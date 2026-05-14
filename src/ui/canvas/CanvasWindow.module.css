@@ -1,0 +1,142 @@
+/*
+ * CanvasWindow — positioning, resize handles, and animations.
+ */
+
+.canvasWindow {
+  /* CSS containment for performance isolation */
+  contain: layout style paint;
+  /* Open animation */
+  animation: windowOpen var(--duration-normal) var(--easing-default);
+}
+
+/* ── Close animation ── */
+
+.closing {
+  animation: windowClose 200ms var(--easing-default) forwards;
+  pointer-events: none;
+}
+
+@keyframes windowOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes windowClose {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* ── Resize handles ── */
+
+.resizeHandle {
+  position: absolute;
+  z-index: 1;
+}
+
+/* Edge handles — 6px thick */
+.resize_n {
+  top: -3px;
+  left: 8px;
+  right: 8px;
+  height: 6px;
+  cursor: n-resize;
+}
+
+.resize_s {
+  bottom: -3px;
+  left: 8px;
+  right: 8px;
+  height: 6px;
+  cursor: s-resize;
+}
+
+.resize_e {
+  top: 8px;
+  right: -3px;
+  bottom: 8px;
+  width: 6px;
+  cursor: e-resize;
+}
+
+.resize_w {
+  top: 8px;
+  left: -3px;
+  bottom: 8px;
+  width: 6px;
+  cursor: w-resize;
+}
+
+/* Corner handles — 12x12 */
+.resize_ne {
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  cursor: ne-resize;
+}
+
+.resize_nw {
+  top: -3px;
+  left: -3px;
+  width: 12px;
+  height: 12px;
+  cursor: nw-resize;
+}
+
+.resize_se {
+  bottom: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  cursor: se-resize;
+}
+
+.resize_sw {
+  bottom: -3px;
+  left: -3px;
+  width: 12px;
+  height: 12px;
+  cursor: sw-resize;
+}
+
+/* ── Drag handle (applied via class on title bar) ── */
+
+.dragHandle {
+  cursor: grab;
+  user-select: none;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* ── Window content area (cancels drag) ── */
+
+.windowContent {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ── Pin indicator ── */
+
+.pinIndicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 14px;
+  z-index: 2;
+  pointer-events: none;
+}

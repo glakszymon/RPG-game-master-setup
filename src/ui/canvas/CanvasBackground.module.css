@@ -1,0 +1,35 @@
+/*
+ * CanvasBackground — CSS patterns for canvas backgrounds.
+ *
+ * Uses CSS background-image with gradients for dot/line grids.
+ * These scale naturally with the canvas CSS transform.
+ */
+
+.background {
+  position: absolute;
+  top: -50000px;
+  left: -50000px;
+  width: 100000px;
+  height: 100000px;
+  pointer-events: none;
+}
+
+/* ── Dot grid ── */
+
+.dotGrid {
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.12) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+/* ── Line grid ── */
+
+.lineGrid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}

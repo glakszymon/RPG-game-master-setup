@@ -1,20 +1,36 @@
-import {app, BrowserWindow} from 'electron'
-import path from 'path'
+import { app, BrowserWindow, ipcMain } from 'electron';
+import path from 'path';
 import { isDev } from './utils.js';
+import { initDatabase, saveCanvasState, loadCanvasState } from './database.js';
 
-// type test = string;
+app.on('ready', async () => {
+  // Initialize SQLite database
+  await initDatabase();
 
-app.on('ready', () => {
-    const mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
-    });
+  const mainWindow = new BrowserWindow({
+    width: 1400,
+    height: 900,
+    webPreferences: {
+      preload: path.join(app.getAppPath(), 'dist-electron/preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
 
-    if(isDev()) {
-        mainWindow.loadURL('http://localhost:5123');
-        // mainWindow.webContents.openDevTools();
-    } else {
-        mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
-    }
-    // mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
-})
+  if (isDev()) {
+    mainWindow.loadURL('http://localhost:5123');
+  } else {
+    mainWindow.loadFile(path.join(app.getAppPath(), '/dist-react/index.html'));
+  }
+
+  // ── Canvas IPC handlers ──
+
+  ipcMain.handle('canvas:save', (_event, campaignId: string, state: string) => {
+    saveCanvasState(campaignId, state);
+    return { ok: true };
+  });
+
+  ipcMain.handle('canvas:load', (_event, campaignId: string) => {
+    return loadCanvasState(campaignId);
+  });
+});

@@ -1,0 +1,22 @@
+/*
+ * Minimap — fixed position in bottom-right corner.
+ */
+
+.minimap {
+  position: fixed;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  width: 180px;
+  height: 120px;
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--glass-blur-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+}
+
+.svg {
+  display: block;
+}
