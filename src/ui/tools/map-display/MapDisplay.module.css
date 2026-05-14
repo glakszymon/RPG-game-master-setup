@@ -1,6 +1,24 @@
+
 .container {
   width: 100%;
   height: 100%;
   overflow: hidden;
   position: relative;
+}
+.loadButton {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  padding: 12px 24px;
+  background: rgba(201, 176, 107, 0.2);
+  border: 1px solid var(--accent, #C9B06B);
+  color: var(--text-primary, #E8E6E3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.loadButton:hover {
+  background: rgba(201, 176, 107, 0.35);
 }
