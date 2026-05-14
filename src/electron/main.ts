@@ -1,7 +1,12 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { isDev } from './utils.js';
-import { initDatabase, saveCanvasState, loadCanvasState, savePreset, loadPresets, deletePreset, renamePreset } from './database.js';
+import {
+  initDatabase,
+  saveCanvasState, loadCanvasState,
+  savePreset, loadPresets, deletePreset, renamePreset,
+  createCampaign, listCampaigns, updateCampaign, updateCampaignStatus, deleteCampaign, touchCampaignSession,
+} from './database.js';
 
 app.on('ready', async () => {
   // Initialize SQLite database
@@ -52,6 +57,37 @@ app.on('ready', async () => {
 
   ipcMain.handle('presets:rename', (_event, campaignId: string, presetId: string, newName: string) => {
     renamePreset(campaignId, presetId, newName);
+    return { ok: true };
+  });
+
+  // ── Campaign IPC handlers ──
+
+  ipcMain.handle('campaigns:list', () => {
+    return listCampaigns();
+  });
+
+  ipcMain.handle('campaigns:create', (_event, id: string, name: string, system: string, iconType: string, iconValue: string) => {
+    createCampaign(id, name, system, iconType, iconValue);
+    return { ok: true };
+  });
+
+  ipcMain.handle('campaigns:update', (_event, id: string, name: string, system: string, iconType: string, iconValue: string) => {
+    updateCampaign(id, name, system, iconType, iconValue);
+    return { ok: true };
+  });
+
+  ipcMain.handle('campaigns:update-status', (_event, id: string, status: string) => {
+    updateCampaignStatus(id, status);
+    return { ok: true };
+  });
+
+  ipcMain.handle('campaigns:delete', (_event, id: string) => {
+    deleteCampaign(id);
+    return { ok: true };
+  });
+
+  ipcMain.handle('campaigns:touch', (_event, id: string) => {
+    touchCampaignSession(id);
     return { ok: true };
   });
 });

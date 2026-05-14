@@ -34,7 +34,7 @@ function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
   );
 }
 
-function InfiniteCanvas() {
+function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignId?: string }) {
   const { canvasRef, getTransform, setTransformCallback, transformRef, zoomIn, zoomOut, resetView, panTo } = usePanZoom();
 
   const {
@@ -83,7 +83,7 @@ function InfiniteCanvas() {
     [dispatch],
   );
 
-  useCanvasPersistence(state, dispatch);
+  useCanvasPersistence(state, dispatch, campaignId ?? 'default');
 
   // Focus presets
   const {
@@ -93,7 +93,7 @@ function InfiniteCanvas() {
     deletePreset,
     renamePreset,
     overwritePreset,
-  } = useFocusPresets({ state, dispatch, getTransform, panTo });
+  } = useFocusPresets({ state, dispatch, getTransform, panTo, campaignId: campaignId ?? 'default' });
 
   // Shortcuts help overlay state
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -260,6 +260,11 @@ function InfiniteCanvas() {
       </CanvasContextMenu>
 
       {/* Viewport-fixed overlays */}
+      {onBack && (
+        <button className={styles.backBtn} onClick={onBack} title="Back to Hub">
+          ← Hub
+        </button>
+      )}
       {spacePanActive && (
         <div className={styles.spacePanOverlay} />
       )}

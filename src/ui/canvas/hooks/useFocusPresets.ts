@@ -10,7 +10,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { CanvasState, FocusPreset, PresetWindowSnapshot, ViewportTransform } from '../types';
 import type { CanvasAction } from './useCanvasState';
 
-const CAMPAIGN_ID = 'default';
 const AUTO_SAVE_ID = '__last_setup__';
 const AUTO_SAVE_DEBOUNCE_MS = 1000;
 
@@ -19,9 +18,10 @@ interface UseFocusPresetsOptions {
   dispatch: React.Dispatch<CanvasAction>;
   getTransform: () => ViewportTransform;
   panTo: (x: number, y: number, scale: number, animate?: boolean) => void;
+  campaignId: string;
 }
 
-export function useFocusPresets({ state, dispatch, getTransform, panTo }: UseFocusPresetsOptions) {
+export function useFocusPresets({ state, dispatch, getTransform, panTo, campaignId }: UseFocusPresetsOptions) {
   const [presets, setPresets] = useState<FocusPreset[]>([]);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadedRef = useRef(false);
@@ -34,7 +34,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo }: UseFoc
     const api = window.electronAPI;
     if (!api?.presets?.loadAll) return;
 
-    api.presets.loadAll(CAMPAIGN_ID).then((json: string) => {
+    api.presets.loadAll(campaignId).then((json: string) => {
       try {
         const loaded = JSON.parse(json) as FocusPreset[];
         setPresets(loaded);
@@ -63,7 +63,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo }: UseFoc
       }));
 
       const dataJson = JSON.stringify({ windows, viewport });
-      api.presets.save(CAMPAIGN_ID, AUTO_SAVE_ID, 'Last Setup', dataJson, true);
+      api.presets.save(campaignId, AUTO_SAVE_ID, 'Last Setup', dataJson, true);
 
       // Update local state
       setPresets((prev) => {
@@ -106,7 +106,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo }: UseFoc
     const id = `preset_${Date.now()}`;
     const dataJson = JSON.stringify({ windows, viewport });
 
-    await window.electronAPI?.presets?.save(CAMPAIGN_ID, id, name, dataJson, false);
+    await window.electronAPI?.presets?.save(campaignId, id, name, dataJson, false);
 
     const newPreset: FocusPreset = {
       id,
@@ -150,13 +150,13 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo }: UseFoc
 
   /** Delete a user preset (cannot delete auto-save) */
   const deletePreset = useCallback(async (presetId: string) => {
-    await window.electronAPI?.presets?.delete(CAMPAIGN_ID, presetId);
+    await window.electronAPI?.presets?.delete(campaignId, presetId);
     setPresets((prev) => prev.filter((p) => p.id !== presetId));
   }, []);
 
   /** Rename a user preset */
   const renamePreset = useCallback(async (presetId: string, newName: string) => {
-    await window.electronAPI?.presets?.rename(CAMPAIGN_ID, presetId, newName);
+    await window.electronAPI?.presets?.rename(campaignId, presetId, newName);
     setPresets((prev) =>
       prev.map((p) => (p.id === presetId ? { ...p, name: newName } : p)),
     );
@@ -179,7 +179,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo }: UseFoc
     }));
 
     const dataJson = JSON.stringify({ windows, viewport });
-    await window.electronAPI?.presets?.save(CAMPAIGN_ID, presetId, preset.name, dataJson, false);
+    await window.electronAPI?.presets?.save(campaignId, presetId, preset.name, dataJson, false);
 
     setPresets((prev) =>
       prev.map((p) =>
