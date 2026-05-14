@@ -88,7 +88,15 @@ export function CharacterCard({
       className={`${styles.card} ${isDragging ? styles.cardDragging : ''}`}
       data-size={size}
       draggable
-      onDragStart={() => onDragStart(character.id)}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('application/json', JSON.stringify({
+          type: 'party-character',
+          id: character.id,
+          name: character.name,
+          portraitPath: character.portraitPath,
+        }));
+        onDragStart(character.id);
+      }}
       onDragOver={(e) => onDragOver(e, character.id)}
       onDragEnd={onDragEnd}
     >

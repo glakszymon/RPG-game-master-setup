@@ -28,4 +28,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     delete: (id: string) => ipcRenderer.invoke('campaigns:delete', id),
     touch: (id: string) => ipcRenderer.invoke('campaigns:touch', id),
   },
+  dialog: {
+    openImageFile: () => ipcRenderer.invoke('dialog:open-image'),
+    readImage: (filePath: string) => ipcRenderer.invoke('dialog:read-image', filePath),
+  },
 });

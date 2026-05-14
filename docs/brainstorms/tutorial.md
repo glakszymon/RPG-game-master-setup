@@ -451,23 +451,50 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 **Zapis stanu w SQLite:**
 - Ścieżka do obrazka, konfiguracja siatki (JSON), pozycje tokenów (JSON), maska FoW (PNG blob)
 
-### Krok 4.1 - Implementacja mapy
+### Krok 4.1 - Implementacja mapy ✅ ZAKOŃCZONE
 
-**Napisz do AI:**
-> "Poprowadź mnie krok po kroku w implementacji okienka Mapy Rozgrywki na canvasie. Zaczynamy od wyświetlania obrazka z zoom/pan, potem siatka, potem Fog of War, potem tokeny."
+**Status implementacji (2026-05-15):**
 
-**Na co zwrócić uwagę:**
-- Czy FoW jest wydajny przy dużych mapach
-- Czy tokeny nie lagują przy przesuwaniu
-- Czy zoom wewnątrz okienka mapy nie koliduje z zoomem canvasa
+Zrealizowane kroki:
+- ✅ **Pixi.js v8 bootstrap** — `usePixiApp.ts` z async `init()`, race condition fix (destroyed flag), ResizeObserver auto-resize
+- ✅ **Ładowanie obrazka mapy** — IPC: main process czyta plik → base64 data URL → Pixi.js Sprite (Chromium blokuje `file://`)
+- ✅ **Zoom/Pan** — zoom buttons + slider + percentage + fit-to-window (floating overlay); pan via middle mouse drag; scroll wheel zablokowany
+- ✅ **Grid overlay** — `useGridLayer.ts`: square + hex grid via Pixi.js Graphics, z kontrolkami (type, cellSize, opacity)
+- ✅ **Fog of War** — `useFowLayer.ts`: mask-based approach (RenderTexture jako maska na czarnym reccie), reveal/conceal pędzlem, Reveal All / Conceal All buttony, debounced PNG persistence
+- ✅ **GIMP-style toolbar** — icon grid (góra) + context panel (środek) + grid settings (dół via `margin-top: auto`)
+- ✅ **noPadding ToolWindow** — pełne pokrycie canvas bez paddingu, `FULL_BLEED_TOOLS` w CanvasWindow
+- ✅ **Intuitive icons** — navigate (crosshair arrows), reveal (eye open), conceal (eye slash), load map (landscape), tokens (person), vfx (star)
+- ✅ **Token system** — `useTokenLayer.ts`: circular tokens z avatarem lub inicjałami, name label, drag na mapie (navigate/tokens tool), kolorowanie po nazwie
+- ✅ **Cross-tool drag&drop** — Party Tracker → Map: `dragstart` ustawia `application/json` z danymi postaci, MapDisplay `onDrop` tworzy `MapToken`
+- ✅ **Manual tokens** — przycisk "Add Token" w kontekście narzędzia Tokens, lista tokenów z opcją usuwania
+- ✅ **VFX effects** — `useVfxLayer.ts`: 7 presetów (fire, explosion, smoke, lightning, glow, fog, ice), particle system z Graphics, click-to-place, configurable size/mode/duration, one-shot auto-remove
+- ✅ **State persistence** — cały `MapDisplayState` (w tym tokeny, VFX, FoW data URL) persystowany przez istniejący mechanizm canvas state JSON blob → SQLite
+
+Odkrycia techniczne:
+1. Pixi.js v8 `init()` jest async — strict mode React 19 wymaga `destroyed` flag
+2. Chromium blokuje `file://` — trzeba IPC + base64 data URL
+3. `'erase'` blend mode NIE DZIAŁA z `renderer.render()` na RenderTexture w Pixi v8 — rozwiązanie: mask-based FoW (biały=fog widoczny, czarny=odsłonięty)
+4. Kontener DOM może mieć wymiary 0 podczas async init — ResizeObserver naprawia to
+5. HTML5 DnD `dataTransfer.setData('application/json', ...)` działa jako cross-tool communication między React components a Pixi canvas
+
+Pliki modułu:
+- `src/ui/tools/map-display/MapDisplay.tsx` — główny komponent z toolbar + canvas
+- `src/ui/tools/map-display/MapDisplay.module.css` — style
+- `src/ui/tools/map-display/types.ts` — interfejsy + DEFAULT_MAP_STATE
+- `src/ui/tools/map-display/hooks/usePixiApp.ts` — Pixi lifecycle
+- `src/ui/tools/map-display/hooks/useGridLayer.ts` — grid overlay
+- `src/ui/tools/map-display/hooks/useFowLayer.ts` — Fog of War (mask-based)
+- `src/ui/tools/map-display/hooks/useTokenLayer.ts` — token rendering + drag
+- `src/ui/tools/map-display/hooks/useVfxLayer.ts` — VFX particle system
 
 **Jak sprawdzić że działa:**
-- Załaduj mapę z biblioteki
-- Włącz siatkę kwadratową i hex - obie powinny się nałożyć poprawnie
-- Odsłoń część FoW pędzlem - sprawdź różne przezroczystości
-- Przeciągnij postać z Party Trackera na mapę jako token
-- Przesuń token - powinien się swobodnie ruszać
-- Zamknij i otwórz mapę - stan powinien się zachować
+- Załaduj mapę — obraz wyświetla się z zoom/pan
+- Włącz siatkę kwadratową i hex — poprawne nakładanie
+- Odsłoń/zakryj FoW pędzlem, użyj Reveal All / Conceal All
+- Przeciągnij postać z Party Trackera na mapę — token z avatarem
+- Dodaj manual token, przeciągnij go po mapie
+- Dodaj efekt VFX (ogień, eksplozja, itp.) — kliknij na mapie
+- Zamknij i otwórz mapę — stan powinien się zachować
 
 **Rezultat:** Działająca mapa z FoW i tokenami.
 

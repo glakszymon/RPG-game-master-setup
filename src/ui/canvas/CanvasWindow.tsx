@@ -9,7 +9,7 @@ import { useRef, useCallback, useState } from 'react';
 import { ToolWindow } from '../components/ToolWindow';
 import { useWindowResize, type ResizeEdge } from './hooks/useWindowResize';
 import { TOOL_MIN_SIZES, TOOL_INFO } from './types';
-import type { WindowState } from './types';
+import type { WindowState, ToolType } from './types';
 import styles from './CanvasWindow.module.css';
 
 interface CanvasWindowProps {
@@ -29,6 +29,9 @@ interface CanvasWindowProps {
 }
 
 const RESIZE_EDGES: ResizeEdge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+
+/** Tools that need full-bleed body (no padding, no scroll) */
+const FULL_BLEED_TOOLS: ReadonlySet<ToolType> = new Set(['map-display']);
 
 function CanvasWindow({
   window: win,
@@ -160,10 +163,11 @@ function CanvasWindow({
       {/* Pin indicator */}
       {win.pinned && <div className={styles.pinIndicator}>📌</div>}
 
-      <ToolWindow
+        <ToolWindow
         title={toolInfo.name}
         icon={toolInfo.icon}
         active={isActive}
+        noPadding={FULL_BLEED_TOOLS.has(win.toolType)}
         onClose={handleClose}
         onMinimize={handleMinimize}
         onTogglePin={() => onTogglePin(win.id)}
