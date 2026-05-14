@@ -37,7 +37,7 @@ export function useCanvasPersistence(
 
   // Debounced save on state change
   useEffect(() => {
-    const api = (window as any).electronAPI;
+    const api = window.electronAPI;
     if (!api?.canvas?.save) return;
 
     if (timerRef.current) clearTimeout(timerRef.current);
