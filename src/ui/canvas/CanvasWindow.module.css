@@ -3,8 +3,6 @@
  */
 
 .canvasWindow {
-  /* CSS containment for performance isolation */
-  contain: layout style paint;
   /* Open animation */
   animation: windowOpen var(--duration-normal) var(--easing-default);
 }

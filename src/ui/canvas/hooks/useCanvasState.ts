@@ -186,7 +186,7 @@ export { canvasReducer };
 
 export const initialCanvasState: CanvasState = {
   windows: [],
-  background: 'solid',
+  background: 'dot-grid',
   nextWindowId: 0,
 };
 
