@@ -406,21 +406,50 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 
 ## Faza 4: Mapa rozgrywki
 
-### Krok 4.0 - Brainstorm
+### Krok 4.0 - Brainstorm (ustalenia) ✅ BRAINSTORM ZAKOŃCZONY
 
-**Napisz do AI:**
-> "Porozmawiaj ze mną o module Mapy Rozgrywki. Omówmy:
-> - Jaka biblioteka do renderowania mapy 2D z fog of war (Canvas, Pixi.js, Konva.js, Fabric.js?)
-> - Import obrazków z globalnej biblioteki map
-> - Siatka: kwadratowa, heksagonalna, brak - konfigurowalny rozmiar komórki
-> - Fog of War: pędzel o regulowanej przezroczystości, odsłanianie/zakrywanie
-> - Tokeny: drag&drop z Party Trackera i Bestiariusza, swobodne przesuwanie
-> - Zoom i pan wewnątrz okienka mapy
-> - Jak zapisywać stan mapy (pozycje tokenów, FoW) między sesjami
-> - Użyj wymagań R23-R26
-> - Sprawdź inspiracja/map.md jako referencję
->
-> Dopytaj mnie o priorytety i edge case'y."
+**Dokument wymagań:** `docs/brainstorms/2026-05-14-map-display-requirements.md`
+
+**Podjęte decyzje:**
+
+**Renderer i architektura warstw:**
+- Pixi.js (WebGL) — wydajność + elastyczność, natywne wsparcie layerów, filtrów, animacji
+- Stos warstw (od dołu): Obraz tła → Siatka → Tokeny → Fog of War → UI overlay
+- Mapa to statyczny obraz ładowany z globalnej biblioteki map (osobny moduł, poza scope)
+- Fallback: systemowy file picker (Electron dialog) dopóki biblioteka map nie istnieje
+
+**Siatka:**
+- Typy: kwadratowa, heksagonalna, brak — konfigurowalny rozmiar komórki i opacity
+- Siatka czysto wizualna — brak snap-to-grid, tokeny pozycjonowane swobodnie
+
+**Fog of War:**
+- Dwa osobne narzędzia: "Reveal" (odsłanianie) i "Conceal" (zakrywanie)
+- Każde z regulowanym rozmiarem pędzla i przezroczystością (100%/50%/0%)
+- Tylko freehand brush (bez cell brush) — FoW niezależny od siatki
+- Bulk actions: "Odsłoń całą mapę" / "Zakryj całą mapę"
+- Zapis: hybryda — PNG blob w SQLite (trwały) + stroke buffer w pamięci (undo/redo w sesji)
+
+**Tokeny:**
+- Drag&drop z paneli Party Tracker i Bestiariusz
+- Wygląd: okrągły avatar (obrazek postaci/potwora), fallback na kolorowe koło z inicjałami, nazwa pod tokenem
+- Swobodne przesuwanie (bez snap-to-grid)
+- Integracja z Combat Trackerem — ładowanie uczestników walki jako tokeny (R26)
+
+**Toolbar (pełny panel kontrolny):**
+- Przełączanie trybów: Nawigacja, Pędzel FoW (Reveal/Conceal), Tokeny, Efekty VFX
+- Aktywne narzędzie blokuje domyślne zachowanie canvasa
+- Panel ustawień aktywnego narzędzia (rozmiar, styl, opacity, parametry specyficzne)
+
+**Efekty VFX:**
+- Preset library z 5-10 gotowymi efektami (ogień, eksplozja, mgła, błyskawica, dym, światło)
+- GM umieszcza efekt w wybranym punkcie na mapie
+- Konfiguracja per efekt: tryb (one-shot/persistent), opóźnienie/trigger manualny, rozmiar, czas trwania
+
+**Nawigacja:**
+- Tryb nawigacji: scroll = zoom, drag = pan (wewnątrz okienka mapy)
+
+**Zapis stanu w SQLite:**
+- Ścieżka do obrazka, konfiguracja siatki (JSON), pozycje tokenów (JSON), maska FoW (PNG blob)
 
 ### Krok 4.1 - Implementacja mapy
 
