@@ -35,7 +35,7 @@ export function useFowLayer(
 
   // ── Create / resize FoW layers ──
   useEffect(() => {
-    if (!app || !worldContainer || mapWidth === 0 || mapHeight === 0) return;
+    if (!app || !app.renderer || !worldContainer || mapWidth === 0 || mapHeight === 0) return;
 
     // 1. Create the mask RenderTexture (white = fog visible)
     const maskRt = RenderTexture.create({
@@ -142,13 +142,14 @@ export function useFowLayer(
 
   // ── Pointer event handlers ──
   useEffect(() => {
-    const canvas = app?.canvas;
+    const canvas = app?.renderer ? app.canvas : null;
     if (!canvas || !worldContainer) return;
 
     const isFowTool = activeTool === 'fow-reveal' || activeTool === 'fow-conceal';
     if (!isFowTool) return;
 
-    const toMapCoords = (e: PointerEvent): { x: number; y: number } => {
+    const toMapCoords = (e: PointerEvent): { x: number; y: number } | null => {
+      if (worldContainer.destroyed) return null;
       const rect = canvas.getBoundingClientRect();
       const canvasX = e.clientX - rect.left;
       const canvasY = e.clientY - rect.top;
@@ -159,9 +160,10 @@ export function useFowLayer(
 
     const onPointerDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
+      const pos = toMapCoords(e);
+      if (!pos) return;
       isPaintingRef.current = true;
       canvas.setPointerCapture(e.pointerId);
-      const pos = toMapCoords(e);
       lastPosRef.current = pos;
       paintAt(pos.x, pos.y);
     };
@@ -169,6 +171,7 @@ export function useFowLayer(
     const onPointerMove = (e: PointerEvent) => {
       if (!isPaintingRef.current) return;
       const pos = toMapCoords(e);
+      if (!pos) return;
       const last = lastPosRef.current;
       if (last) {
         paintLine(last.x, last.y, pos.x, pos.y);

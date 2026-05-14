@@ -135,7 +135,7 @@ export function useTokenLayer(
 
   // ── Drag handling ──
   useEffect(() => {
-    const canvas = app?.canvas;
+    const canvas = app?.renderer ? app.canvas : null;
     if (!canvas || !worldContainer) return;
 
     const canDrag = activeTool === 'tokens' || activeTool === 'navigate';
@@ -144,6 +144,7 @@ export function useTokenLayer(
     let dragging: { tokenId: string; offsetX: number; offsetY: number } | null = null;
 
     const toMapCoords = (e: PointerEvent) => {
+      if (worldContainer.destroyed) return null;
       const rect = canvas.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
@@ -170,6 +171,7 @@ export function useTokenLayer(
     const onPointerDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
       const pos = toMapCoords(e);
+      if (!pos) return;
       const tokenId = hitTest(pos.x, pos.y);
       if (!tokenId) return;
 
@@ -189,6 +191,7 @@ export function useTokenLayer(
     const onPointerMove = (e: PointerEvent) => {
       if (!dragging) return;
       const pos = toMapCoords(e);
+      if (!pos) return;
       const newX = pos.x - dragging.offsetX;
       const newY = pos.y - dragging.offsetY;
 
@@ -203,6 +206,7 @@ export function useTokenLayer(
     const onPointerUp = (e: PointerEvent) => {
       if (!dragging) return;
       const pos = toMapCoords(e);
+      if (!pos) return;
       const newX = pos.x - dragging.offsetX;
       const newY = pos.y - dragging.offsetY;
       const tokenId = dragging.tokenId;

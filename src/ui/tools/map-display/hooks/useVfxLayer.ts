@@ -155,11 +155,12 @@ export function useVfxLayer(
 
   // ── Click-to-place handler ──
   useEffect(() => {
-    const canvas = app?.canvas;
+    const canvas = app?.renderer ? app.canvas : null;
     if (!canvas || !worldContainer || activeTool !== 'vfx') return;
 
     const onClick = (e: PointerEvent) => {
       if (e.button !== 0) return;
+      if (worldContainer.destroyed) return;
       const rect = canvas.getBoundingClientRect();
       const mapX = (e.clientX - rect.left - worldContainer.x) / worldContainer.scale.x;
       const mapY = (e.clientY - rect.top - worldContainer.y) / worldContainer.scale.y;

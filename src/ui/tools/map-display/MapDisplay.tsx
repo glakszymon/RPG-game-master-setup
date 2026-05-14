@@ -259,7 +259,7 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
 
   // ── Pan (middle mouse drag) ──
   useEffect(() => {
-    const canvas = appRef.current?.canvas;
+    const canvas = appRef.current?.renderer ? appRef.current.canvas : null;
     if (!isReady || !canvas) return;
 
     const onWheel = (e: WheelEvent) => { e.preventDefault(); };
@@ -281,7 +281,7 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
     const onPointerMove = (e: PointerEvent) => {
       if (!isPanning) return;
       const world = worldRef.current;
-      if (!world) return;
+      if (!world || world.destroyed) return;
 
       world.x += e.clientX - lastX;
       world.y += e.clientY - lastY;
@@ -295,7 +295,7 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
       canvas.releasePointerCapture(e.pointerId);
 
       const world = worldRef.current;
-      if (world) {
+      if (world && !world.destroyed) {
         onToolStateChange({
           ...stateRef.current,
           viewport: { x: world.x, y: world.y, zoom: world.scale.x },
