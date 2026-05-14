@@ -59,6 +59,60 @@ export const SHORTCUTS = {
     category: 'General',
     description: 'Pokaż listę skrótów',
   },
+  preset1: {
+    keys: '$mod+Digit1',
+    label: 'Ctrl+1',
+    category: 'Window',
+    description: 'Aktywuj preset 1',
+  },
+  preset2: {
+    keys: '$mod+Digit2',
+    label: 'Ctrl+2',
+    category: 'Window',
+    description: 'Aktywuj preset 2',
+  },
+  preset3: {
+    keys: '$mod+Digit3',
+    label: 'Ctrl+3',
+    category: 'Window',
+    description: 'Aktywuj preset 3',
+  },
+  preset4: {
+    keys: '$mod+Digit4',
+    label: 'Ctrl+4',
+    category: 'Window',
+    description: 'Aktywuj preset 4',
+  },
+  preset5: {
+    keys: '$mod+Digit5',
+    label: 'Ctrl+5',
+    category: 'Window',
+    description: 'Aktywuj preset 5',
+  },
+  preset6: {
+    keys: '$mod+Digit6',
+    label: 'Ctrl+6',
+    category: 'Window',
+    description: 'Aktywuj preset 6',
+  },
+  preset7: {
+    keys: '$mod+Digit7',
+    label: 'Ctrl+7',
+    category: 'Window',
+    description: 'Aktywuj preset 7',
+  },
+  preset8: {
+    keys: '$mod+Digit8',
+    label: 'Ctrl+8',
+    category: 'Window',
+    description: 'Aktywuj preset 8',
+  },
+  preset9: {
+    keys: '$mod+Digit9',
+    label: 'Ctrl+9',
+    category: 'Window',
+    description: 'Aktywuj preset 9',
+  },
 } as const satisfies Record<string, ShortcutDefinition>;
 
 export type ShortcutId = keyof typeof SHORTCUTS;

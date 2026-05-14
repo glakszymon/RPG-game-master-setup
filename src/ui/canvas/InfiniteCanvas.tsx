@@ -14,11 +14,13 @@ import { useCanvasPersistence } from './hooks/useCanvasPersistence';
 import { useViewportCulling } from './hooks/useViewportCulling';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSpacePan } from './hooks/useSpacePan';
+import { useFocusPresets } from './hooks/useFocusPresets';
 import { CanvasBackground } from './CanvasBackground';
 import { CanvasWindow } from './CanvasWindow';
 import { CanvasContextMenu } from './ContextMenu';
 import { Minimap } from './Minimap';
 import { MinimizeTray } from './MinimizeTray';
+import { PresetToolbar } from './PresetToolbar';
 import { ShortcutsOverlay } from './ShortcutsOverlay';
 import type { ToolType, ViewportTransform } from './types';
 import styles from './InfiniteCanvas.module.css';
@@ -33,7 +35,7 @@ function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
 }
 
 function InfiniteCanvas() {
-  const { canvasRef, getTransform, setTransformCallback, transformRef, zoomIn, zoomOut, resetView } = usePanZoom();
+  const { canvasRef, getTransform, setTransformCallback, transformRef, zoomIn, zoomOut, resetView, panTo } = usePanZoom();
 
   const {
     state,
@@ -83,6 +85,16 @@ function InfiniteCanvas() {
 
   useCanvasPersistence(state, dispatch);
 
+  // Focus presets
+  const {
+    presets,
+    savePreset,
+    activatePreset,
+    deletePreset,
+    renamePreset,
+    overwritePreset,
+  } = useFocusPresets({ state, dispatch, getTransform, panTo });
+
   // Shortcuts help overlay state
   const [showShortcuts, setShowShortcuts] = useState(false);
 
@@ -104,8 +116,17 @@ function InfiniteCanvas() {
       zoomReset: resetView,
       escape: closeTopmostWindow,
       helpPanel: () => setShowShortcuts((s) => !s),
+      preset1: () => { const p = presets.filter((pr) => !pr.isAutoSave)[0]; if (p) activatePreset(p.id); },
+      preset2: () => { const p = presets.filter((pr) => !pr.isAutoSave)[1]; if (p) activatePreset(p.id); },
+      preset3: () => { const p = presets.filter((pr) => !pr.isAutoSave)[2]; if (p) activatePreset(p.id); },
+      preset4: () => { const p = presets.filter((pr) => !pr.isAutoSave)[3]; if (p) activatePreset(p.id); },
+      preset5: () => { const p = presets.filter((pr) => !pr.isAutoSave)[4]; if (p) activatePreset(p.id); },
+      preset6: () => { const p = presets.filter((pr) => !pr.isAutoSave)[5]; if (p) activatePreset(p.id); },
+      preset7: () => { const p = presets.filter((pr) => !pr.isAutoSave)[6]; if (p) activatePreset(p.id); },
+      preset8: () => { const p = presets.filter((pr) => !pr.isAutoSave)[7]; if (p) activatePreset(p.id); },
+      preset9: () => { const p = presets.filter((pr) => !pr.isAutoSave)[8]; if (p) activatePreset(p.id); },
     }),
-    [undo, redo, zoomIn, zoomOut, resetView, closeTopmostWindow],
+    [undo, redo, zoomIn, zoomOut, resetView, closeTopmostWindow, presets, activatePreset],
   );
   useKeyboardShortcuts(shortcutHandlers);
 
@@ -243,6 +264,14 @@ function InfiniteCanvas() {
         <div className={styles.spacePanOverlay} />
       )}
       <MinimizeTray windows={state.windows} onRestore={restoreWindow} />
+      <PresetToolbar
+        presets={presets}
+        onActivate={activatePreset}
+        onSave={savePreset}
+        onDelete={deletePreset}
+        onRename={renamePreset}
+        onOverwrite={overwritePreset}
+      />
       <Minimap
         windows={state.windows}
         viewport={minimapTransform}
