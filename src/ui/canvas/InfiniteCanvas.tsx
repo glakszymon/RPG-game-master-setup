@@ -23,6 +23,8 @@ import { MinimizeTray } from './MinimizeTray';
 import { PresetToolbar } from './PresetToolbar';
 import { ShortcutsOverlay } from './ShortcutsOverlay';
 import type { ToolType, ViewportTransform } from './types';
+import { PartyTracker } from '../tools/party-tracker';
+import type { PartyTrackerState } from '../tools/party-tracker';
 import styles from './InfiniteCanvas.module.css';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
@@ -32,6 +34,32 @@ function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
       <p>{toolType} — content coming soon</p>
     </div>
   );
+}
+
+/** Render the correct tool component based on toolType */
+function ToolContent({
+  toolType,
+  toolState,
+  onToolStateChange,
+  campaignId,
+}: {
+  toolType: ToolType;
+  toolState: unknown;
+  onToolStateChange: (state: unknown) => void;
+  campaignId: string;
+}) {
+  switch (toolType) {
+    case 'party-tracker':
+      return (
+        <PartyTracker
+          toolState={toolState as PartyTrackerState | undefined}
+          onToolStateChange={onToolStateChange}
+          campaignId={campaignId}
+        />
+      );
+    default:
+      return <ToolPlaceholder toolType={toolType} />;
+  }
 }
 
 function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignId?: string }) {
@@ -252,7 +280,12 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
                 onDragStart={startCoalescing}
                 onDragEnd={endCoalescing}
               >
-                <ToolPlaceholder toolType={win.toolType} />
+                <ToolContent
+                  toolType={win.toolType}
+                  toolState={win.toolState}
+                  onToolStateChange={(s) => dispatch({ type: 'UPDATE_TOOL_STATE', id: win.id, toolState: s })}
+                  campaignId={campaignId ?? 'default'}
+                />
               </CanvasWindow>
             ))}
           </div>

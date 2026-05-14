@@ -1,0 +1,362 @@
+/*
+ * PartyTracker — CSS Module
+ * Glassmorphism character cards with flex-wrap layout.
+ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ─── Toolbar ────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.sizePresets {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.presetBtn {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--easing-default);
+}
+
+.presetBtn:hover {
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+}
+
+.presetActive {
+  background: var(--color-accent-muted);
+  border-color: var(--color-accent-border);
+  color: var(--color-text-accent);
+}
+
+.gearBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast) var(--easing-default);
+}
+
+.gearBtn:hover {
+  color: var(--color-text-primary);
+}
+
+/* ─── Card Grid (flex-wrap) ──────────────────── */
+
+.cardGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  overflow-y: auto;
+  flex: 1;
+  align-content: flex-start;
+}
+
+/* ─── Character Card ─────────────────────────── */
+
+.card {
+  background: var(--glass-bg-surface);
+  backdrop-filter: var(--glass-blur-surface);
+  border: var(--glass-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color var(--duration-fast) var(--easing-default);
+}
+
+.card:hover {
+  border-color: var(--color-border-hover);
+}
+
+/* Card sizes */
+.card[data-size="S"] {
+  width: 140px;
+}
+
+.card[data-size="M"] {
+  width: 180px;
+}
+
+.card[data-size="L"] {
+  width: 240px;
+}
+
+/* ─── Portrait ───────────────────────────────── */
+
+.portrait {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-elevated);
+}
+
+.portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portraitPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--color-text-muted);
+  font-size: var(--text-2xl);
+}
+
+/* ─── Name ───────────────────────────────────── */
+
+.name {
+  padding: var(--space-2) var(--space-2) var(--space-1);
+  text-align: center;
+  cursor: default;
+}
+
+.nameText {
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.nameInput {
+  width: 100%;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  text-align: center;
+  padding: 2px 4px;
+  outline: none;
+}
+
+/* ─── Fields ─────────────────────────────────── */
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  gap: var(--space-1);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Field widths (auto-flow) */
+.fieldWidth_1_3 {
+  width: calc(33.333% - var(--space-1));
+}
+
+.fieldWidth_1_2 {
+  width: calc(50% - var(--space-1));
+}
+
+.fieldWidth_2_3 {
+  width: calc(66.666% - var(--space-1));
+}
+
+.fieldWidth_full {
+  width: 100%;
+}
+
+.fieldLabel {
+  font-size: 9px;
+  font-family: var(--font-body);
+  font-weight: var(--font-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fieldValue {
+  min-height: 20px;
+}
+
+/* ─── Field Inputs (inline) ──────────────────── */
+
+.numberInput {
+  width: 100%;
+  background: var(--color-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  padding: 2px 4px;
+  text-align: inherit;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--easing-default);
+  -moz-appearance: textfield;
+}
+
+.numberInput::-webkit-outer-spin-button,
+.numberInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.numberInput:focus {
+  border-color: var(--color-accent-border);
+}
+
+.slider {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+
+.textInput {
+  width: 100%;
+  background: var(--color-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  padding: 2px 4px;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--easing-default);
+}
+
+.textInput:focus {
+  border-color: var(--color-accent-border);
+}
+
+.textBox {
+  width: 100%;
+  min-height: 40px;
+  resize: vertical;
+  background: var(--color-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  padding: 4px;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--easing-default);
+}
+
+.textBox:focus {
+  border-color: var(--color-accent-border);
+}
+
+/* ─── Bubbles ────────────────────────────────── */
+
+.bubbles {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.bubble {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: all var(--duration-fast) var(--easing-default);
+}
+
+.bubble:hover {
+  border-color: var(--color-accent);
+}
+
+.bubbleFilled {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* ─── Radio ──────────────────────────────────── */
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.radioLabel input[type="radio"] {
+  accent-color: var(--color-accent);
+}
+
+/* ─── Checkbox ───────────────────────────────── */
+
+.checkbox {
+  accent-color: var(--color-accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ─── Add Button ─────────────────────────────── */
+
+.addBtn {
+  width: 60px;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-surface);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-muted);
+  font-size: var(--text-2xl);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--easing-default);
+  align-self: stretch;
+}
+
+.addBtn:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+}
