@@ -93,7 +93,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
     deletePreset,
     renamePreset,
     overwritePreset,
-  } = useFocusPresets({ state, dispatch, getTransform, panTo });
+  } = useFocusPresets({ state, dispatch, getTransform, panTo, campaignId: campaignId ?? 'default' });
 
   // Shortcuts help overlay state
   const [showShortcuts, setShowShortcuts] = useState(false);

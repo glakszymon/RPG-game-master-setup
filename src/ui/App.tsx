@@ -55,7 +55,7 @@ function App() {
     case 'canvas':
       return (
         <div {...wrapperProps}>
-          <InfiniteCanvas onBack={goToHub} />
+          <InfiniteCanvas onBack={goToHub} campaignId={view.campaignId} />
         </div>
       );
     case 'mapCreator':
