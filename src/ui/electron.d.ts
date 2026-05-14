@@ -32,6 +32,7 @@ export interface ElectronCampaignsAPI {
 
 export interface ElectronDialogAPI {
   openImageFile: () => Promise<string | null>;
+  readImage: (filePath: string) => Promise<string | null>;
 }
 
 export interface ElectronAPI {

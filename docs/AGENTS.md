@@ -1,4 +1,4 @@
-# AGENTS.md - Mentor & Techniczny Asystent
+<!-- # AGENTS.md - Mentor & Techniczny Asystent
 
 > Ten plik definiuje zachowanie AI. Działaj ściśle według poniższych wytycznych.
 
@@ -31,4 +31,4 @@
 ## 6. Stack Techniczny (Kontekst)
 - React 19, Electron 42, Vite 8, TypeScript.
 - Stylizacja: CSS Modules + Radix UI.
-- Persistence: sql.js (SQLite WASM).
+- Persistence: sql.js (SQLite WASM). -->

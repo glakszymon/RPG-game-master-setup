@@ -30,5 +30,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   dialog: {
     openImageFile: () => ipcRenderer.invoke('dialog:open-image'),
+    readImage: (filePath: string) => ipcRenderer.invoke('dialog:read-image', filePath),
   },
 });

@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { isDev } from './utils.js';
 import {
   initDatabase,
@@ -100,5 +101,17 @@ app.on('ready', async () => {
     });
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];
+  });
+
+  ipcMain.handle('dialog:read-image', (_event, filePath: string) => {
+    try {
+      const buffer = fs.readFileSync(filePath);
+      const ext = path.extname(filePath).slice(1).toLowerCase();
+      const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+      const base64 = buffer.toString('base64');
+      return `data:${mime};base64,${base64}`;
+    } catch {
+      return null;
+    }
   });
 });
