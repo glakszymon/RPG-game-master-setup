@@ -1,3 +1,5 @@
+import type { VfxInstance, VfxPreset } from './hooks/useVfxLayer';
+
 export type MapTool = 'navigate' | 'fow-reveal' | 'fow-conceal' | 'tokens' | 'vfx';
 
 export interface MapToken {
@@ -23,12 +25,23 @@ export interface ViewportState {
   zoom: number;
 }
 
+export interface VfxSettings {
+  selectedPreset: VfxPreset;
+  size: number;
+  mode: 'one-shot' | 'persistent';
+  duration: number;
+}
+
 export interface MapDisplayState {
     imagePath: string | null;
     grid: GridConfig;
     viewport: ViewportState;
     tokens: MapToken[];
     fowDataUrl: string | null;
+    activeTool: MapTool;
+    brushSettings: BrushSettings;
+    vfxInstances: VfxInstance[];
+    vfxSettings: VfxSettings;
 }
 
 export interface BrushSettings {
@@ -42,4 +55,8 @@ export const DEFAULT_MAP_STATE: MapDisplayState = {
   viewport: { x: 0, y: 0, zoom: 1 },
   tokens: [],
   fowDataUrl: null,
+  activeTool: 'navigate',
+  brushSettings: { size: 40, opacity: 1 },
+  vfxInstances: [],
+  vfxSettings: { selectedPreset: 'fire', size: 60, mode: 'persistent', duration: 2 },
 };
