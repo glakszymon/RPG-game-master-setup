@@ -1,61 +1,82 @@
 /*
  * Database — SQLite persistence for canvas state and future campaign data.
  *
- * Uses better-sqlite3 for synchronous, fast SQLite access from the main process.
- * Canvas state is stored as JSON blobs per campaign for simplicity.
+ * Uses sql.js (WASM-based SQLite) to avoid native module compilation issues
+ * with Electron. Canvas state is stored as JSON blobs per campaign.
  */
 
-import Database from 'better-sqlite3';
+import initSqlJs, { type Database } from 'sql.js';
 import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
 
-let db: Database.Database | null = null;
+let db: Database | null = null;
+let dbPath: string = '';
 
-export function initDatabase(): void {
+export async function initDatabase(): Promise<void> {
   const userDataPath = app.getPath('userData');
   const dbDir = path.join(userDataPath, 'data');
 
-  // Ensure data directory exists
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
 
-  const dbPath = path.join(dbDir, 'game-master-panel.db');
-  db = new Database(dbPath);
+  dbPath = path.join(dbDir, 'game-master-panel.db');
 
-  // Enable WAL mode for better concurrent read/write performance
-  db.pragma('journal_mode = WAL');
+  const SQL = await initSqlJs();
+
+  // Load existing database file if it exists
+  if (fs.existsSync(dbPath)) {
+    const fileBuffer = fs.readFileSync(dbPath);
+    db = new SQL.Database(fileBuffer);
+  } else {
+    db = new SQL.Database();
+  }
 
   // Create tables
-  db.exec(`
+  db.run(`
     CREATE TABLE IF NOT EXISTS canvas_state (
       campaign_id TEXT PRIMARY KEY,
       state_json TEXT NOT NULL,
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  persist();
+}
+
+function persist(): void {
+  if (!db) return;
+  const data = db.export();
+  const buffer = Buffer.from(data);
+  fs.writeFileSync(dbPath, buffer);
 }
 
 export function saveCanvasState(campaignId: string, stateJson: string): void {
   if (!db) throw new Error('Database not initialized');
 
-  const stmt = db.prepare(`
-    INSERT INTO canvas_state (campaign_id, state_json, updated_at)
-    VALUES (?, ?, datetime('now'))
-    ON CONFLICT(campaign_id)
-    DO UPDATE SET state_json = excluded.state_json, updated_at = datetime('now')
-  `);
+  db.run(
+    `INSERT INTO canvas_state (campaign_id, state_json, updated_at)
+     VALUES (?, ?, datetime('now'))
+     ON CONFLICT(campaign_id)
+     DO UPDATE SET state_json = excluded.state_json, updated_at = datetime('now')`,
+    [campaignId, stateJson],
+  );
 
-  stmt.run(campaignId, stateJson);
+  persist();
 }
 
 export function loadCanvasState(campaignId: string): string | null {
   if (!db) throw new Error('Database not initialized');
 
-  const row = db.prepare(
+  const result = db.exec(
     'SELECT state_json FROM canvas_state WHERE campaign_id = ?',
-  ).get(campaignId) as { state_json: string } | undefined;
+    [campaignId],
+  );
 
-  return row?.state_json ?? null;
+  if (result.length === 0 || result[0].values.length === 0) {
+    return null;
+  }
+
+  return result[0].values[0][0] as string;
 }

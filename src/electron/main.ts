@@ -3,9 +3,9 @@ import path from 'path';
 import { isDev } from './utils.js';
 import { initDatabase, saveCanvasState, loadCanvasState } from './database.js';
 
-app.on('ready', () => {
+app.on('ready', async () => {
   // Initialize SQLite database
-  initDatabase();
+  await initDatabase();
 
   const mainWindow = new BrowserWindow({
     width: 1400,
