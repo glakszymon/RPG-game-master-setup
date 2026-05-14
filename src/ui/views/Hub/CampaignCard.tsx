@@ -38,7 +38,7 @@ function CampaignCard({ campaign, onClick, onEdit, onArchive, onDelete }: Campai
         </DropdownMenu.Trigger>
 
         <DropdownMenu.Portal>
-          <DropdownMenu.Content className={styles.menuContent} sideOffset={4}>
+          <DropdownMenu.Content className={styles.menuContent} sideOffset={4} onClick={(e) => e.stopPropagation()}>
             <DropdownMenu.Item className={styles.menuItem} onSelect={onEdit}>
               Edit
             </DropdownMenu.Item>
