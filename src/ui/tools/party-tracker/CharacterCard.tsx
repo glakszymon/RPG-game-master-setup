@@ -3,7 +3,7 @@
  * Supports inline editing of all values.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type {
   Character,
   CardStructure,
@@ -33,6 +33,22 @@ export function CharacterCard({
 }: CharacterCardProps) {
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(character.name);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePortraitClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      // Create a local URL for preview (in production, save to disk via IPC)
+      const url = URL.createObjectURL(file);
+      onUpdateCharacter(character.id, { portraitPath: url });
+    },
+    [character.id, onUpdateCharacter],
+  );
 
   const handleNameDoubleClick = useCallback(() => {
     setNameValue(character.name);
@@ -60,7 +76,7 @@ export function CharacterCard({
   return (
     <div className={styles.card} data-size={size}>
       {/* Portrait */}
-      <div className={styles.portrait} onClick={() => {/* TODO: file picker */}}>
+      <div className={styles.portrait} onClick={handlePortraitClick}>
         {character.portraitPath ? (
           <img src={character.portraitPath} alt={character.name} />
         ) : (
@@ -68,6 +84,13 @@ export function CharacterCard({
             <span>+</span>
           </div>
         )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
       </div>
 
       {/* Name */}
@@ -125,6 +148,48 @@ function FieldRenderer({ field, value, onChange }: FieldRendererProps) {
   );
 }
 
+/* ─── NumberInput (select-all on focus, overwrite behavior) ─── */
+
+function NumberInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(String(value));
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setEditing(true);
+    setText(String(value));
+    e.target.select();
+  };
+
+  const handleBlur = () => {
+    setEditing(false);
+    const parsed = Number(text);
+    onChange(isNaN(parsed) ? 0 : parsed);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      (e.target as HTMLInputElement).blur();
+    }
+    if (e.key === 'Escape') {
+      setText(String(value));
+      setEditing(false);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      className={styles.numberInput}
+      value={editing ? text : String(value)}
+      onChange={(e) => setText(e.target.value)}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+    />
+  );
+}
+
 /* ─── Field Input (inline editing) ──────────────── */
 
 interface FieldInputProps {
@@ -151,12 +216,7 @@ function FieldInput({ field, value, onChange }: FieldInputProps) {
         );
       }
       return (
-        <input
-          type="number"
-          className={styles.numberInput}
-          value={numVal}
-          onChange={(e) => onChange({ type: 'number', value: Number(e.target.value) })}
-        />
+        <NumberInput value={numVal} onChange={(v) => onChange({ type: 'number', value: v })} />
       );
     }
 

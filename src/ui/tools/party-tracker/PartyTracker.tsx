@@ -5,7 +5,7 @@
  * Inline editing of field values directly on cards.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type {
   Character,
   CardStructure,
@@ -16,6 +16,7 @@ import type {
 } from './types';
 import { DEFAULT_CARD_STRUCTURE } from './types';
 import { CharacterCard } from './CharacterCard';
+import { CardEditor } from './CardEditor';
 import styles from './PartyTracker.module.css';
 
 interface PartyTrackerProps {
@@ -64,7 +65,10 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
 
   // TODO: Replace with SQLite persistence
   const [characters, setCharacters] = useState<Character[]>([]);
-  const [cardStructure] = useState<CardStructure>(DEFAULT_CARD_STRUCTURE);
+  const [cardStructure, setCardStructure] = useState<CardStructure>(DEFAULT_CARD_STRUCTURE);
+  const [gearOpen, setGearOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const gearRef = useRef<HTMLDivElement>(null);
 
   const addCharacter = useCallback(() => {
     const newChar: Character = {
@@ -76,6 +80,10 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
     };
     setCharacters((prev) => [...prev, newChar]);
   }, [characters.length, cardStructure]);
+
+  const removeCharacter = useCallback((id: string) => {
+    setCharacters((prev) => prev.filter((c) => c.id !== id));
+  }, []);
 
   const updateCharacter = useCallback((id: string, updates: Partial<Character>) => {
     setCharacters((prev) =>
@@ -101,7 +109,8 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
   );
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} onPointerDown={(e) => e.stopPropagation()}>
+      {/* Toolbar */}
       <div className={styles.toolbar}>
         <div className={styles.sizePresets}>
           {(['S', 'M', 'L'] as CardSizePreset[]).map((size) => (
@@ -115,11 +124,50 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
             </button>
           ))}
         </div>
-        <button className={styles.gearBtn} title="Settings">
-          &#9881;
-        </button>
+
+        {/* Gear menu */}
+        <div className={styles.gearWrapper} ref={gearRef}>
+          <button
+            className={styles.gearBtn}
+            title="Settings"
+            onClick={() => setGearOpen((o) => !o)}
+          >
+            &#9881;
+          </button>
+          {gearOpen && (
+            <div className={styles.gearMenu}>
+              <button
+                className={styles.gearMenuItem}
+                onClick={() => {
+                  setGearOpen(false);
+                  setEditorOpen(true);
+                }}
+              >
+                Edit Card Structure
+              </button>
+              <div className={styles.gearMenuDivider} />
+              <span className={styles.gearMenuLabel}>Remove character:</span>
+              {characters.length === 0 && (
+                <span className={styles.gearMenuEmpty}>No characters</span>
+              )}
+              {characters.map((c) => (
+                <button
+                  key={c.id}
+                  className={`${styles.gearMenuItem} ${styles.gearMenuDanger}`}
+                  onClick={() => {
+                    removeCharacter(c.id);
+                    setGearOpen(false);
+                  }}
+                >
+                  Remove "{c.name}"
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Cards */}
       <div className={styles.cardGrid} data-size={cardSize}>
         {characters.map((char) => (
           <CharacterCard
@@ -136,6 +184,23 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
           +
         </button>
       </div>
+
+      {/* Click-away to close gear menu */}
+      {gearOpen && (
+        <div className={styles.backdrop} onClick={() => setGearOpen(false)} />
+      )}
+
+      {/* Card Editor Modal */}
+      {editorOpen && (
+        <CardEditor
+          structure={cardStructure}
+          onSave={(newStructure) => {
+            setCardStructure(newStructure);
+            setEditorOpen(false);
+          }}
+          onCancel={() => setEditorOpen(false)}
+        />
+      )}
     </div>
   );
 }

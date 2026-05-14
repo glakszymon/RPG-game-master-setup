@@ -65,6 +65,88 @@
   color: var(--color-text-primary);
 }
 
+.gearWrapper {
+  position: relative;
+}
+
+/* ─── Gear Dropdown Menu ─────────────────────── */
+
+.gearMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--space-1);
+  min-width: 180px;
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--glass-blur-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-1) 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+}
+
+.gearMenuItem {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--easing-default);
+}
+
+.gearMenuItem:hover {
+  background: var(--color-bg-hover);
+}
+
+.gearMenuDanger {
+  color: var(--color-error);
+}
+
+.gearMenuDanger:hover {
+  background: var(--color-error-muted);
+}
+
+.gearMenuDivider {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-1) 0;
+}
+
+.gearMenuLabel {
+  display: block;
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gearMenuEmpty {
+  display: block;
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* ─── Backdrop (click-away) ──────────────────── */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
 /* ─── Card Grid (flex-wrap) ──────────────────── */
 
 .cardGrid {

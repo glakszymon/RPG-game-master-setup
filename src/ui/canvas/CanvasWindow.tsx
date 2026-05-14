@@ -175,7 +175,7 @@ function CanvasWindow({
           onPointerUp: handleDragPointerUp,
         }}
       >
-        <div className={styles.windowContent}>
+        <div className={styles.windowContent} onPointerDown={(e) => e.stopPropagation()}>
           {children}
         </div>
       </ToolWindow>
