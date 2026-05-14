@@ -323,6 +323,7 @@
 .slider {
   width: 100%;
   accent-color: var(--color-accent);
+  color-scheme: dark;
 }
 
 .textInput {

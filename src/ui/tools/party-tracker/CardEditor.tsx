@@ -5,6 +5,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import type {
   CardStructure,
   FieldDefinition,
@@ -44,6 +45,15 @@ const ALIGN_OPTIONS: { value: Alignment; label: string }[] = [
   { value: 'center', label: 'C' },
   { value: 'right', label: 'R' },
 ];
+
+const FIELD_TYPE_ICONS: Record<FieldType, string> = {
+  'number': '#',
+  'bubbles': '\u25CB',   // ○
+  'text-field': 'A',
+  'text-box': '\u00B6',  // ¶
+  'radio': '\u25C9',     // ◉
+  'checkbox': '\u2611',  // ☑
+};
 
 function uid(): string {
   return crypto.randomUUID();
@@ -116,8 +126,8 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
     onSave({ fields });
   }, [fields, onSave]);
 
-  return (
-    <div className={styles.overlay}>
+  return createPortal(
+    <div className={styles.overlay} onPointerDown={(e) => e.stopPropagation()}>
       <div className={styles.modal}>
         <div className={styles.header}>
           <h2 className={styles.title}>Card Editor</h2>
@@ -148,7 +158,7 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
                       }}
                     >
                       <span className={styles.previewFieldLabel}>{field.title}</span>
-                      <span className={styles.previewFieldType}>{field.type}</span>
+                      <PreviewFieldWidget field={field} />
                     </div>
                   );
                 })}
@@ -159,6 +169,20 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
           {/* Right: Field Editor */}
           <div className={styles.editorCol}>
             <h3 className={styles.colTitle}>Fields</h3>
+
+            {/* Add field buttons — at top */}
+            <div className={styles.addFieldRow}>
+              {FIELD_TYPES.map((ft) => (
+                <button
+                  key={ft.value}
+                  className={styles.addFieldBtn}
+                  onClick={() => addField(ft.value)}
+                  title={`Add ${ft.label}`}
+                >
+                  {FIELD_TYPE_ICONS[ft.value]} {ft.label}
+                </button>
+              ))}
+            </div>
 
             <div className={styles.fieldList}>
               {fields.map((field, idx) => (
@@ -172,13 +196,16 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
                 >
                   <div className={styles.fieldDragHandle}>&#9776;</div>
                   <div className={styles.fieldConfig}>
-                    {/* Title */}
-                    <input
-                      className={styles.fieldTitleInput}
-                      value={field.title}
-                      onChange={(e) => updateField(field.id, { title: e.target.value })}
-                      placeholder="Field title"
-                    />
+                    {/* Title + type badge inline */}
+                    <div className={styles.fieldTitleRow}>
+                      <input
+                        className={styles.fieldTitleInput}
+                        value={field.title}
+                        onChange={(e) => updateField(field.id, { title: e.target.value })}
+                        placeholder="Field title"
+                      />
+                      <span className={styles.fieldTypeBadge}>{field.type}</span>
+                    </div>
 
                     {/* Row: width + text-align + position-align */}
                     <div className={styles.fieldRow}>
@@ -193,7 +220,7 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
                       </select>
 
                       <div className={styles.alignGroup}>
-                        <span className={styles.alignLabel}>Text:</span>
+                        <span className={styles.alignLabel}>Txt</span>
                         {ALIGN_OPTIONS.map((a) => (
                           <button
                             key={a.value}
@@ -206,7 +233,7 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
                       </div>
 
                       <div className={styles.alignGroup}>
-                        <span className={styles.alignLabel}>Pos:</span>
+                        <span className={styles.alignLabel}>Pos</span>
                         {ALIGN_OPTIONS.map((a) => (
                           <button
                             key={a.value}
@@ -233,19 +260,6 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
                 </div>
               ))}
             </div>
-
-            {/* Add field buttons */}
-            <div className={styles.addFieldRow}>
-              {FIELD_TYPES.map((ft) => (
-                <button
-                  key={ft.value}
-                  className={styles.addFieldBtn}
-                  onClick={() => addField(ft.value)}
-                >
-                  + {ft.label}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -255,8 +269,51 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
           <button className={styles.saveBtn} onClick={handleSave}>Save</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
+}
+
+/* ─── Preview field widget (real widgets, not text labels) ─── */
+
+function PreviewFieldWidget({ field }: { field: FieldDefinition }) {
+  switch (field.type) {
+    case 'number': {
+      const settings = field.settings as NumberFieldSettings | undefined;
+      if (settings?.sliderEnabled && settings.min != null && settings.max != null) {
+        return <input type="range" className={styles.previewSlider} min={settings.min} max={settings.max} defaultValue={settings.min} readOnly />;
+      }
+      return <span className={styles.previewNumberValue}>0</span>;
+    }
+    case 'bubbles': {
+      const count = (field.settings as BubblesFieldSettings)?.count ?? 5;
+      return (
+        <div className={styles.previewBubbles}>
+          {Array.from({ length: count }, (_, i) => (
+            <span key={i} className={styles.previewBubble} />
+          ))}
+        </div>
+      );
+    }
+    case 'text-field':
+      return <div className={styles.previewTextLine} />;
+    case 'text-box':
+      return <div className={styles.previewTextBox} />;
+    case 'radio': {
+      const opts = (field.settings as RadioFieldSettings)?.options ?? [];
+      return (
+        <div className={styles.previewRadioGroup}>
+          {opts.map((o) => (
+            <span key={o} className={styles.previewRadioOption}>{o}</span>
+          ))}
+        </div>
+      );
+    }
+    case 'checkbox':
+      return <div className={styles.previewCheckbox} />;
+    default:
+      return null;
+  }
 }
 
 /* ─── Type-specific field settings ─── */

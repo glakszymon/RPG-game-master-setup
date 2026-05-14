@@ -11,6 +11,7 @@
   justify-content: center;
   z-index: var(--z-modal);
   padding: var(--space-8);
+  color-scheme: dark;
 }
 
 .modal {
@@ -136,9 +137,68 @@
   letter-spacing: 0.05em;
 }
 
-.previewFieldType {
+/* Preview widgets */
+.previewNumberValue {
+  font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
+}
+
+.previewSlider {
+  width: 100%;
+  height: 10px;
+  accent-color: var(--color-accent);
+  pointer-events: none;
+}
+
+.previewBubbles {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.previewBubble {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-text-muted);
+}
+
+.previewTextLine {
+  width: 100%;
+  height: 14px;
+  background: var(--color-bg-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.previewTextBox {
+  width: 100%;
+  height: 28px;
+  background: var(--color-bg-base);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.previewRadioGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.previewRadioOption {
+  font-size: 8px;
+  color: var(--color-text-muted);
+  padding: 1px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.previewCheckbox {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--color-text-muted);
+  border-radius: 2px;
 }
 
 /* ─── Field List ─────────────────────────── */
@@ -155,8 +215,8 @@
 .fieldItem {
   display: flex;
   align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -188,8 +248,25 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
   min-width: 0;
+}
+
+.fieldTitleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.fieldTypeBadge {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  background: var(--color-bg-elevated);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .fieldTitleInput {
@@ -226,6 +303,12 @@
   font-size: var(--text-xs);
   padding: 3px 6px;
   outline: none;
+  color-scheme: dark;
+}
+
+.fieldSelect option {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .alignGroup {
@@ -365,6 +448,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+  margin-bottom: var(--space-3);
 }
 
 .addFieldBtn {
