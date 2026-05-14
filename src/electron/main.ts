@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { isDev } from './utils.js';
 import {
@@ -89,5 +89,16 @@ app.on('ready', async () => {
   ipcMain.handle('campaigns:touch', (_event, id: string) => {
     touchCampaignSession(id);
     return { ok: true };
+  });
+
+  ipcMain.handle('dialog:open-image', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] },
+      ],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0];
   });
 });

@@ -30,10 +30,15 @@ export interface ElectronCampaignsAPI {
   touch: (id: string) => Promise<{ ok: boolean }>;
 }
 
+export interface ElectronDialogAPI {
+  openImageFile: () => Promise<string | null>;
+}
+
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
   presets: ElectronPresetsAPI;
   campaigns: ElectronCampaignsAPI;
+  dialog: ElectronDialogAPI;
 }
 
 declare global {

@@ -26,6 +26,8 @@ import type { ToolType, ViewportTransform } from './types';
 import { PartyTracker } from '../tools/party-tracker';
 import type { PartyTrackerState } from '../tools/party-tracker';
 import styles from './InfiniteCanvas.module.css';
+import type { MapDisplayState } from '../tools/map-display/types';
+import { MapDisplay } from '../tools/map-display/MapDisplay';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
 function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
@@ -57,6 +59,15 @@ function ToolContent({
           campaignId={campaignId}
         />
       );
+    
+    case 'map-display':
+    return (
+      <MapDisplay
+        toolState={toolState as MapDisplayState | undefined}
+        onToolStateChange={onToolStateChange}
+        campaignId={campaignId}
+      />
+    );
     default:
       return <ToolPlaceholder toolType={toolType} />;
   }
