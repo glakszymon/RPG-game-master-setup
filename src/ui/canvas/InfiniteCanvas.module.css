@@ -32,3 +32,30 @@
   cursor: grab;
   /* Transparent — lets panzoom handle the actual pan via canvas-level events */
 }
+
+/* ── Back to Hub button ── */
+
+.backBtn {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 50;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-accent);
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--glass-blur-elevated);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  opacity: 0.7;
+  transition:
+    opacity var(--duration-fast) var(--easing-default),
+    box-shadow var(--duration-fast) var(--easing-default);
+}
+
+.backBtn:hover {
+  opacity: 1;
+  box-shadow: var(--shadow-glow-accent);
+}
