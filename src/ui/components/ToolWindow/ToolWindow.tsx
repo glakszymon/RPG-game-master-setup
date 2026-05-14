@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import styles from './ToolWindow.module.css';
 
 export interface ToolWindowProps {
@@ -29,6 +29,9 @@ export interface ToolWindowProps {
   /** CSS class name applied to the title bar for drag handle targeting */
   dragHandleClass?: string;
 
+  /** Pointer event handlers spread onto the title bar for custom drag */
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+
   /** Additional className */
   className?: string;
 }
@@ -52,6 +55,7 @@ function ToolWindow({
   onMinimize,
   onTogglePin,
   dragHandleClass,
+  dragHandleProps,
   className,
 }: ToolWindowProps) {
   const rootClasses = [
@@ -72,7 +76,7 @@ function ToolWindow({
   return (
     <div className={rootClasses}>
       {/* Title bar — drag handle when used on canvas */}
-      <div className={titleBarClasses}>
+      <div className={titleBarClasses} {...dragHandleProps}>
         {icon && <span className={styles.titleIcon}>{icon}</span>}
         <span className={styles.title}>{title}</span>
         <div className={styles.controls}>

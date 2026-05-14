@@ -1,13 +1,11 @@
 /*
  * CanvasWindow — wraps ToolWindow with drag, resize, z-order, and pin.
  *
- * Uses react-draggable for title-bar drag and custom pointer events
- * for 8-directional resize. Handles scale compensation for both.
+ * Custom pointer-event drag on title bar with scale compensation.
+ * Custom pointer events for 8-directional resize.
  */
 
 import { useRef, useCallback, useState } from 'react';
-import Draggable from 'react-draggable';
-import type { DraggableData, DraggableEvent } from 'react-draggable';
 import { ToolWindow } from '../components/ToolWindow';
 import { useWindowResize, type ResizeEdge } from './hooks/useWindowResize';
 import { TOOL_MIN_SIZES, TOOL_INFO } from './types';
@@ -53,19 +51,50 @@ function CanvasWindow({
   const toolInfo = TOOL_INFO[win.toolType];
   const minSize = TOOL_MIN_SIZES[win.toolType];
 
-  // ── Drag ──
+  // ── Drag (custom pointer events) ──
 
-  const handleDragStop = useCallback(
-    (_e: DraggableEvent, data: DraggableData) => {
-      onMove(win.id, data.x, data.y);
-      onDragEnd?.();
+  const dragState = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+
+  const handleDragPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      // Only primary button
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+
+      dragState.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        originX: win.x,
+        originY: win.y,
+      };
+      onDragStart?.();
     },
-    [win.id, onMove, onDragEnd],
+    [win.x, win.y, onDragStart],
   );
 
-  const handleDragStart = useCallback(() => {
-    onDragStart?.();
-  }, [onDragStart]);
+  const handleDragPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragState.current) return;
+      const dx = (e.clientX - dragState.current.startX) / scale;
+      const dy = (e.clientY - dragState.current.startY) / scale;
+      const newX = dragState.current.originX + dx;
+      const newY = dragState.current.originY + dy;
+      onMove(win.id, newX, newY);
+    },
+    [win.id, scale, onMove],
+  );
+
+  const handleDragPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragState.current) return;
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      dragState.current = null;
+      onDragEnd?.();
+    },
+    [onDragEnd],
+  );
 
   // ── Resize ──
 
@@ -93,7 +122,6 @@ function CanvasWindow({
 
   const handleClose = useCallback(() => {
     setClosing(true);
-    // Wait for CSS animation to finish
     setTimeout(() => {
       onClose(win.id);
     }, 200);
@@ -108,54 +136,50 @@ function CanvasWindow({
   if (win.minimized) return null;
 
   return (
-    <Draggable
-      nodeRef={nodeRef as React.RefObject<HTMLElement>}
-      handle={`.${styles.dragHandle}`}
-      cancel={`.${styles.windowContent}`}
-      position={{ x: win.x, y: win.y }}
-      onStart={handleDragStart}
-      onStop={handleDragStop}
-      scale={scale}
+    <div
+      ref={nodeRef}
+      className={`canvas-window ${styles.canvasWindow} ${closing ? styles.closing : ''}`}
+      style={{
+        width: win.width,
+        height: win.height,
+        zIndex,
+        position: 'absolute',
+        transform: `translate(${win.x}px, ${win.y}px)`,
+      }}
+      onMouseDown={handleMouseDown}
     >
-      <div
-        ref={nodeRef}
-        className={`canvas-window ${styles.canvasWindow} ${closing ? styles.closing : ''}`}
-        style={{
-          width: win.width,
-          height: win.height,
-          zIndex,
-          position: 'absolute',
+      {/* Resize handles */}
+      {RESIZE_EDGES.map((edge) => (
+        <div
+          key={edge}
+          className={`${styles.resizeHandle} ${styles[`resize_${edge}`]}`}
+          onPointerDown={handleResizePointerDown(edge)}
+        />
+      ))}
+
+      {/* Pin indicator */}
+      {win.pinned && <div className={styles.pinIndicator}>📌</div>}
+
+      <ToolWindow
+        title={toolInfo.name}
+        icon={toolInfo.icon}
+        active={isActive}
+        onClose={handleClose}
+        onMinimize={handleMinimize}
+        onTogglePin={() => onTogglePin(win.id)}
+        pinned={win.pinned}
+        dragHandleClass={styles.dragHandle}
+        dragHandleProps={{
+          onPointerDown: handleDragPointerDown,
+          onPointerMove: handleDragPointerMove,
+          onPointerUp: handleDragPointerUp,
         }}
-        onMouseDown={handleMouseDown}
       >
-        {/* Resize handles */}
-        {RESIZE_EDGES.map((edge) => (
-          <div
-            key={edge}
-            className={`${styles.resizeHandle} ${styles[`resize_${edge}`]}`}
-            onPointerDown={handleResizePointerDown(edge)}
-          />
-        ))}
-
-        {/* Pin indicator */}
-        {win.pinned && <div className={styles.pinIndicator}>📌</div>}
-
-        <ToolWindow
-          title={toolInfo.name}
-          icon={toolInfo.icon}
-          active={isActive}
-          onClose={handleClose}
-          onMinimize={handleMinimize}
-          onTogglePin={() => onTogglePin(win.id)}
-          pinned={win.pinned}
-          dragHandleClass={styles.dragHandle}
-        >
-          <div className={styles.windowContent}>
-            {children}
-          </div>
-        </ToolWindow>
-      </div>
-    </Draggable>
+        <div className={styles.windowContent}>
+          {children}
+        </div>
+      </ToolWindow>
+    </div>
   );
 }
 
