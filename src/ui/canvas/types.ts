@@ -41,6 +41,26 @@ export interface ViewportTransform {
   scale: number;
 }
 
+/** A saved window layout snapshot (geometry only, no toolState) */
+export interface PresetWindowSnapshot {
+  toolType: ToolType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  pinned: boolean;
+  minimized: boolean;
+}
+
+export interface FocusPreset {
+  id: string;
+  name: string;
+  windows: PresetWindowSnapshot[];
+  viewport: ViewportTransform;
+  isAutoSave: boolean;
+  updatedAt: string;
+}
+
 /** Per-tool minimum dimensions */
 export const TOOL_MIN_SIZES: Record<ToolType, { minWidth: number; minHeight: number }> = {
   'combat-tracker': { minWidth: 400, minHeight: 300 },

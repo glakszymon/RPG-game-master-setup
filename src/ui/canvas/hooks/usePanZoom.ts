@@ -101,6 +101,14 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     panzoomRef.current?.reset({ animate: true });
   }, []);
 
+  /** Animate to a specific transform (for preset restore) */
+  const panTo = useCallback((x: number, y: number, scale: number, animate = true) => {
+    const pz = panzoomRef.current;
+    if (!pz) return;
+    pz.zoom(scale, { animate });
+    pz.pan(x, y, { animate });
+  }, []);
+
   return {
     canvasRef,
     getTransform,
@@ -109,6 +117,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     zoomIn,
     zoomOut,
     resetView,
+    panTo,
     transformRef,
   };
 }

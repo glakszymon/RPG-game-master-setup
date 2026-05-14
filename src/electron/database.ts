@@ -42,6 +42,18 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS focus_presets (
+      campaign_id TEXT NOT NULL,
+      preset_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      data_json TEXT NOT NULL,
+      is_auto_save INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (campaign_id, preset_id)
+    );
+  `);
+
   persist();
 }
 
@@ -79,4 +91,69 @@ export function loadCanvasState(campaignId: string): string | null {
   }
 
   return result[0].values[0][0] as string;
+}
+
+// ── Focus Presets ──
+
+export function savePreset(
+  campaignId: string,
+  presetId: string,
+  name: string,
+  dataJson: string,
+  isAutoSave: boolean,
+): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT INTO focus_presets (campaign_id, preset_id, name, data_json, is_auto_save, updated_at)
+     VALUES (?, ?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(campaign_id, preset_id)
+     DO UPDATE SET name = excluded.name, data_json = excluded.data_json, updated_at = datetime('now')`,
+    [campaignId, presetId, name, dataJson, isAutoSave ? 1 : 0],
+  );
+
+  persist();
+}
+
+export function loadPresets(campaignId: string): string {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = db.exec(
+    'SELECT preset_id, name, data_json, is_auto_save, updated_at FROM focus_presets WHERE campaign_id = ? ORDER BY is_auto_save DESC, name ASC',
+    [campaignId],
+  );
+
+  if (result.length === 0) return '[]';
+
+  const presets = result[0].values.map(([presetId, name, dataJson, isAutoSave, updatedAt]) => ({
+    id: presetId,
+    name,
+    ...JSON.parse(dataJson as string),
+    isAutoSave: isAutoSave === 1,
+    updatedAt,
+  }));
+
+  return JSON.stringify(presets);
+}
+
+export function deletePreset(campaignId: string, presetId: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    'DELETE FROM focus_presets WHERE campaign_id = ? AND preset_id = ? AND is_auto_save = 0',
+    [campaignId, presetId],
+  );
+
+  persist();
+}
+
+export function renamePreset(campaignId: string, presetId: string, newName: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    'UPDATE focus_presets SET name = ?, updated_at = datetime(\'now\') WHERE campaign_id = ? AND preset_id = ? AND is_auto_save = 0',
+    [newName, campaignId, presetId],
+  );
+
+  persist();
 }

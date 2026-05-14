@@ -1,0 +1,130 @@
+/*
+ * PresetToolbar — fixed position top-right toolbar.
+ */
+
+.toolbar {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: var(--z-overlay);
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--glass-blur-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.trigger:hover {
+  background: var(--glass-bg-interactive);
+}
+
+.icon {
+  font-size: var(--font-size-md);
+}
+
+.label {
+  font-weight: 500;
+}
+
+/* Dropdown content */
+.content,
+.subContent {
+  min-width: 180px;
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--glass-blur-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-popover);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.item:hover,
+.item[data-highlighted] {
+  background: var(--glass-bg-interactive);
+}
+
+.itemDanger {
+  composes: item;
+  color: var(--color-danger);
+}
+
+.itemDisabled {
+  composes: item;
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.itemIcon {
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.itemName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemShortcut {
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.chevron {
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.separator {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-1) 0;
+}
+
+.saveInput {
+  padding: var(--space-2) var(--space-3);
+}
+
+.input {
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  background: var(--glass-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--color-accent);
+}
