@@ -126,6 +126,12 @@
   overflow-y: auto;
 }
 
+.bodyNoPadding {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+
 /* ── Minimized state (controlled by canvas) ── */
 
 .minimized .body {

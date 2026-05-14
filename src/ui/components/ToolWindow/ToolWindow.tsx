@@ -32,6 +32,9 @@ export interface ToolWindowProps {
   /** Pointer event handlers spread onto the title bar for custom drag */
   dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
 
+  /** Remove body padding for full-bleed content (e.g. map canvas) */
+  noPadding?: boolean;
+
   /** Additional className */
   className?: string;
 }
@@ -51,6 +54,7 @@ function ToolWindow({
   children,
   active = false,
   pinned = false,
+  noPadding = false,
   onClose,
   onMinimize,
   onTogglePin,
@@ -146,7 +150,7 @@ function ToolWindow({
       </div>
 
       {/* Body */}
-      <div className={styles.body}>{children}</div>
+      <div className={`${styles.body} ${noPadding ? styles.bodyNoPadding : ''}`}>{children}</div>
     </div>
   );
 }
