@@ -215,7 +215,6 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
             size={cardSize}
             onUpdateCharacter={updateCharacter}
             onUpdateFieldValue={updateFieldValue}
-            onRemove={removeCharacter}
             onDragStart={handleCardDragStart}
             onDragOver={handleCardDragOver}
             onDragEnd={handleCardDragEnd}

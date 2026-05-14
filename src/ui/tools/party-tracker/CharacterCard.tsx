@@ -22,7 +22,6 @@ interface CharacterCardProps {
   size: CardSizePreset;
   onUpdateCharacter: (id: string, updates: Partial<Character>) => void;
   onUpdateFieldValue: (charId: string, fieldId: string, value: FieldValue) => void;
-  onRemove: (id: string) => void;
   onDragStart: (id: string) => void;
   onDragOver: (e: React.DragEvent, id: string) => void;
   onDragEnd: () => void;
@@ -35,7 +34,6 @@ export function CharacterCard({
   size,
   onUpdateCharacter,
   onUpdateFieldValue,
-  onRemove,
   onDragStart,
   onDragOver,
   onDragEnd,
@@ -94,15 +92,6 @@ export function CharacterCard({
       onDragOver={(e) => onDragOver(e, character.id)}
       onDragEnd={onDragEnd}
     >
-      {/* Remove button */}
-      <button
-        className={styles.cardRemoveBtn}
-        onClick={() => onRemove(character.id)}
-        title="Remove character"
-      >
-        &times;
-      </button>
-
       {/* Portrait */}
       <div className={styles.portrait} onClick={handlePortraitClick}>
         {character.portraitPath ? (
