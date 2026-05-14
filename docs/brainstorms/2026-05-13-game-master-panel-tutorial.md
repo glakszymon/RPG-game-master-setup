@@ -321,55 +321,84 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 
 ## Faza 3: Party Tracker
 
-### Krok 3.0 - Brainstorm
+### Krok 3.0 - Brainstorm (ustalenia)
 
-**Napisz do AI:**
-> "Porozmawiaj ze mną o Party Tracker - okienku na canvasie do zarządzania drużyną. Omówmy:
-> - Układ kart postaci (rząd, siatka, lista?)
-> - Zawartość karty: zdjęcie, nazwa, stałe pola (HP, Armor, Initiative), customowe pola
-> - Edycja inline vs osobny widok edycji
-> - Typy pól: Number, Bubbles (kółka do zaznaczania), Text Field, Text Box, Radio
-> - Drag&drop zmiana kolejności pól i postaci
-> - Edytor karty postaci: jak powinien wyglądać
-> - Integracja z innymi modułami (Combat Tracker, Mapa)
-> - Użyj wymagań R12-R19
-> - Sprawdź inspiracja/party tracker.md jako referencję
->
-> Dopytaj mnie o każdy szczegół."
+**Ustalenia z brainstormu:**
+
+**Okienko Party Tracker:**
+- Window na infinite canvas (przesuwalne, resizable jak inne okna)
+- Karty postaci ułożone w rzędzie z flex-wrap (zawijanie do kolejnych wierszy)
+- Rozmiar kart: presety S / M / L (w ustawieniach gear menu)
+- Przycisk "+" na końcu rzędu kart — dodaje nową pustą postać
+- Drag&drop kart zmienia kolejność postaci w party
+- Gear icon (prawy górny róg): edytuj strukturę kart, usuń postać, preset rozmiaru
+
+**Karta postaci:**
+- Zdjęcie postaci (góra, wycentrowane) — klik na placeholder otwiera file picker
+- Nazwa postaci (pod zdjęciem) — double-click włącza inline edit
+- Custom pola poniżej — wartości edytowane inline (klik → edycja)
+- Domyślne pola nowej kampanii: HP, Armor, Initiative — ale usuwalne jak każde inne
+
+**Edytor struktury kart (Card Editor):**
+- Otwierany z gear menu jako modal overlay nad canvasem
+- Dwie kolumny: lewa = podgląd na żywo karty, prawa = lista pól do edycji
+- Struktura wspólna dla WSZYSTKICH postaci w kampanii
+- Pola ułożone pionowo, kolejność zmieniana drag&drop
+- Dodawanie pola: wybór typu (Number, Bubbles, Text Field, Text Box, Radio, Checkbox)
+- Każde pole ma: tytuł, szerokość (1/3, 1/2, 2/3, full), text-align (L/C/R), pozycja w wierszu (L/C/R)
+- Auto-flow: pola o łącznej szerokości ≤ 1 stają obok siebie w jednym wierszu
+- Ustawienia per typ:
+  - Number: opcja suwaka (jeśli włączony — wymagane min i max)
+  - Bubbles: ilość kółek (stała, user zaznacza wypełnione)
+  - Radio: lista opcji (etykiety)
+  - Text Field / Text Box / Checkbox: brak dodatkowych
+- Przyciski Cancel i Save na dole
+
+**Persystencja i integracja:**
+- SQLite per kampania (dane postaci + struktura kart + zdjęcia)
+- Combat Tracker współdzieli dane postaci (HP, Initiative itp.)
 
 ### Krok 3.1 - Karty postaci
 
 **Napisz do AI:**
-> "Poprowadź mnie w implementacji Party Trackera jako okienka na canvasie. Zaczynamy od wyświetlania kart, potem edycja inline."
+> "Poprowadź mnie w implementacji Party Trackera jako okienka na canvasie. Zaczynamy od wyświetlania kart z flex-wrap, potem edycja inline. Użyj ustaleń z brainstormu w tutorialu (Krok 3.0)."
 
 **Na co zwrócić uwagę:**
 - Czy karty wyglądają dobrze z glassmorphism
 - Czy edycja inline jest intuicyjna (klik na wartość → edycja)
-- Czy horizontal scroll działa płynnie gdy karty się nie mieszczą
+- Czy flex-wrap działa poprawnie przy wielu kartach
+- Czy presety rozmiaru (S/M/L) zmieniają karty
 
 **Jak sprawdzić że działa:**
 - Otwórz Party Tracker z context menu
-- Dodaj 4+ postaci z różnymi polami
-- Edytuj HP kliknięciem na wartość
-- Zmień rozmiar okienka - karty powinny się dostosować
-- Zamknij i otwórz ponownie - dane powinny przetrwać
+- Dodaj 4+ postaci przyciskiem "+"
+- Ustaw zdjęcia (klik na placeholder → file picker)
+- Double-click na nazwę → zmień nazwę
+- Edytuj HP/Armor kliknięciem na wartość
+- Drag&drop zmień kolejność kart
+- Zmień preset rozmiaru w gear menu
+- Zmień rozmiar okienka - karty powinny się zawijać (flex-wrap)
+- Zamknij i otwórz ponownie - dane powinny przetrwać (SQLite)
 
 ### Krok 3.2 - Edytor karty postaci
 
 **Napisz do AI:**
-> "Poprowadź mnie w implementacji edytora karty postaci na podstawie naszych ustaleń z brainstormu. Pokaż mi jak zrobić live preview i drag&drop pól."
+> "Poprowadź mnie w implementacji edytora karty postaci (Card Editor) jako modal overlay. Dwie kolumny: live preview + lista pól. Użyj ustaleń z brainstormu w tutorialu (Krok 3.0)."
 
 **Jak sprawdzić że działa:**
-- Otwórz edytor z ustawień Party Trackera
-- Dodaj różne typy pól (Number, Bubbles, Text, Radio)
-- Drag&drop zmień kolejność - preview powinien się aktualizować na żywo
-- Zapisz i sprawdź czy karta wygląda jak w preview
-- Cancel powinien cofnąć wszystkie zmiany
+- Otwórz edytor z gear menu
+- Dodaj różne typy pól (Number z suwakiem, Bubbles, Text, Radio)
+- Drag&drop zmień kolejność pól - preview aktualizuje się na żywo
+- Ustaw szerokości (1/3, 1/2) — pola stają obok siebie (auto-flow)
+- Ustaw text-align i pozycję w wierszu
+- Zapisz → karta wygląda jak w preview
+- Cancel → cofa wszystkie zmiany
+- Sprawdź że struktura działa na WSZYSTKIE postacie
 
 **Rezultat:** Pełny Party Tracker z edytorem kart.
 
 **Integracje z innymi modułami:**
-- → Combat Tracker: postaci można dodawać do walki
+- → Combat Tracker: współdzielone dane postaci (HP, Initiative)
 - → Mapa: postaci jako tokeny na mapie
 - → LAN Sharing: karty widoczne dla graczy (konfigurowalne co widać)
 
