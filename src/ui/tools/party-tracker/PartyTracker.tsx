@@ -255,3 +255,85 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
     </div>
   );
 }
+
+/* ─── Remove Character Panel ─── */
+
+function RemoveCharacterPanel({
+  characters,
+  onRemove,
+  onCancel,
+}: {
+  characters: Character[];
+  onRemove: (id: string) => void;
+  onCancel: () => void;
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [confirmStep, setConfirmStep] = useState(0); // 0 = select, 1 = first confirm, 2 = final confirm
+
+  const selected = characters.find((c) => c.id === selectedId);
+
+  return createPortal(
+    <div className={styles.removeOverlay} onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      <div className={styles.removePanel}>
+        <h3 className={styles.removePanelTitle}>Remove Character</h3>
+
+        {confirmStep === 0 && (
+          <>
+            <p className={styles.removePanelText}>Select a character to remove:</p>
+            <div className={styles.removeCharList}>
+              {characters.map((c) => (
+                <button
+                  key={c.id}
+                  className={`${styles.removeCharItem} ${selectedId === c.id ? styles.removeCharItemSelected : ''}`}
+                  onClick={() => setSelectedId(c.id)}
+                >
+                  {c.portraitPath && <img src={c.portraitPath} className={styles.removeCharPortrait} alt="" />}
+                  <span>{c.name}</span>
+                </button>
+              ))}
+            </div>
+            <div className={styles.removePanelActions}>
+              <button className={styles.cancelBtn} onClick={onCancel}>Cancel</button>
+              <button
+                className={styles.dangerBtn}
+                disabled={!selectedId}
+                onClick={() => setConfirmStep(1)}
+              >
+                Continue
+              </button>
+            </div>
+          </>
+        )}
+
+        {confirmStep === 1 && selected && (
+          <>
+            <p className={styles.removePanelText}>
+              Are you sure you want to remove <strong>{selected.name}</strong>?
+            </p>
+            <div className={styles.removePanelActions}>
+              <button className={styles.cancelBtn} onClick={() => setConfirmStep(0)}>Back</button>
+              <button className={styles.dangerBtn} onClick={() => setConfirmStep(2)}>
+                Yes, remove
+              </button>
+            </div>
+          </>
+        )}
+
+        {confirmStep === 2 && selected && (
+          <>
+            <p className={styles.removePanelText}>
+              This action is <strong>irreversible</strong>. All data for <strong>{selected.name}</strong> will be lost.
+            </p>
+            <div className={styles.removePanelActions}>
+              <button className={styles.cancelBtn} onClick={onCancel}>Cancel</button>
+              <button className={styles.dangerBtnFinal} onClick={() => onRemove(selected.id)}>
+                Confirm removal
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
