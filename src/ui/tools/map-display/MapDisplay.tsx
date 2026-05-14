@@ -57,7 +57,7 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
     onToolStateChange({ ...stateRef.current, tokens: newTokens });
   }, [onToolStateChange]);
 
-  const { addToken, removeToken } = useTokenLayer(
+  const { addToken, addTokenWithSync, removeToken } = useTokenLayer(
     appRef.current,
     worldRef.current,
     state.tokens,
@@ -100,7 +100,7 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
 
       const world = worldRef.current;
       const container = canvasAreaRef.current;
-      if (!world || !container) return;
+      if (!world || world.destroyed || !container) return;
 
       // Convert drop coords to map coords
       const rect = container.getBoundingClientRect();
@@ -119,11 +119,12 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
         y: mapY,
         scale: 1,
       };
-      addToken(token);
+      // Sync existing tokens from same character + add new one in a single update
+      addTokenWithSync(token);
     } catch {
       // Invalid drop data
     }
-  }, [addToken]);
+  }, [addTokenWithSync]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -134,7 +135,7 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
   const addManualToken = useCallback(() => {
     const world = worldRef.current;
     const container = canvasAreaRef.current;
-    if (!world || !container) return;
+    if (!world || world.destroyed || !container) return;
 
     const cx = container.clientWidth / 2;
     const cy = container.clientHeight / 2;
@@ -186,7 +187,7 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
     const sprite = mapSpriteRef.current;
     const container = canvasAreaRef.current;
     const world = worldRef.current;
-    if (!sprite || !container || !world) return;
+    if (!sprite || !container || !world || world.destroyed) return;
 
     const cw = container.clientWidth;
     const ch = container.clientHeight;
@@ -220,13 +221,13 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
   const loadImage = useCallback(async (filePath: string, shouldFit: boolean) => {
     const app = appRef.current;
     const world = worldRef.current;
-    if (!app || !world) return;
+    if (!app || !world || world.destroyed) return;
 
     const dataUrl = await window.electronAPI?.dialog.readImage(filePath);
     if (!dataUrl) return;
 
     const texture = await Assets.load(dataUrl);
-
+    if (world.destroyed) return;
     if (mapSpriteRef.current) {
       mapSpriteRef.current.destroy();
     }

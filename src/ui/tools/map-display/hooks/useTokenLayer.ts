@@ -63,7 +63,9 @@ function getInitials(name: string): string {
 
 interface TokenLayerActions {
   addToken: (token: MapToken) => void;
+  addTokenWithSync: (token: MapToken) => void;
   removeToken: (tokenId: string) => void;
+  updateTokensBySource: (sourceId: string, patch: { name: string; avatarPath: string | null }) => void;
 }
 
 export function useTokenLayer(
@@ -95,12 +97,15 @@ export function useTokenLayer(
     };
   }, [worldContainer]);
 
+  const tokenDataRef = useRef<Map<string, { name: string; avatarPath: string | null }>>(new Map());
+
   // ── Sync token sprites with token data ──
   useEffect(() => {
     const layer = tokenContainerRef.current;
     if (!app || !layer) return;
 
     const existing = tokenSpritesRef.current;
+    const prevData = tokenDataRef.current;
     const currentIds = new Set(tokens.map((t) => t.id));
 
     // Remove tokens that no longer exist
@@ -108,12 +113,23 @@ export function useTokenLayer(
       if (!currentIds.has(id)) {
         container.destroy({ children: true });
         existing.delete(id);
+        prevData.delete(id);
       }
     }
 
     // Add or update tokens
     for (const token of tokens) {
       let container = existing.get(token.id);
+      const prev = prevData.get(token.id);
+      const nameChanged = prev && prev.name !== token.name;
+      const avatarChanged = prev && prev.avatarPath !== token.avatarPath;
+
+      // Rebuild visual if name or avatar changed
+      if (container && (nameChanged || avatarChanged)) {
+        container.destroy({ children: true });
+        existing.delete(token.id);
+        container = undefined;
+      }
 
       if (!container) {
         container = createTokenVisual(token);
@@ -130,6 +146,9 @@ export function useTokenLayer(
       container.x = token.x;
       container.y = token.y;
       container.scale.set(token.scale);
+
+      // Track current data for change detection
+      prevData.set(token.id, { name: token.name, avatarPath: token.avatarPath });
     }
   }, [app, tokens]);
 
@@ -236,11 +255,30 @@ export function useTokenLayer(
     onTokensChange([...tokensRef.current, token]);
   }, [onTokensChange]);
 
+  /** Add token + sync name/avatar on existing tokens from same source in one atomic update */
+  const addTokenWithSync = useCallback((token: MapToken) => {
+    const synced = tokensRef.current.map((t) =>
+      t.sourceType === 'party' && t.sourceId === token.sourceId
+        ? { ...t, name: token.name, avatarPath: token.avatarPath }
+        : t,
+    );
+    onTokensChange([...synced, token]);
+  }, [onTokensChange]);
+
   const removeToken = useCallback((tokenId: string) => {
     onTokensChange(tokensRef.current.filter((t) => t.id !== tokenId));
   }, [onTokensChange]);
 
-  return { addToken, removeToken };
+  const updateTokensBySource = useCallback((sourceId: string, patch: { name: string; avatarPath: string | null }) => {
+    const current = tokensRef.current;
+    const hasMatch = current.some((t) => t.sourceId === sourceId);
+    if (!hasMatch) return;
+    onTokensChange(current.map((t) =>
+      t.sourceId === sourceId ? { ...t, name: patch.name, avatarPath: patch.avatarPath } : t,
+    ));
+  }, [onTokensChange]);
+
+  return { addToken, addTokenWithSync, removeToken, updateTokensBySource };
 }
 
 // ── Create the visual for a single token ──
@@ -283,8 +321,16 @@ async function loadTokenAvatar(
   avatarPath: string,
 ) {
   try {
-    const dataUrl = await window.electronAPI?.dialog.readImage(avatarPath);
-    if (!dataUrl || container.destroyed) return;
+    // avatarPath may already be a base64 data URL (from Party Tracker's img src)
+    let dataUrl: string;
+    if (avatarPath.startsWith('data:')) {
+      dataUrl = avatarPath;
+    } else {
+      const result = await window.electronAPI?.dialog.readImage(avatarPath);
+      if (!result || container.destroyed) return;
+      dataUrl = result;
+    }
+    if (container.destroyed) return;
 
     const texture = await Assets.load(dataUrl);
     const sprite = new Sprite(texture);
