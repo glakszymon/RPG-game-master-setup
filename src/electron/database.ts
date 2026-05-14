@@ -43,6 +43,22 @@ export async function initDatabase(): Promise<void> {
   `);
 
   db.run(`
+    CREATE TABLE IF NOT EXISTS campaigns (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      system TEXT NOT NULL DEFAULT '',
+      icon_type TEXT NOT NULL DEFAULT 'preset',
+      icon_value TEXT NOT NULL DEFAULT 'sword',
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      last_session_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  // Seed Demo Campaign on first launch
+  seedDemoCampaign();
+
+  db.run(`
     CREATE TABLE IF NOT EXISTS focus_presets (
       campaign_id TEXT NOT NULL,
       preset_id TEXT NOT NULL,
@@ -55,6 +71,20 @@ export async function initDatabase(): Promise<void> {
   `);
 
   persist();
+}
+
+function seedDemoCampaign(): void {
+  if (!db) return;
+
+  // Only seed if no campaigns exist
+  const result = db.exec('SELECT COUNT(*) FROM campaigns');
+  const count = result.length > 0 ? (result[0].values[0][0] as number) : 0;
+  if (count > 0) return;
+
+  db.run(
+    `INSERT INTO campaigns (id, name, system, icon_type, icon_value, status, created_at, last_session_at)
+     VALUES ('demo-campaign', 'The Lost Mine of Phandelver', 'D&D 5e', 'preset', 'dragon', 'active', datetime('now'), datetime('now'))`,
+  );
 }
 
 function persist(): void {
@@ -155,5 +185,91 @@ export function renamePreset(campaignId: string, presetId: string, newName: stri
     [newName, campaignId, presetId],
   );
 
+  persist();
+}
+
+// ── Campaigns ──
+
+export interface CampaignRow {
+  id: string;
+  name: string;
+  system: string;
+  icon_type: string;
+  icon_value: string;
+  status: string;
+  created_at: string;
+  last_session_at: string;
+}
+
+export function createCampaign(
+  id: string,
+  name: string,
+  system: string,
+  iconType: string,
+  iconValue: string,
+): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT INTO campaigns (id, name, system, icon_type, icon_value, status, created_at, last_session_at)
+     VALUES (?, ?, ?, ?, ?, 'active', datetime('now'), datetime('now'))`,
+    [id, name, system, iconType, iconValue],
+  );
+
+  persist();
+}
+
+export function listCampaigns(): CampaignRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = db.exec(
+    'SELECT id, name, system, icon_type, icon_value, status, created_at, last_session_at FROM campaigns ORDER BY last_session_at DESC',
+  );
+
+  if (result.length === 0) return [];
+
+  return result[0].values.map(([id, name, system, icon_type, icon_value, status, created_at, last_session_at]) => ({
+    id: id as string,
+    name: name as string,
+    system: system as string,
+    icon_type: icon_type as string,
+    icon_value: icon_value as string,
+    status: status as string,
+    created_at: created_at as string,
+    last_session_at: last_session_at as string,
+  }));
+}
+
+export function updateCampaign(id: string, name: string, system: string, iconType: string, iconValue: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    'UPDATE campaigns SET name = ?, system = ?, icon_type = ?, icon_value = ? WHERE id = ?',
+    [name, system, iconType, iconValue, id],
+  );
+
+  persist();
+}
+
+export function updateCampaignStatus(id: string, status: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('UPDATE campaigns SET status = ? WHERE id = ?', [status, id]);
+  persist();
+}
+
+export function deleteCampaign(id: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM campaigns WHERE id = ?', [id]);
+  db.run('DELETE FROM canvas_state WHERE campaign_id = ?', [id]);
+  db.run('DELETE FROM focus_presets WHERE campaign_id = ?', [id]);
+  persist();
+}
+
+export function touchCampaignSession(id: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('UPDATE campaigns SET last_session_at = datetime(\'now\') WHERE id = ?', [id]);
   persist();
 }

@@ -1,0 +1,56 @@
+/*
+ * ViewTransition — CSS animations for view transitions
+ *
+ * .zoomIn: campaign card expands to fill viewport
+ * .slideIn: map creator slides in from right
+ * .fadeOut: hub fades out when leaving
+ */
+
+/* ── Zoom-in transition (Hub → Canvas) ── */
+
+.zoomEnter {
+  animation: zoomIn var(--duration-slow) var(--easing-default) forwards;
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Slide transition (Hub → Map Creator) ── */
+
+.slideEnter {
+  animation: slideIn var(--duration-slow) var(--easing-default) forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ── Fade out (leaving any view back to hub) ── */
+
+.fadeEnter {
+  animation: fadeIn var(--duration-normal) var(--easing-default) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

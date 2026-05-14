@@ -1,0 +1,161 @@
+/*
+ * CampaignCard — individual campaign card in the grid
+ */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 200px;
+  padding: var(--space-6) var(--space-4) var(--space-4);
+  background: var(--glass-bg-surface);
+  backdrop-filter: var(--glass-blur-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--easing-default),
+    box-shadow var(--duration-normal) var(--easing-default);
+}
+
+.card:hover {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--shadow-glow-accent);
+}
+
+/* ── Three-dots menu trigger ── */
+
+.menuTrigger {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--easing-default),
+    background var(--duration-fast) var(--easing-default);
+}
+
+.card:hover .menuTrigger {
+  opacity: 1;
+}
+
+.menuTrigger:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+/* ── Dropdown menu ── */
+
+.menuContent {
+  min-width: 140px;
+  padding: var(--space-1);
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--glass-blur-elevated);
+  border: 1px solid var(--color-border-hover);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-modal);
+}
+
+.menuItem {
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+}
+
+.menuItem:hover,
+.menuItem[data-highlighted] {
+  background: var(--color-bg-hover);
+}
+
+.menuItemDanger {
+  color: var(--color-error);
+}
+
+.menuSeparator {
+  height: 1px;
+  margin: var(--space-1) 0;
+  background: var(--color-border);
+}
+
+/* ── Icon ── */
+
+.icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-muted);
+}
+
+.presetIcon {
+  font-size: var(--text-2xl);
+}
+
+.customIcon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+/* ── Text ── */
+
+.name {
+  font-family: var(--font-heading);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin: 0;
+}
+
+.system {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ── Footer ── */
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-3);
+}
+
+.date {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.badge {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-warning-muted);
+  color: var(--color-warning);
+}

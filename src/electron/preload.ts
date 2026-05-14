@@ -17,4 +17,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     rename: (campaignId: string, presetId: string, newName: string) =>
       ipcRenderer.invoke('presets:rename', campaignId, presetId, newName),
   },
+  campaigns: {
+    list: () => ipcRenderer.invoke('campaigns:list'),
+    create: (id: string, name: string, system: string, iconType: string, iconValue: string) =>
+      ipcRenderer.invoke('campaigns:create', id, name, system, iconType, iconValue),
+    update: (id: string, name: string, system: string, iconType: string, iconValue: string) =>
+      ipcRenderer.invoke('campaigns:update', id, name, system, iconType, iconValue),
+    updateStatus: (id: string, status: string) =>
+      ipcRenderer.invoke('campaigns:update-status', id, status),
+    delete: (id: string) => ipcRenderer.invoke('campaigns:delete', id),
+    touch: (id: string) => ipcRenderer.invoke('campaigns:touch', id),
+  },
 });
