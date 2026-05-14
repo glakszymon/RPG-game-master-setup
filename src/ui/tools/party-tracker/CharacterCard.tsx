@@ -22,6 +22,11 @@ interface CharacterCardProps {
   size: CardSizePreset;
   onUpdateCharacter: (id: string, updates: Partial<Character>) => void;
   onUpdateFieldValue: (charId: string, fieldId: string, value: FieldValue) => void;
+  onRemove: (id: string) => void;
+  onDragStart: (id: string) => void;
+  onDragOver: (e: React.DragEvent, id: string) => void;
+  onDragEnd: () => void;
+  isDragging: boolean;
 }
 
 export function CharacterCard({
@@ -30,6 +35,11 @@ export function CharacterCard({
   size,
   onUpdateCharacter,
   onUpdateFieldValue,
+  onRemove,
+  onDragStart,
+  onDragOver,
+  onDragEnd,
+  isDragging,
 }: CharacterCardProps) {
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(character.name);
@@ -43,9 +53,11 @@ export function CharacterCard({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      // Create a local URL for preview (in production, save to disk via IPC)
-      const url = URL.createObjectURL(file);
-      onUpdateCharacter(character.id, { portraitPath: url });
+      const reader = new FileReader();
+      reader.onload = () => {
+        onUpdateCharacter(character.id, { portraitPath: reader.result as string });
+      };
+      reader.readAsDataURL(file);
     },
     [character.id, onUpdateCharacter],
   );
@@ -74,7 +86,23 @@ export function CharacterCard({
   );
 
   return (
-    <div className={styles.card} data-size={size}>
+    <div
+      className={`${styles.card} ${isDragging ? styles.cardDragging : ''}`}
+      data-size={size}
+      draggable
+      onDragStart={() => onDragStart(character.id)}
+      onDragOver={(e) => onDragOver(e, character.id)}
+      onDragEnd={onDragEnd}
+    >
+      {/* Remove button */}
+      <button
+        className={styles.cardRemoveBtn}
+        onClick={() => onRemove(character.id)}
+        title="Remove character"
+      >
+        &times;
+      </button>
+
       {/* Portrait */}
       <div className={styles.portrait} onClick={handlePortraitClick}>
         {character.portraitPath ? (
@@ -134,6 +162,7 @@ interface FieldRendererProps {
 
 function FieldRenderer({ field, value, onChange }: FieldRendererProps) {
   const widthClass = `fieldWidth_${field.width.replace('/', '_')}`;
+  const justifyMap = { left: 'flex-start', center: 'center', right: 'flex-end' } as const;
 
   return (
     <div
@@ -141,7 +170,7 @@ function FieldRenderer({ field, value, onChange }: FieldRendererProps) {
       style={{ textAlign: field.textAlign }}
     >
       <label className={styles.fieldLabel}>{field.title}</label>
-      <div className={styles.fieldValue}>
+      <div className={styles.fieldValue} style={{ justifyContent: justifyMap[field.positionAlign ?? 'left'] }}>
         <FieldInput field={field} value={value} onChange={onChange} />
       </div>
     </div>

@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type {
   Character,
   CardStructure,
@@ -62,13 +63,27 @@ function createDefaultFieldValues(structure: CardStructure): Record<string, Fiel
 
 export function PartyTracker({ toolState, onToolStateChange, campaignId: _campaignId }: PartyTrackerProps) {
   const cardSize: CardSizePreset = toolState?.cardSize ?? 'M';
+  const characters: Character[] = toolState?.characters ?? [];
+  const cardStructure: CardStructure = toolState?.cardStructure ?? DEFAULT_CARD_STRUCTURE;
 
-  // TODO: Replace with SQLite persistence
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [cardStructure, setCardStructure] = useState<CardStructure>(DEFAULT_CARD_STRUCTURE);
   const [gearOpen, setGearOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [removePanelOpen, setRemovePanelOpen] = useState(false);
+  const [dragCharId, setDragCharId] = useState<string | null>(null);
   const gearRef = useRef<HTMLDivElement>(null);
+
+  /** Helper to persist state changes */
+  const updateState = useCallback(
+    (updates: Partial<PartyTrackerState>) => {
+      onToolStateChange({
+        cardSize: toolState?.cardSize ?? 'M',
+        characters: toolState?.characters ?? [],
+        cardStructure: toolState?.cardStructure ?? DEFAULT_CARD_STRUCTURE,
+        ...updates,
+      });
+    },
+    [toolState, onToolStateChange],
+  );
 
   const addCharacter = useCallback(() => {
     const newChar: Character = {
@@ -78,38 +93,58 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
       fieldValues: createDefaultFieldValues(cardStructure),
       order: characters.length,
     };
-    setCharacters((prev) => [...prev, newChar]);
-  }, [characters.length, cardStructure]);
+    updateState({ characters: [...characters, newChar] });
+  }, [characters, cardStructure, updateState]);
 
   const removeCharacter = useCallback((id: string) => {
-    setCharacters((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+    updateState({ characters: characters.filter((c) => c.id !== id) });
+  }, [characters, updateState]);
 
   const updateCharacter = useCallback((id: string, updates: Partial<Character>) => {
-    setCharacters((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-    );
-  }, []);
+    updateState({
+      characters: characters.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+    });
+  }, [characters, updateState]);
 
   const updateFieldValue = useCallback((charId: string, fieldId: string, value: FieldValue) => {
-    setCharacters((prev) =>
-      prev.map((c) =>
+    updateState({
+      characters: characters.map((c) =>
         c.id === charId
           ? { ...c, fieldValues: { ...c.fieldValues, [fieldId]: value } }
           : c,
       ),
-    );
-  }, []);
+    });
+  }, [characters, updateState]);
 
   const setCardSize = useCallback(
     (size: CardSizePreset) => {
-      onToolStateChange({ ...toolState, cardSize: size });
+      updateState({ cardSize: size });
     },
-    [toolState, onToolStateChange],
+    [updateState],
   );
 
+  const handleCardDragStart = useCallback((id: string) => {
+    setDragCharId(id);
+  }, []);
+
+  const handleCardDragOver = useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (dragCharId === null || dragCharId === targetId) return;
+    const fromIdx = characters.findIndex((c) => c.id === dragCharId);
+    const toIdx = characters.findIndex((c) => c.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const next = [...characters];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    updateState({ characters: next });
+  }, [dragCharId, characters, updateState]);
+
+  const handleCardDragEnd = useCallback(() => {
+    setDragCharId(null);
+  }, []);
+
   return (
-    <div className={styles.container} onPointerDown={(e) => e.stopPropagation()}>
+    <div className={styles.container} onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
       {/* Toolbar */}
       <div className={styles.toolbar}>
         <div className={styles.sizePresets}>
@@ -140,28 +175,31 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
                 className={styles.gearMenuItem}
                 onClick={() => {
                   setGearOpen(false);
+                  addCharacter();
+                }}
+              >
+                + Add Character
+              </button>
+              <button
+                className={`${styles.gearMenuItem} ${styles.gearMenuDanger}`}
+                onClick={() => {
+                  setGearOpen(false);
+                  setRemovePanelOpen(true);
+                }}
+                disabled={characters.length === 0}
+              >
+                &minus; Remove Character
+              </button>
+              <div className={styles.gearMenuDivider} />
+              <button
+                className={styles.gearMenuItem}
+                onClick={() => {
+                  setGearOpen(false);
                   setEditorOpen(true);
                 }}
               >
                 Edit Card Structure
               </button>
-              <div className={styles.gearMenuDivider} />
-              <span className={styles.gearMenuLabel}>Remove character:</span>
-              {characters.length === 0 && (
-                <span className={styles.gearMenuEmpty}>No characters</span>
-              )}
-              {characters.map((c) => (
-                <button
-                  key={c.id}
-                  className={`${styles.gearMenuItem} ${styles.gearMenuDanger}`}
-                  onClick={() => {
-                    removeCharacter(c.id);
-                    setGearOpen(false);
-                  }}
-                >
-                  Remove "{c.name}"
-                </button>
-              ))}
             </div>
           )}
         </div>
@@ -177,12 +215,13 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
             size={cardSize}
             onUpdateCharacter={updateCharacter}
             onUpdateFieldValue={updateFieldValue}
+            onRemove={removeCharacter}
+            onDragStart={handleCardDragStart}
+            onDragOver={handleCardDragOver}
+            onDragEnd={handleCardDragEnd}
+            isDragging={dragCharId === char.id}
           />
         ))}
-
-        <button className={styles.addBtn} onClick={addCharacter} title="Add character">
-          +
-        </button>
       </div>
 
       {/* Click-away to close gear menu */}
@@ -195,10 +234,22 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId: _campai
         <CardEditor
           structure={cardStructure}
           onSave={(newStructure) => {
-            setCardStructure(newStructure);
+            updateState({ cardStructure: newStructure });
             setEditorOpen(false);
           }}
           onCancel={() => setEditorOpen(false)}
+        />
+      )}
+
+      {/* Remove Character Panel */}
+      {removePanelOpen && (
+        <RemoveCharacterPanel
+          characters={characters}
+          onRemove={(id) => {
+            removeCharacter(id);
+            setRemovePanelOpen(false);
+          }}
+          onCancel={() => setRemovePanelOpen(false)}
         />
       )}
     </div>

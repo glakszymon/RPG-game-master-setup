@@ -68,6 +68,8 @@ export type FieldValue =
 /** Party Tracker tool state (stored in WindowState.toolState) */
 export interface PartyTrackerState {
   cardSize: CardSizePreset;
+  characters: Character[];
+  cardStructure: CardStructure;
 }
 
 /** Default card structure for new campaigns */

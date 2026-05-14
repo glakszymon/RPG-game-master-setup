@@ -162,6 +162,7 @@
 /* ─── Character Card ─────────────────────────── */
 
 .card {
+  position: relative;
   background: var(--glass-bg-surface);
   backdrop-filter: var(--glass-blur-surface);
   border: var(--glass-border);
@@ -170,10 +171,47 @@
   flex-direction: column;
   overflow: hidden;
   transition: border-color var(--duration-fast) var(--easing-default);
+  cursor: grab;
 }
 
 .card:hover {
   border-color: var(--color-border-hover);
+}
+
+.card:hover .cardRemoveBtn {
+  opacity: 1;
+}
+
+.cardDragging {
+  opacity: 0.4;
+  border-color: var(--color-accent-border);
+}
+
+.cardRemoveBtn {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--duration-fast) var(--easing-default);
+  z-index: 2;
+}
+
+.cardRemoveBtn:hover {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: var(--color-text-inverse);
 }
 
 /* Card sizes */
@@ -192,7 +230,7 @@
 /* ─── Portrait ───────────────────────────────── */
 
 .portrait {
-  width: 100%;
+  width: 60%;
   aspect-ratio: 1;
   overflow: hidden;
   cursor: pointer;
@@ -200,6 +238,9 @@
   align-items: center;
   justify-content: center;
   background: var(--color-bg-elevated);
+  border-radius: 50%;
+  margin: var(--space-3) auto var(--space-2);
+  border: 2px solid var(--color-border);
 }
 
 .portrait img {
@@ -290,6 +331,8 @@
 }
 
 .fieldValue {
+  display: flex;
+  align-items: center;
   min-height: 20px;
 }
 

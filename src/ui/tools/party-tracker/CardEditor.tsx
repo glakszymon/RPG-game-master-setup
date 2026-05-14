@@ -127,7 +127,7 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
   }, [fields, onSave]);
 
   return createPortal(
-    <div className={styles.overlay} onPointerDown={(e) => e.stopPropagation()}>
+    <div className={styles.overlay} onPointerDown={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
       <div className={styles.modal}>
         <div className={styles.header}>
           <h2 className={styles.title}>Card Editor</h2>
@@ -144,9 +144,9 @@ export function CardEditor({ structure, onSave, onCancel }: CardEditorProps) {
               <div className={styles.previewFields}>
                 {fields.map((field) => {
                   const widthPercent =
-                    field.width === '1/3' ? '33.333%' :
+                    field.width === '1/3' ? '32.3%' :
                     field.width === '1/2' ? '50%' :
-                    field.width === '2/3' ? '66.666%' :
+                    field.width === '2/3' ? '66%' :
                     '100%';
                   return (
                     <div

@@ -58,7 +58,7 @@
 }
 
 .previewCol {
-  width: 35%;
+  width: 20rem;
   padding: var(--space-4);
   border-right: 1px solid var(--color-border);
   overflow-y: auto;
