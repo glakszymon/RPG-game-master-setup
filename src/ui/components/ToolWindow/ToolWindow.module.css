@@ -109,6 +109,10 @@
   color: var(--color-text-primary);
 }
 
+.controlButtonActive {
+  color: var(--color-accent);
+}
+
 .controlButtonClose:hover {
   background: var(--color-error-muted);
   color: var(--color-error);
@@ -122,7 +126,7 @@
   overflow-y: auto;
 }
 
-/* ── Minimized state ── */
+/* ── Minimized state (controlled by canvas) ── */
 
 .minimized .body {
   display: none;

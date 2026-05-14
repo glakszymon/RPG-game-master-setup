@@ -1,90 +1,129 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode } from 'react';
 import styles from './ToolWindow.module.css';
 
 export interface ToolWindowProps {
-  /** Tytuł wyświetlany w title barze */
+  /** Title displayed in the title bar */
   title: string;
 
-  /** Opcjonalna ikona obok tytułu (ReactNode — SVG, emoji, itp.) */
+  /** Optional icon next to title (ReactNode — SVG, emoji, etc.) */
   icon?: ReactNode;
 
-  /** Treść okna */
+  /** Window content */
   children: ReactNode;
 
-  /** Czy okno jest aktywne (złoty glow) */
+  /** Whether window is active (gold glow) */
   active?: boolean;
 
-  /** Callback zamknięcia */
+  /** Whether window is pinned (always on top) */
+  pinned?: boolean;
+
+  /** Close callback */
   onClose?: () => void;
 
-  /** Dodatkowe className */
+  /** Minimize callback — when provided, canvas manages minimize state externally */
+  onMinimize?: () => void;
+
+  /** Pin toggle callback */
+  onTogglePin?: () => void;
+
+  /** CSS class name applied to the title bar for drag handle targeting */
+  dragHandleClass?: string;
+
+  /** Additional className */
   className?: string;
 }
 
 /**
- * ToolWindow — okno narzędziowe na canvasie.
+ * ToolWindow — tool window on the canvas.
  *
- * Glassmorphism panel z title barem, przyciskami minimize/close,
- * i opcjonalnym accent glow gdy aktywne.
+ * Glassmorphism panel with title bar, minimize/close buttons,
+ * and optional accent glow when active.
  *
- * Drag/resize logika będzie w Canvas module — ToolWindow odpowiada
- * wyłącznie za wygląd i strukturę HTML.
- *
- * Użycie:
- *   <ToolWindow title="Party Tracker" icon={<SwordIcon />} active>
- *     <PartyTrackerContent />
- *   </ToolWindow>
+ * Drag/resize logic lives in the Canvas module — ToolWindow is
+ * responsible only for appearance and HTML structure.
  */
 function ToolWindow({
   title,
   icon,
   children,
   active = false,
+  pinned = false,
   onClose,
+  onMinimize,
+  onTogglePin,
+  dragHandleClass,
   className,
 }: ToolWindowProps) {
-  const [minimized, setMinimized] = useState(false);
-
   const rootClasses = [
     styles.window,
     active ? styles.active : '',
-    minimized ? styles.minimized : '',
     className ?? '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const titleBarClasses = [
+    styles.titleBar,
+    dragHandleClass ?? '',
   ]
     .filter(Boolean)
     .join(' ');
 
   return (
     <div className={rootClasses}>
-      {/* Title bar — będzie drag handle przy canvas implementacji */}
-      <div className={styles.titleBar}>
+      {/* Title bar — drag handle when used on canvas */}
+      <div className={titleBarClasses}>
         {icon && <span className={styles.titleIcon}>{icon}</span>}
         <span className={styles.title}>{title}</span>
         <div className={styles.controls}>
-          {/* Minimize */}
-          <button
-            className={styles.controlButton}
-            onClick={() => setMinimized(!minimized)}
-            aria-label={minimized ? 'Rozwiń' : 'Minimalizuj'}
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
+          {/* Pin toggle */}
+          {onTogglePin && (
+            <button
+              className={`${styles.controlButton} ${pinned ? styles.controlButtonActive : ''}`}
+              onClick={(e) => { e.stopPropagation(); onTogglePin(); }}
+              aria-label={pinned ? 'Unpin' : 'Pin'}
+              title={pinned ? 'Unpin window' : 'Pin window (always on top)'}
             >
-              <path d="M2 6h8" />
-            </svg>
-          </button>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M7 1L11 5M4 3L9 8M3 7L1 11L5 9M6 2L10 6" />
+              </svg>
+            </button>
+          )}
+          {/* Minimize */}
+          {onMinimize && (
+            <button
+              className={styles.controlButton}
+              onClick={(e) => { e.stopPropagation(); onMinimize(); }}
+              aria-label="Minimize"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
+                <path d="M2 6h8" />
+              </svg>
+            </button>
+          )}
           {/* Close */}
           {onClose && (
             <button
               className={`${styles.controlButton} ${styles.controlButtonClose}`}
-              onClick={onClose}
-              aria-label="Zamknij"
+              onClick={(e) => { e.stopPropagation(); onClose(); }}
+              aria-label="Close"
             >
               <svg
                 width="12"
@@ -102,7 +141,7 @@ function ToolWindow({
         </div>
       </div>
 
-      {/* Body — ukrywane przy minimize */}
+      {/* Body */}
       <div className={styles.body}>{children}</div>
     </div>
   );

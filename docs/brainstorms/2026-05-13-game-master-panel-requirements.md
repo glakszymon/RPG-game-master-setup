@@ -53,7 +53,7 @@ Dungeon Masterzy potrzebuja jednego narzedzia do zarzadzania sesjami RPG: sledze
 - R10. Ekran startowy jako hub: lista kampanii do zaladowania LUB wejscie do kreatora map
 - R11. Kreator kampanii: prosty formularz (nazwa, system, ikona) - minimum na start, konfiguracja wewnatrz kampanii
 - R68. Plotno sesji i kreator map to calkowicie osobne widoki - brak bezposredniego przelaczania, powrot do hub
-- R69. Context menu na plotnie: flat lista wszystkich narzedzi (bez grupowania w kategorie)
+- R69. Context menu na plotnie: narzedzia pogrupowane w kategorie (Combat Tools, Party & NPCs, World & Time, Notes & Content, Audio/Visual)
 
 ### Party Tracker (Panel Sledzenia Druzyny)
 
