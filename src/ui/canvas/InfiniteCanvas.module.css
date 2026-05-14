@@ -24,3 +24,11 @@
   position: relative;
   transform-origin: 0 0;
 }
+
+.spacePanOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 9999;
+  cursor: grab;
+  /* Transparent — lets panzoom handle the actual pan via canvas-level events */
+}

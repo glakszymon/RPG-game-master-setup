@@ -86,6 +86,16 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     panzoomRef.current?.zoom(scale, { animate: true });
   }, []);
 
+  /** Zoom in by one step */
+  const zoomIn = useCallback(() => {
+    panzoomRef.current?.zoomIn();
+  }, []);
+
+  /** Zoom out by one step */
+  const zoomOut = useCallback(() => {
+    panzoomRef.current?.zoomOut();
+  }, []);
+
   /** Reset to default view */
   const resetView = useCallback(() => {
     panzoomRef.current?.reset({ animate: true });
@@ -96,6 +106,8 @@ export function usePanZoom(options: UsePanZoomOptions = {}) {
     getTransform,
     setTransformCallback,
     zoomTo,
+    zoomIn,
+    zoomOut,
     resetView,
     transformRef,
   };

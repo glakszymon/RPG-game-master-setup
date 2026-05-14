@@ -1,0 +1,51 @@
+/*
+ * ShortcutsOverlay styles — keyboard shortcuts help dialog.
+ */
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg, 16px);
+}
+
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 4px);
+}
+
+.categoryTitle {
+  font-family: var(--font-heading, 'Exo 2', sans-serif);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-xs, 4px);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md, 12px);
+  padding: var(--spacing-xs, 4px) 0;
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding: 2px 8px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75rem;
+  background: var(--color-bg-elevated, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-sm, 4px);
+  color: var(--color-text-primary);
+}
+
+.description {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}

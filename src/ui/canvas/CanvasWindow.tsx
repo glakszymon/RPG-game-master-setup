@@ -25,6 +25,8 @@ interface CanvasWindowProps {
   onClose: (id: string) => void;
   onMinimize: (id: string) => void;
   onTogglePin: (id: string) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
   children: React.ReactNode;
 }
 
@@ -41,6 +43,8 @@ function CanvasWindow({
   onClose,
   onMinimize,
   onTogglePin,
+  onDragStart,
+  onDragEnd,
   children,
 }: CanvasWindowProps) {
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -54,9 +58,14 @@ function CanvasWindow({
   const handleDragStop = useCallback(
     (_e: DraggableEvent, data: DraggableData) => {
       onMove(win.id, data.x, data.y);
+      onDragEnd?.();
     },
-    [win.id, onMove],
+    [win.id, onMove, onDragEnd],
   );
+
+  const handleDragStart = useCallback(() => {
+    onDragStart?.();
+  }, [onDragStart]);
 
   // ── Resize ──
 
@@ -104,6 +113,7 @@ function CanvasWindow({
       handle={`.${styles.dragHandle}`}
       cancel={`.${styles.windowContent}`}
       position={{ x: win.x, y: win.y }}
+      onStart={handleDragStart}
       onStop={handleDragStop}
       scale={scale}
     >

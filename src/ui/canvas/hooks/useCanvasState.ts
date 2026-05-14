@@ -180,16 +180,18 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
   }
 }
 
+export { canvasReducer };
+
 // ── Hook ──
 
-const initialState: CanvasState = {
+export const initialCanvasState: CanvasState = {
   windows: [],
   background: 'solid',
   nextWindowId: 0,
 };
 
 export function useCanvasState() {
-  const [state, dispatch] = useReducer(canvasReducer, initialState);
+  const [state, dispatch] = useReducer(canvasReducer, initialCanvasState);
 
   const openWindow = useCallback(
     (toolType: ToolType, x: number, y: number) =>

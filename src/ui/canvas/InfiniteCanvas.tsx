@@ -6,16 +6,20 @@
  * minimap, and minimize tray.
  */
 
-import { useCallback, useState, useRef, useEffect } from 'react';
+import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { usePanZoom } from './hooks/usePanZoom';
-import { useCanvasState } from './hooks/useCanvasState';
+import { canvasReducer, initialCanvasState } from './hooks/useCanvasState';
+import { useUndoRedo } from './hooks/useUndoRedo';
 import { useCanvasPersistence } from './hooks/useCanvasPersistence';
 import { useViewportCulling } from './hooks/useViewportCulling';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useSpacePan } from './hooks/useSpacePan';
 import { CanvasBackground } from './CanvasBackground';
 import { CanvasWindow } from './CanvasWindow';
 import { CanvasContextMenu } from './ContextMenu';
 import { Minimap } from './Minimap';
 import { MinimizeTray } from './MinimizeTray';
+import { ShortcutsOverlay } from './ShortcutsOverlay';
 import type { ToolType, ViewportTransform } from './types';
 import styles from './InfiniteCanvas.module.css';
 
@@ -29,26 +33,97 @@ function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
 }
 
 function InfiniteCanvas() {
-  const { canvasRef, getTransform, setTransformCallback, transformRef } = usePanZoom();
+  const { canvasRef, getTransform, setTransformCallback, transformRef, zoomIn, zoomOut, resetView } = usePanZoom();
 
   const {
     state,
     dispatch,
-    openWindow,
-    closeWindow,
-    moveWindow,
-    resizeWindow,
-    minimizeWindow,
-    restoreWindow,
-    focusWindow,
-    togglePin,
-  } = useCanvasState();
+    undo,
+    redo,
+    startCoalescing,
+    endCoalescing,
+  } = useUndoRedo(canvasReducer, initialCanvasState);
+
+  // Convenience dispatchers
+  const openWindow = useCallback(
+    (toolType: ToolType, x: number, y: number) =>
+      dispatch({ type: 'OPEN_WINDOW', toolType, x, y }),
+    [dispatch],
+  );
+  const closeWindow = useCallback(
+    (id: string) => dispatch({ type: 'CLOSE_WINDOW', id }),
+    [dispatch],
+  );
+  const moveWindow = useCallback(
+    (id: string, x: number, y: number) =>
+      dispatch({ type: 'MOVE_WINDOW', id, x, y }),
+    [dispatch],
+  );
+  const resizeWindow = useCallback(
+    (id: string, x: number, y: number, width: number, height: number) =>
+      dispatch({ type: 'RESIZE_WINDOW', id, x, y, width, height }),
+    [dispatch],
+  );
+  const minimizeWindow = useCallback(
+    (id: string) => dispatch({ type: 'MINIMIZE_WINDOW', id }),
+    [dispatch],
+  );
+  const restoreWindow = useCallback(
+    (id: string) => dispatch({ type: 'RESTORE_WINDOW', id }),
+    [dispatch],
+  );
+  const focusWindow = useCallback(
+    (id: string) => dispatch({ type: 'FOCUS_WINDOW', id }),
+    [dispatch],
+  );
+  const togglePin = useCallback(
+    (id: string) => dispatch({ type: 'TOGGLE_PIN', id }),
+    [dispatch],
+  );
 
   useCanvasPersistence(state, dispatch);
 
+  // Shortcuts help overlay state
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Close topmost non-pinned window
+  const closeTopmostWindow = useCallback(() => {
+    const topmost = [...state.windows]
+      .reverse()
+      .find((w) => !w.minimized && !w.pinned);
+    if (topmost) closeWindow(topmost.id);
+  }, [state.windows, closeWindow]);
+
+  // Keyboard shortcuts
+  const shortcutHandlers = useMemo(
+    () => ({
+      undo,
+      redo,
+      zoomIn,
+      zoomOut,
+      zoomReset: resetView,
+      escape: closeTopmostWindow,
+      helpPanel: () => setShowShortcuts((s) => !s),
+    }),
+    [undo, redo, zoomIn, zoomOut, resetView, closeTopmostWindow],
+  );
+  useKeyboardShortcuts(shortcutHandlers);
+
+  // Space+drag pan overlay
+  const [spacePanActive, setSpacePanActive] = useState(false);
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  const handleSpaceActivate = useCallback(() => setSpacePanActive(true), []);
+  const handleSpaceDeactivate = useCallback(() => setSpacePanActive(false), []);
+
+  useSpacePan({
+    viewportRef,
+    onActivate: handleSpaceActivate,
+    onDeactivate: handleSpaceDeactivate,
+  });
+
   // Track viewport dimensions for minimap
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
-  const viewportRef = useRef<HTMLDivElement>(null);
 
   // Track transform for minimap (re-render on change, debounced)
   const [minimapTransform, setMinimapTransform] = useState<ViewportTransform>({
@@ -153,6 +228,8 @@ function InfiniteCanvas() {
                 onClose={closeWindow}
                 onMinimize={minimizeWindow}
                 onTogglePin={togglePin}
+                onDragStart={startCoalescing}
+                onDragEnd={endCoalescing}
               >
                 <ToolPlaceholder toolType={win.toolType} />
               </CanvasWindow>
@@ -162,6 +239,9 @@ function InfiniteCanvas() {
       </CanvasContextMenu>
 
       {/* Viewport-fixed overlays */}
+      {spacePanActive && (
+        <div className={styles.spacePanOverlay} />
+      )}
       <MinimizeTray windows={state.windows} onRestore={restoreWindow} />
       <Minimap
         windows={state.windows}
@@ -170,6 +250,7 @@ function InfiniteCanvas() {
         viewportHeight={viewportSize.height}
         visible={true}
       />
+      <ShortcutsOverlay open={showShortcuts} onOpenChange={setShowShortcuts} />
     </div>
   );
 }
