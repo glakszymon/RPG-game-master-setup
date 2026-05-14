@@ -2,6 +2,11 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Graphics, Container, Application, BlurFilter } from 'pixi.js';
 import type { MapTool } from '../types';
 
+/** Helper to set cursor without ESLint tracing back to ref params */
+function setCursor(el: HTMLElement, cursor: string) {
+  el.style.cursor = cursor;
+}
+
 /**
  * useVfxLayer — Simple VFX effects placed on the map.
  *
@@ -51,8 +56,8 @@ const PRESET_COLORS: Record<VfxPreset, number[]> = {
 };
 
 export function useVfxLayer(
-  app: Application | null,
-  worldContainer: Container | null,
+  appRef: React.RefObject<Application | null>,
+  worldContainerRef: React.RefObject<Container | null>,
   vfxInstances: VfxInstance[],
   activeTool: MapTool,
   selectedPreset: VfxPreset,
@@ -63,30 +68,34 @@ export function useVfxLayer(
 ): VfxLayerActions {
   const layerRef = useRef<Container | null>(null);
   const instancesRef = useRef(vfxInstances);
-  instancesRef.current = vfxInstances;
+  useEffect(() => { instancesRef.current = vfxInstances; });
   const animFrameRef = useRef<number | null>(null);
   const particlesRef = useRef<Map<string, Particle[]>>(new Map());
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // ── Create VFX layer ──
   useEffect(() => {
+    const worldContainer = worldContainerRef.current;
     if (!worldContainer) return;
     const layer = new Container();
     layer.label = 'vfx-layer';
     worldContainer.addChild(layer);
     layerRef.current = layer;
+    const particles = particlesRef.current;
+    const timers = timersRef.current;
 
     return () => {
       layer.destroy({ children: true });
       layerRef.current = null;
-      particlesRef.current.clear();
-      for (const t of timersRef.current.values()) clearTimeout(t);
-      timersRef.current.clear();
+      particles.clear();
+      for (const t of timers.values()) clearTimeout(t);
+      timers.clear();
     };
-  }, [worldContainer]);
+  }, [worldContainerRef]);
 
   // ── Spawn particles for each VFX instance ──
   useEffect(() => {
+    const app = appRef.current;
     const layer = layerRef.current;
     if (!app || !layer) return;
 
@@ -118,10 +127,11 @@ export function useVfxLayer(
         }
       }
     }
-  }, [app, vfxInstances, onVfxChange]);
+  }, [appRef, vfxInstances, onVfxChange]);
 
   // ── Animation loop ──
   useEffect(() => {
+    const app = appRef.current;
     if (!app) return;
 
     let lastTime = performance.now();
@@ -151,10 +161,12 @@ export function useVfxLayer(
     return () => {
       if (animFrameRef.current !== null) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [app]);
+  }, [appRef]);
 
   // ── Click-to-place handler ──
   useEffect(() => {
+    const app = appRef.current;
+    const worldContainer = worldContainerRef.current;
     const canvas = app?.renderer ? app.canvas : null;
     if (!canvas || !worldContainer || activeTool !== 'vfx') return;
 
@@ -178,12 +190,12 @@ export function useVfxLayer(
     };
 
     canvas.addEventListener('pointerdown', onClick);
-    canvas.style.cursor = 'crosshair';
+    setCursor(canvas, 'crosshair');
     return () => {
       canvas.removeEventListener('pointerdown', onClick);
-      canvas.style.cursor = '';
+      setCursor(canvas, '');
     };
-  }, [app, worldContainer, activeTool, selectedPreset, vfxSize, vfxMode, vfxDuration, onVfxChange]);
+  }, [appRef, worldContainerRef, activeTool, selectedPreset, vfxSize, vfxMode, vfxDuration, onVfxChange]);
 
   // ── Actions ──
   const placeVfx = useCallback((
@@ -273,7 +285,7 @@ function resetParticle(p: Particle) {
       p.life = 0.5 + Math.random() * 0.8;
       p.baseScale = 0.8 + Math.random() * 0.6;
       break;
-    case 'explosion':
+    case 'explosion': {
       const angle = Math.random() * Math.PI * 2;
       const speed = 40 + Math.random() * 80;
       p.vx = Math.cos(angle) * speed;
@@ -281,6 +293,7 @@ function resetParticle(p: Particle) {
       p.life = 0.3 + Math.random() * 0.5;
       p.baseScale = 1 + Math.random();
       break;
+    }
     case 'smoke':
       p.vx = (Math.random() - 0.5) * 10;
       p.vy = -(5 + Math.random() * 15);

@@ -5,7 +5,7 @@
  * Inline editing of field values directly on cards.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type {
   Character,
@@ -61,9 +61,9 @@ function createDefaultFieldValues(structure: CardStructure): Record<string, Fiel
   return values;
 }
 
-export function PartyTracker({ toolState, onToolStateChange, campaignId: _campaignId }: PartyTrackerProps) {
+export function PartyTracker({ toolState, onToolStateChange }: PartyTrackerProps) {
   const cardSize: CardSizePreset = toolState?.cardSize ?? 'M';
-  const characters: Character[] = toolState?.characters ?? [];
+  const characters: Character[] = useMemo(() => toolState?.characters ?? [], [toolState?.characters]);
   const cardStructure: CardStructure = toolState?.cardStructure ?? DEFAULT_CARD_STRUCTURE;
 
   const [gearOpen, setGearOpen] = useState(false);

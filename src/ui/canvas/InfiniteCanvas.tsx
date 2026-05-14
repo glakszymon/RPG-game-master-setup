@@ -74,7 +74,7 @@ function ToolContent({
 }
 
 function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignId?: string }) {
-  const { canvasRef, getTransform, setTransformCallback, transformRef, zoomIn, zoomOut, resetView, panTo } = usePanZoom();
+  const { canvasRef, getTransform, setTransformCallback, zoomIn, zoomOut, resetView, panTo } = usePanZoom();
 
   const {
     state,
@@ -192,6 +192,9 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
     scale: 1,
   });
 
+  // Track scale as state for render-safe reads
+  const [currentScale, setCurrentScale] = useState(1);
+
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
@@ -220,6 +223,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         setMinimapTransform({ ...t });
+        setCurrentScale(t.scale);
         updateVisibility();
       });
     });
@@ -279,7 +283,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
               <CanvasWindow
                 key={win.id}
                 window={win}
-                scale={transformRef.current.scale}
+                scale={currentScale}
                 zIndex={zIndices.get(win.id) ?? 10}
                 isActive={win.id === activeWindowId}
                 onMove={moveWindow}

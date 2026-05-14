@@ -11,7 +11,7 @@ import type { GridConfig } from '../types';
  * Redraws whenever gridConfig or mapSize changes.
  */
 export function useGridLayer(
-  worldContainer: Container | null,
+  worldContainerRef: React.RefObject<Container | null>,
   gridConfig: GridConfig,
   mapWidth: number,
   mapHeight: number,
@@ -19,6 +19,7 @@ export function useGridLayer(
   const gfxRef = useRef<Graphics | null>(null);
 
   useEffect(() => {
+    const worldContainer = worldContainerRef.current;
     if (!worldContainer) return;
 
     // Create or reuse Graphics
@@ -53,7 +54,7 @@ export function useGridLayer(
     return () => {
       // Cleanup on unmount only
     };
-  }, [worldContainer, gridConfig.type, gridConfig.cellSize, gridConfig.opacity, mapWidth, mapHeight]);
+  }, [worldContainerRef, gridConfig.type, gridConfig.cellSize, gridConfig.opacity, mapWidth, mapHeight]);
 
   // Full cleanup on unmount
   useEffect(() => {
