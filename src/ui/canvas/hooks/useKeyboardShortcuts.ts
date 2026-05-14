@@ -6,8 +6,8 @@
  */
 
 import { useEffect, useMemo } from 'react';
-// @ts-expect-error tinykeys typings don't resolve via package.json exports
-import tinykeys from 'tinykeys';
+// @ts-expect-error tinykeys types don't resolve via package.json exports
+import { tinykeys } from 'tinykeys';
 import { SHORTCUTS } from '../shortcuts';
 import type { ShortcutId } from '../shortcuts';
 
