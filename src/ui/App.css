@@ -1,0 +1,68 @@
+.showcase {
+  padding: var(--space-8);
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  overflow-y: auto;
+  height: 100vh;
+  /* Pozwalamy na scroll i zaznaczanie tekstu na showcase */
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.pageTitle {
+  text-align: center;
+}
+
+.pageSubtitle {
+  text-align: center;
+  font-size: var(--text-lg);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sectionTitle {
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.toolWindowDemo {
+  width: 350px;
+}
+
+.colorSwatch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+}
+
+.swatchDot {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}

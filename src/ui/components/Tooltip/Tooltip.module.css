@@ -1,0 +1,42 @@
+.content {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--glass-blur-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-tooltip);
+
+  animation: tooltipIn var(--duration-fast) var(--easing-bounce);
+}
+
+.content[data-state='closed'] {
+  animation: tooltipOut var(--duration-fast) var(--easing-default);
+}
+
+@keyframes tooltipIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tooltipOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.arrow {
+  fill: var(--color-border);
+}

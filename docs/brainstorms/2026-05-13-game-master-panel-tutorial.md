@@ -1,0 +1,935 @@
+# Game Master Panel - Tutorial krok po kroku
+
+Ten dokument to przewodnik budowania aplikacji Game Master Panel od zera.
+AI pełni rolę mentora - prowadzi Cię krok po kroku, a Ty piszesz kod samodzielnie z jego pomocą.
+
+Przed każdą fazą przeprowadzasz brainstorm z AI, aby zaprojektować idealny moduł, a dopiero potem przechodzisz do implementacji.
+
+---
+
+## Wymagania wstępne
+
+Zanim zaczniesz, upewnij się że masz zainstalowane:
+- **Node.js** (wersja LTS lub nowsza)
+- **npm** lub inny menedżer pakietów
+- **Git**
+- **Edytor kodu** (np. VS Code, Cursor, WebStorm)
+- **AI assistant** (Claude, ChatGPT, lub inny) - będzie Twoim mentorem
+
+---
+
+## Faza 0: Przygotowanie środowiska
+
+### Krok 0.1 - Inicjalizacja projektu
+
+**Dlaczego to robimy:** Potrzebujesz szkieletu aplikacji desktopowej z hot reload, żeby szybko iterować nad kodem.
+
+**Napisz do AI:**
+> "Poprowadź mnie krok po kroku jak zainicjalizować projekt Electron + React + TypeScript z Vite. Potrzebuję:
+> - electron-builder do budowania na Linux i Windows
+> - SQLite (better-sqlite3) jako bazę danych
+> - strukturę folderów: src/main (electron), src/renderer (react), src/shared (typy/utils)
+> - podstawowy package.json z scriptami dev, build:linux, build:win
+> - ESLint + Prettier
+>
+> Tłumacz mi co robisz na każdym etapie i dlaczego."
+
+**Na co zwrócić uwagę w odpowiedzi AI:**
+- Czy AI wyjaśnia dlaczego wybiera dane wersje pakietów
+- Czy konfiguracja Vite poprawnie obsługuje Electron (main + renderer)
+- Czy hot reload działa zarówno dla renderer jak i main process
+
+**Jak sprawdzić że działa:**
+- Uruchom `npm run dev` - powinna otworzyć się pusta aplikacja Electron
+- Zmień tekst w renderer - powinien odświeżyć się bez restartu
+- Sprawdź w DevTools (Ctrl+Shift+I) czy nie ma błędów w konsoli
+
+**Rezultat:** Działający szkielet Electron + React z hot reload.
+
+### Krok 0.2 - Design System ✅ BRAINSTORM ZAKOŃCZONY
+
+**Dlaczego to robimy:** Ustalamy spójny wygląd aplikacji zanim zaczniemy pisać UI, żeby nie refaktorować później.
+
+**Dokument wymagań:** `docs/brainstorms/2026-05-14-design-system-requirements.md`
+
+**Podjęte decyzje:**
+
+| Aspekt | Decyzja |
+|--------|---------|
+| Tryb | Dark mode only (brak light mode) |
+| Styl | Glassmorphism — nowoczesna baza z subtelnymi magicznymi akcentami w kluczowych interakcjach |
+| Kolor akcentowy | Blady złoty / stare złoto (#C9B06B) |
+| Font body | Exo 2 (Google Fonts) — geometric sans-serif z tech klimatem |
+| Font nagłówków | Michroma (Google Fonts) — uppercase, dashboard/command center feel |
+| Font mono | JetBrains Mono / ui-monospace fallback |
+| Komponenty | Radix UI (headless primitives) — pełna kontrola nad stylami + accessibility out of the box |
+| Stylowanie | CSS Modules (.module.css per komponent) + CSS custom properties jako design tokens |
+| Animacje | Umiarkowane — CSS transitions domyślnie, keyframe animations dla kluczowych momentów (bez Framer Motion) |
+| Spacing | Skala 4px (4, 8, 12, 16, 20, 24, 32, 40, 48, 64) |
+
+**Paleta kolorów:**
+- Tło: `--bg-base: #0F1117`, surface `rgba(255,255,255,0.05)` z `backdrop-blur: 12px`
+- Tekst: primary `#E8E6E3`, secondary `#9CA3AF`, muted `#6B7280`
+- Accent: `#C9B06B` + warianty (hover, muted, border)
+- Semantyczne: success `#4ADE80`, error `#F87171`, warning `#FBBF24`, info `#60A5FA`
+
+**Napisz do AI:**
+> "Poprowadź mnie w stworzeniu design systemu na podstawie ustaleń z `docs/brainstorms/2026-05-14-design-system-requirements.md`. Pomóż mi stworzyć:
+> - Plik z CSS custom properties (tokeny: kolory, spacing, typography, shadows, blur)
+> - Bazowe komponenty z Radix UI + CSS Modules (Button, Input, Card, ToolWindow, Modal)
+> - Global styles
+>
+> Tłumacz każdy krok."
+
+**Na co zwrócić uwagę:**
+- Czy kolory mają wystarczający kontrast (dostępność)
+- Czy glassmorphism nie będzie problematyczny wydajnościowo przy wielu okienkach
+- Czy Radix UI poprawnie obsługuje focus trap i keyboard navigation
+
+**Jak sprawdzić że działa:**
+- Stwórz prostą stronę testową z wszystkimi komponentami
+- Sprawdź czy glassmorphism wygląda dobrze na ciemnym tle
+- Sprawdź czy złoty akcent (#C9B06B) jest czytelny na ciemnym tle
+- Sprawdź keyboard navigation (Tab, Escape, Enter) na komponentach Radix
+
+**Rezultat:** Działający design system z tokenami i bazowymi komponentami.
+
+### Krok 0.3 - Baza danych
+
+**Dlaczego to robimy:** Baza danych to fundament - wszystkie moduły będą z niej korzystać.
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o schemacie bazy danych SQLite dla aplikacji Game Master Panel. Oto moduły które będę budować:
+> - Kampanie (z wizardem tworzenia)
+> - Postacie graczy (Party Tracker)
+> - Mapy (globalna biblioteka)
+> - Potwory (Bestiariusz)
+> - NPC (biblioteka + generator)
+> - Notatki (block editor)
+> - Audio (soundboard)
+> - Sesje (śledzenie sesji gry)
+> - Ustawienia kampanii (custom kalendarze, warunki walki, itp. - pole settings_json)
+>
+> Omówmy:
+> - Jakie tabele potrzebuję
+> - Jakie relacje między nimi
+> - Jak przechowywać elastyczne dane (JSON fields vs osobne tabele)
+> - Strategia migracji
+> - Jak zorganizować IPC między main process a rendererem
+>
+> Dopytaj mnie o szczegóły."
+
+**Napisz do AI:**
+> "Poprowadź mnie krok po kroku w implementacji modułu bazy danych na podstawie naszych ustaleń. Potrzebuję:
+> - Definicje tabel z migracjami
+> - Helper functions do CRUD
+> - IPC handlers w main process
+> - Preload script z bezpiecznym API dla renderera
+>
+> Tłumacz każdy krok i dlaczego tak a nie inaczej."
+
+**Na co zwrócić uwagę:**
+- Czy AI używa prepared statements (bezpieczeństwo)
+- Czy IPC jest typowane (TypeScript interfaces w src/shared)
+- Czy migracje są wersjonowane
+
+**Jak sprawdzić że działa:**
+- Stwórz testową kampanię przez IPC z renderera
+- Sprawdź czy dane zapisują się w pliku .db
+- Zrestartuj aplikację i sprawdź czy dane przetrwały
+
+**Rezultat:** Działająca baza danych z API dostępnym z frontendu.
+
+### Krok 0.4 - Strategia autozapisu
+
+**Dlaczego to robimy:** Każdy moduł będzie potrzebował autozapisu - lepiej ustalić strategię raz niż wymyślać za każdym razem.
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o strategii autozapisu danych w aplikacji Electron + SQLite. Omówmy:
+> - Kiedy zapisywać (debounce, natychmiast, przy zamknięciu okna?)
+> - Jak obsłużyć konflikty (wiele okienek edytuje te same dane?)
+> - Jak sygnalizować użytkownikowi stan zapisu
+> - Jak obsłużyć błędy zapisu
+> - Performance - jak nie blokować UI przy zapisie
+>
+> Dopytaj mnie o szczegóły."
+
+**Rezultat:** Ustalona strategia autozapisu używana przez wszystkie moduły.
+
+### Krok 0.5 - State management
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o wyborze state management dla mojego projektu:
+>
+> Porównaj opcje dla aplikacji z wieloma niezależnymi oknami na canvasie:
+> - Zustand
+> - Redux Toolkit
+> - Jotai
+> - React Context
+>
+> Uwzględnij: wydajność z wieloma okienkami na canvasie, łatwość nauki (junior developer), integrację z TypeScript.
+>
+> Framework CSS i biblioteka komponentów już wybrane: CSS Modules + Radix UI (patrz Krok 0.2).
+>
+> Dopytaj mnie o preferencje."
+
+**Rezultat:** Wybrany i skonfigurowany state management.
+
+---
+
+## Faza 1: Nieskończone płótno (Canvas)
+
+### Krok 1.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o implementacji infinite canvas dla mojej aplikacji. To KLUCZOWY komponent - od niego zależy cała reszta. Omówmy:
+> - Jaka biblioteka najlepsza (react-flow, pixi.js, custom canvas z react-dnd, inne?)
+> - Nieskończone płótno z zoom i pan
+> - System okienek: drag, resize, minimize, close, z-order, pin (always on top)
+> - Context menu z narzędziami pogrupowanymi w kategorie (Combat Tools, NPC Management, World & Time, Tables & Content, Audio/Visual)
+> - Wiele instancji tego samego narzędzia
+> - Minimapa w rogu
+> - Konfigurowalne tło (ciemne/siatka kropek/siatka linii)
+> - Animacje: płynne otwieranie/zamykanie/minimalizowanie okienek
+> - Autozapis stanu canvasa (pozycje okienek, zoom, pan) do SQLite per kampania
+> - Wydajność z 10+ oknami otwartymi jednocześnie
+> - Wymogi: R5-R9, R63-R67 z docs/brainstorms/2026-05-13-game-master-panel-requirements.md
+>
+> Dopytaj mnie o priorytety i edge case'y."
+
+### Krok 1.1 - Implementacja silnika płótna
+
+**Napisz do AI:**
+> "Na podstawie naszych ustaleń, poprowadź mnie krok po kroku w implementacji infinite canvas z [wybrana biblioteka]. Zaczynamy od podstaw i budujemy stopniowo. Tłumacz każdy krok."
+
+**Na co zwrócić uwagę:**
+- Czy zoom działa płynnie (nie szarpie)
+- Czy pan działa na middle mouse + alt+drag
+- Czy okienka nie migają przy szybkim przesuwaniu
+
+**Jak sprawdzić że działa:**
+- Otwórz 5+ pustych okienek z context menu
+- Przesuwaj je, zmieniaj rozmiar, minimalizuj
+- Zoomuj i panuj - okienka powinny się przesuwać razem z canvasem
+- Zamknij i otwórz ponownie aplikację - układ powinien się zachować
+
+**Rezultat:** Działające płótno z systemem okienek.
+
+### Krok 1.2 - Skróty klawiszowe
+
+**Dlaczego to robimy:** Power userzy potrzebują skrótów do szybkiej nawigacji.
+
+**Napisz do AI:**
+> "Poprowadź mnie w dodaniu systemu skrótów klawiszowych do canvasa:
+> - Ctrl+Z / Ctrl+Y: globalny undo/redo
+> - Ctrl+= / Ctrl+-: zoom in/out
+> - Ctrl+0: reset zoom
+> - Escape: zamknij aktywne okno/dialog
+> - Space+drag: pan (alternatywa)
+> - Wyświetl listę skrótów pod Ctrl+?
+>
+> Pokaż mi jak zrobić to w sposób rozszerzalny (łatwo dodawać nowe skróty)."
+
+**Jak sprawdzić że działa:**
+- Przetestuj każdy skrót
+- Sprawdź czy Escape zamyka okno na pierwszym planie
+- Sprawdź czy Ctrl+? pokazuje listę
+
+**Rezultat:** Pełna nawigacja klawiaturą.
+
+### Krok 1.3 - Globalny Undo/Redo
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji globalnego systemu undo/redo:
+> - Stos akcji z opisem (np. 'Przesunięto okienko', 'Zmieniono HP')
+> - Ctrl+Z cofa ostatnią akcję, Ctrl+Y powtarza
+> - Każdy moduł rejestruje swoje akcje w centralnym storze
+> - Limit stosu: ostatnie 50 akcji
+>
+> Pokaż mi wzorzec który pozwoli łatwo dodawać undo/redo do nowych modułów."
+
+**Jak sprawdzić że działa:**
+- Przesuń okienko, Ctrl+Z - wraca na miejsce
+- Ctrl+Y - przesuwa ponownie
+- Sprawdź limit 50 akcji
+
+**Rezultat:** Działający undo/redo.
+
+### Krok 1.4 - Focus Presets
+
+**Dlaczego to robimy:** Gracz Mistrz używa różnych layoutów w różnych sytuacjach (walka vs eksploracja vs roleplay).
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o Focus Presets - zapisywaniu i przywracaniu layoutów okienek. Omówmy:
+> - Jak zapisywać układ (pozycje, rozmiary, zoom, które okienka otwarte)
+> - Jak przełączać między layoutami (animacja? natychmiastowo?)
+> - Gdzie w UI umieścić zarządzanie presetami (context menu? osobny panel?)
+> - Czy automatycznie zapisywać 'Last Setup'?
+> - Ile presetów maximum?
+>
+> Dopytaj mnie o szczegóły."
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Focus Presets na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Ułóż okienka, zapisz preset "Walka"
+- Zmień układ, zapisz "Eksploracja"
+- Przełączaj między nimi - układ powinien się odtwarzać
+- Zrestartuj aplikację - presety powinny przetrwać
+
+**Rezultat:** Działające Focus Presets.
+
+---
+
+## Faza 2: Menu wejściowe (Hub)
+
+### Krok 2.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o ekranie startowym (Hub) aplikacji. Omówmy:
+> - Layout: jak wyglądać ma główny ekran
+> - Lista kampanii: jakie informacje wyświetlać (nazwa, system, ikona, data ostatniej sesji)
+> - Campaign Wizard: wieloetapowe tworzenie kampanii (nazwa+system+ikona → pola postaci → członkowie drużyny → statystyki walki)
+> - Demo Campaign: predefiniowana kampania dla nowych użytkowników
+> - Przejście do canvasa: jaka animacja
+> - Kreator Map: osobny widok dostępny z Huba
+> - Użyj wymagań R10, R11, R54, R55, R68 z docs/brainstorms/2026-05-13-game-master-panel-requirements.md
+>
+> Dopytaj mnie o szczegóły wizualne i funkcjonalne."
+
+### Krok 2.1 - Implementacja Huba
+
+**Napisz do AI:**
+> "Poprowadź mnie krok po kroku w implementacji ekranu startowego na podstawie naszych ustaleń. Zaczynamy od layoutu, potem lista kampanii, potem wizard."
+
+**Na co zwrócić uwagę:**
+- Czy glassmorphism dobrze wygląda na ekranie startowym
+- Czy Campaign Wizard jest intuicyjny (kolejne kroki logicznie się łączą)
+- Czy animacja przejścia Hub → Canvas jest płynna
+
+**Jak sprawdzić że działa:**
+- Otwórz aplikację - Hub powinien się wyświetlić
+- Stwórz nową kampanię przez wizard (wszystkie kroki)
+- Kliknij kampanię - przejście do canvasa
+- Wróć do Huba i sprawdź czy kampania jest na liście
+- Sprawdź czy Demo Campaign istnieje przy pierwszym uruchomieniu
+
+**Rezultat:** Działający hub z listą kampanii i Campaign Wizard.
+
+---
+
+## Faza 3: Party Tracker
+
+### Krok 3.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o Party Tracker - okienku na canvasie do zarządzania drużyną. Omówmy:
+> - Układ kart postaci (rząd, siatka, lista?)
+> - Zawartość karty: zdjęcie, nazwa, stałe pola (HP, Armor, Initiative), customowe pola
+> - Edycja inline vs osobny widok edycji
+> - Typy pól: Number, Bubbles (kółka do zaznaczania), Text Field, Text Box, Radio
+> - Drag&drop zmiana kolejności pól i postaci
+> - Edytor karty postaci: jak powinien wyglądać
+> - Integracja z innymi modułami (Combat Tracker, Mapa)
+> - Użyj wymagań R12-R19
+> - Sprawdź inspiracja/party tracker.md jako referencję
+>
+> Dopytaj mnie o każdy szczegół."
+
+### Krok 3.1 - Karty postaci
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Party Trackera jako okienka na canvasie. Zaczynamy od wyświetlania kart, potem edycja inline."
+
+**Na co zwrócić uwagę:**
+- Czy karty wyglądają dobrze z glassmorphism
+- Czy edycja inline jest intuicyjna (klik na wartość → edycja)
+- Czy horizontal scroll działa płynnie gdy karty się nie mieszczą
+
+**Jak sprawdzić że działa:**
+- Otwórz Party Tracker z context menu
+- Dodaj 4+ postaci z różnymi polami
+- Edytuj HP kliknięciem na wartość
+- Zmień rozmiar okienka - karty powinny się dostosować
+- Zamknij i otwórz ponownie - dane powinny przetrwać
+
+### Krok 3.2 - Edytor karty postaci
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji edytora karty postaci na podstawie naszych ustaleń z brainstormu. Pokaż mi jak zrobić live preview i drag&drop pól."
+
+**Jak sprawdzić że działa:**
+- Otwórz edytor z ustawień Party Trackera
+- Dodaj różne typy pól (Number, Bubbles, Text, Radio)
+- Drag&drop zmień kolejność - preview powinien się aktualizować na żywo
+- Zapisz i sprawdź czy karta wygląda jak w preview
+- Cancel powinien cofnąć wszystkie zmiany
+
+**Rezultat:** Pełny Party Tracker z edytorem kart.
+
+**Integracje z innymi modułami:**
+- → Combat Tracker: postaci można dodawać do walki
+- → Mapa: postaci jako tokeny na mapie
+- → LAN Sharing: karty widoczne dla graczy (konfigurowalne co widać)
+
+---
+
+## Faza 4: Mapa rozgrywki
+
+### Krok 4.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o module Mapy Rozgrywki. Omówmy:
+> - Jaka biblioteka do renderowania mapy 2D z fog of war (Canvas, Pixi.js, Konva.js, Fabric.js?)
+> - Import obrazków z globalnej biblioteki map
+> - Siatka: kwadratowa, heksagonalna, brak - konfigurowalny rozmiar komórki
+> - Fog of War: pędzel o regulowanej przezroczystości, odsłanianie/zakrywanie
+> - Tokeny: drag&drop z Party Trackera i Bestiariusza, swobodne przesuwanie
+> - Zoom i pan wewnątrz okienka mapy
+> - Jak zapisywać stan mapy (pozycje tokenów, FoW) między sesjami
+> - Użyj wymagań R23-R26
+> - Sprawdź inspiracja/map.md jako referencję
+>
+> Dopytaj mnie o priorytety i edge case'y."
+
+### Krok 4.1 - Implementacja mapy
+
+**Napisz do AI:**
+> "Poprowadź mnie krok po kroku w implementacji okienka Mapy Rozgrywki na canvasie. Zaczynamy od wyświetlania obrazka z zoom/pan, potem siatka, potem Fog of War, potem tokeny."
+
+**Na co zwrócić uwagę:**
+- Czy FoW jest wydajny przy dużych mapach
+- Czy tokeny nie lagują przy przesuwaniu
+- Czy zoom wewnątrz okienka mapy nie koliduje z zoomem canvasa
+
+**Jak sprawdzić że działa:**
+- Załaduj mapę z biblioteki
+- Włącz siatkę kwadratową i hex - obie powinny się nałożyć poprawnie
+- Odsłoń część FoW pędzlem - sprawdź różne przezroczystości
+- Przeciągnij postać z Party Trackera na mapę jako token
+- Przesuń token - powinien się swobodnie ruszać
+- Zamknij i otwórz mapę - stan powinien się zachować
+
+**Rezultat:** Działająca mapa z FoW i tokenami.
+
+**Integracje z innymi modułami:**
+- ← Party Tracker: postaci jako tokeny (drag&drop)
+- ← Bestiariusz: potwory jako tokeny (drag&drop)
+- → Combat Tracker: przycisk "Załaduj na mapę" dodaje uczestników walki
+- → LAN Sharing: mapa widoczna dla graczy (bez FoW które DM nie odsłonił)
+
+---
+
+## Faza 5: Combat Tracker
+
+### Krok 5.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o Combat Tracker - narzędziu do prowadzenia walki. Omówmy:
+> - Lista uczestników w kolejności inicjatywy
+> - Jakie informacje wyświetlać (portret, nazwa, HP, inicjatywa, warunki/statusy)
+> - System tur: podświetlenie aktywnego, przycisk 'Następna tura'
+> - Dodawanie uczestników: drag&drop z Party Trackera, z Bestiariusza, ręcznie
+> - Damage/Heal: jak szybko modyfikować HP
+> - Warunki/statusy: lista checkboxów (Stunned, Poisoned, itp.) - konfigurowalne per kampania
+> - Rzut inicjatywy: automatyczny przycisk
+> - Integracja z mapą: przycisk 'Załaduj na mapę'
+> - Wizualne wskazanie HP = 0 (czerwona karta)
+> - Sprawdź inspiracja/combat tracker.md jako referencję
+> - Użyj wymagań R27-R31
+>
+> Dopytaj mnie o szczegóły flow walki."
+
+### Krok 5.1 - Implementacja
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Combat Trackera na podstawie naszych ustaleń. Zaczynamy od listy uczestników, potem system tur, potem damage/heal."
+
+**Na co zwrócić uwagę:**
+- Czy przełączanie tur jest szybkie i czytelne
+- Czy drag&drop dodawania uczestników jest intuicyjne
+- Czy wizualnie odróżniasz aktywnego uczestnika od reszty
+
+**Jak sprawdzić że działa:**
+- Dodaj 5+ uczestników (mix z Party Trackera i ręcznie)
+- Rzuć inicjatywę - kolejność powinna się posortować
+- Przełączaj tury - podświetlenie powinno się przesuwać
+- Zadaj damage - HP powinno się zmniejszyć
+- Ustaw HP na 0 - karta powinna być czerwona
+- Dodaj warunki (Stunned, Poisoned) - powinny być widoczne na karcie
+
+**Rezultat:** Działający combat tracker.
+
+**Integracje z innymi modułami:**
+- ← Party Tracker: postaci jako uczestnicy walki (drag&drop)
+- ← Bestiariusz: potwory jako uczestnicy (drag&drop)
+- → Mapa: przycisk "Załaduj na mapę" tworzy tokeny dla wszystkich
+- → LAN Sharing: kolejność inicjatywy widoczna dla graczy
+
+---
+
+## Faza 6: Udostępnianie LAN (Killer Feature)
+
+### Krok 6.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o systemie LAN sharing - to kluczowa funkcja mojej aplikacji. Omówmy:
+> - Architektura: lokalny HTTP server + WebSocket w Electron
+> - Jaką technologię (express + socket.io, fastify + ws, uWebSockets?)
+> - Co gracze widzą w przeglądarce: mapa, inicjatywa, statystyki postaci
+> - Co gracze mogą robić: przesuwać swój token? edytować swoje pola?
+> - DM kontroluje co jest widoczne i interaktywne (checkboxy/toggles)
+> - Czy dźwięk z Soundboarda streamować do graczy?
+> - Podgląd 'Widok Gracza' na canvasie DM-a
+> - Bezpieczeństwo: czy gracze mogą coś zepsuć?
+> - Synchronizacja w czasie rzeczywistym
+> - Responsywny interfejs dla graczy (mobile/tablet/desktop)
+> - Użyj wymagań R49-R52
+>
+> Dopytaj mnie o każdy aspekt."
+
+### Krok 6.1 - Implementacja serwera
+
+**Napisz do AI:**
+> "Poprowadź mnie krok po kroku w implementacji LAN sharing. Zaczynamy od serwera HTTP + WebSocket, potem prosty widok gracza, potem synchronizacja."
+
+**Na co zwrócić uwagę:**
+- Czy serwer startuje na konfigurowalnym porcie
+- Czy WebSocket reconnect działa gdy gracz straci połączenie
+- Czy zmiany DM-a są natychmiastowe u graczy
+
+**Jak sprawdzić że działa:**
+- Uruchom aplikację i serwer LAN
+- Otwórz URL w przeglądarce na tym samym komputerze
+- Otwórz URL na telefonie (ten sam WiFi)
+- Przesuń token na mapie - powinien się ruszyć u gracza
+- Odsłoń FoW - gracz powinien zobaczyć nowy fragment
+- Wyłącz widoczność mapy w ustawieniach - gracz nie powinien jej widzieć
+
+**Rezultat:** Gracze widzą mapę i info na swoich urządzeniach.
+
+**Integracje z innymi modułami:**
+- ← Mapa: widok mapy dla graczy (bez ukrytego FoW)
+- ← Combat Tracker: kolejność inicjatywy dla graczy
+- ← Party Tracker: statystyki postaci gracza
+- ← Soundboard: opcjonalny streaming audio
+
+---
+
+## Faza 7: Bestiariusz
+
+### Krok 7.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o Bestiariuszu - bibliotece potworów. Omówmy:
+> - Struktura danych potwora (customowe pola jak w Party Tracker vs stałe pola)
+> - Wyszukiwarka i filtrowanie po tagach
+> - Organizacja w foldery (drag&drop)
+> - Import JSON: jak mapować pola
+> - Drag&drop na mapę i do Combat Trackera
+> - Czy potwory są per kampania czy globalne?
+> - Sprawdź inspiracja/Bestriariusz.md jako referencję
+> - Użyj wymagań R32-R34
+>
+> Dopytaj mnie o szczegóły."
+
+### Krok 7.1 - Implementacja
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Bestiariusza na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Dodaj 5+ potworów z różnymi tagami
+- Wyszukaj po nazwie - filtrowanie powinno działać
+- Filtruj po tagach - powinny się wyświetlić tylko pasujące
+- Drag&drop potwora na mapę - powinien pojawić się token
+- Drag&drop do Combat Trackera - powinien dodać się jako uczestnik
+- Import JSON z listą potworów - powinny się pojawić w bibliotece
+
+**Rezultat:** Działający bestiariusz.
+
+**Integracje z innymi modułami:**
+- → Mapa: potwory jako tokeny (drag&drop)
+- → Combat Tracker: potwory jako uczestnicy walki (drag&drop)
+
+---
+
+## Faza 8: Notatnik
+
+### Krok 8.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o Notatniku - block editorze w stylu Notion. Omówmy:
+> - Jaka biblioteka (BlockNote, Tiptap, Editor.js, Plate?)
+> - Jakie bloki: tekst, H1-H3, listy, tabele, checkboxy, separator, code block
+> - Sidebar z drzewem plików i folderów
+> - Wyszukiwanie po tytule i treści
+> - Autozapis
+> - Jak przechowywać w SQLite (JSON?)
+> - Sprawdź inspiracja/notes.md jako referencję
+> - Użyj wymagań R35-R37
+>
+> Dopytaj mnie o szczegóły."
+
+### Krok 8.1 - Implementacja
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Notatnika na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Stwórz notatkę z różnymi blokami (tekst, nagłówek, lista, tabela)
+- Drag&drop przesuwanie bloków
+- Stwórz folder i przenieś do niego notatkę
+- Wyszukaj po treści - powinna znaleźć notatkę
+- Zamknij i otwórz - treść powinna się zachować (autozapis)
+
+**Rezultat:** Działający notatnik.
+
+---
+
+## Faza 9: Soundboard
+
+### Krok 9.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o Soundboard - panelu dźwięku. Omówmy:
+> - Jakie formaty audio wspierać (MP3, WAV, OGG)
+> - Layering: wiele tracków jednocześnie
+> - Wbudowane sample CC0 (deszcz, las, loch, bitwa, ogień, wiatr, rzeka, tawerna)
+> - UI: lista tracków, play/pause, volume, loop
+> - Master volume
+> - Wizualizacja audio (waveform? VU meter?)
+> - Web Audio API vs prosty HTML5 Audio
+> - Sprawdź inspiracja/sound.md jako referencję
+> - Użyj wymagań R38-R41
+>
+> Dopytaj mnie o szczegóły."
+
+### Krok 9.1 - Implementacja
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Soundboarda na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Importuj plik MP3 - powinien pojawić się na liście
+- Odtwórz 3 tracki jednocześnie - powinny się mieszać
+- Zmień volume jednego tracka - reszta bez zmian
+- Master volume powinien wpływać na wszystkie
+- Loop toggle - track powinien się zapętlać
+- Wbudowane sample powinny działać od razu
+
+**Rezultat:** Działający soundboard z ambientami.
+
+---
+
+## Faza 10: Kreator map
+
+### Krok 10.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o Kreatorze Map - osobnym widoku dostępnym z Huba. Omówmy:
+> - Dwa tryby: import obrazka + siatka ORAZ edytor kafelkowy
+> - Tryb import: jak nakładać siatkę, konfiguracja rozmiaru komórek
+> - Tryb kafelkowy: paleta tilesetów, malowanie, warstwy (teren, obiekty)
+> - Narzędzia: pędzel, gumka, fill, selekcja
+> - Zapisywanie do globalnej biblioteki (dostępne we wszystkich kampaniach)
+> - Eksport jako obraz
+> - Undo/redo
+> - Użyj wymagań R20-R22, R57
+> - Sprawdź inspiracja/map.md jako referencję
+>
+> Dopytaj mnie o szczegóły."
+
+### Krok 10.1 - Implementacja
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Kreatora Map na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Importuj obraz i nałóż siatkę kwadratową/hex
+- W edytorze kafelkowym: namaluj teren pędzlem
+- Fill tool powinien wypełnić obszar
+- Zapisz mapę - powinna pojawić się w globalnej bibliotece
+- Otwórz tę mapę w okienku Mapa Rozgrywki na canvasie
+
+**Rezultat:** Działający kreator map.
+
+---
+
+## Faza 11: Pozostałe moduły
+
+### Krok 11.1 - Generator pogody
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o Generatorze Pogody. Omówmy:
+> - Parametry: temperatura, zachmurzenie, siła/kierunek wiatru, wilgotność
+> - Algorytm analizy: jak generować opis pogody i klimat
+> - Wpływ na rozgrywkę: widoczność, komfort podróży
+> - Sprawdź inspiracja/world.md jako referencję
+> - Użyj wymagań R42-R43
+>
+> Dopytaj mnie o szczegóły."
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Generatora Pogody na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Ustaw parametry pogody - opis powinien się wygenerować
+- Ekstremalny parametr (np. -40°C + huragan) - powinien dać sensowny opis
+- Sprawdź czy sugerowany klimat pasuje do parametrów
+
+### Krok 11.2 - Tracker czasu
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o Trackerze Czasu. Omówmy:
+> - Zegar in-game: wizualizacja dnia/nocy (kolory: pomarańczowy dzień, fioletowy noc)
+> - Przyciski przesuwania czasu (+1 min, +10 min, +1h, +4h, +1 dzień, cofnij)
+> - Custom kalendarz: konfigurowalne nazwy miesięcy, długości, święta
+> - Timer sesji real-time (ile czasu gra trwa w realu)
+> - Sprawdź inspiracja/world.md jako referencję
+> - Użyj wymagań R44-R46
+>
+> Dopytaj mnie o szczegóły."
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Trackera Czasu na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Przesuń czas o +4h - wizualizacja dnia/nocy powinna się zmienić
+- Skonfiguruj custom kalendarz (np. 13 miesięcy)
+- Timer sesji: start, poczekaj minutę, sprawdź czy liczy
+
+### Krok 11.3 - Generator sklepów
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o Generatorze Sklepów. Omówmy:
+> - Parametry: typ sklepu, poziom cen, ekonomia miasta, rozmiar asortymentu
+> - Algorytm generowania przedmiotów
+> - Edycja wygenerowanego sklepu
+> - Import JSON z custom przedmiotami
+> - Sprawdź inspiracja/shop generator.md jako referencję
+> - Użyj wymagań R47-R48
+>
+> Dopytaj mnie o szczegóły."
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Generatora Sklepów na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Wygeneruj sklep typu "Smithy" - powinny być przedmioty kowalskie
+- Zmień ekonomię na "bogate miasto" - ceny powinny wzrosnąć
+- Edytuj wygenerowany sklep (dodaj/usuń przedmiot)
+- Import JSON z custom przedmiotami
+
+### Krok 11.4 - NPC Library + Generator
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o narzędziach NPC. Omówmy:
+> - NPC Library: baza NPC z wyszukiwaniem, tagami, folderami
+> - Pola NPC: nazwa, typ/rola, tagi, opis, notatki, custom fields
+> - NPC Generator: losowe generowanie (imię, rola, opis, wiek)
+> - Custom listy imion (import JSON)
+> - Zapis wygenerowanego NPC do biblioteki
+> - Sprawdź inspiracja/npc.md jako referencję
+>
+> Dopytaj mnie o szczegóły."
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji NPC Library i Generatora na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Dodaj NPC ręcznie z tagami i folderem
+- Wygeneruj losowego NPC - powinien mieć sensowne dane
+- Zapisz wygenerowanego NPC do biblioteki
+- Wyszukaj po nazwie i filtruj po tagach
+
+### Krok 11.5 - PDF Library
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o PDF Library - przeglądarka podręczników. Omówmy:
+> - Jak renderować PDF w Electron (pdf.js? embed?)
+> - Organizacja: foldery, wyszukiwanie
+> - Zakładki na ważne strony
+> - Wyszukiwanie tekstu w PDF
+> - Sprawdź inspiracja/library.md jako referencję
+>
+> Dopytaj mnie o szczegóły."
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji PDF Library na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Dodaj PDF do biblioteki
+- Otwórz i przewijaj strony
+- Dodaj zakładkę i wróć do niej
+- Wyszukaj tekst w PDF
+
+### Krok 11.6 - Roll Tables
+
+**Brainstorm z AI:**
+> "Porozmawiaj ze mną o Roll Tables - customowych tabelach losowych. Omówmy:
+> - Tworzenie tabeli: nazwa, lista wyników z wagami
+> - Rzucanie: losowy wynik z tabeli
+> - Tabele zagnieżdżone (wynik odwołuje się do innej tabeli?)
+> - Przykłady: losowe spotkania, skarby, imiona, pogoda
+>
+> Dopytaj mnie o szczegóły."
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Roll Tables na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Stwórz tabelę z 10 wynikami
+- Rzuć 20 razy - wyniki powinny być losowe i pasować do wag
+- Edytuj tabelę - zmiany powinny się zapisać
+
+### Krok 11.7 - Dice Roller (opcjonalny)
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji prostego Dice Rollera jako małego okienka na canvasie:
+> - Przyciski: d4, d6, d8, d10, d12, d20, d100
+> - Pole na formułę (np. 2d6+3)
+> - Animacja rzutu
+> - Historia ostatnich rzutów
+> - Użyj wymagania R53"
+
+**Jak sprawdzić że działa:**
+- Kliknij d20 - powinien wylosować 1-20
+- Wpisz "2d6+3" - wynik powinien być 5-15
+- Historia powinna zapisywać ostatnie rzuty
+
+---
+
+## Faza 12: Floating Utilities
+
+### Krok 12.0 - Brainstorm
+
+**Napisz do AI:**
+> "Porozmawiaj ze mną o Floating Utilities - małych narzędziach zawsze widocznych na ekranie (poza canvasem). Omówmy:
+> - Sticky Notes: szybkie notatki tymczasowe (nie to samo co Notatnik)
+> - Audio Recorder: nagrywanie sesji do pliku
+> - Timer: stoper/odliczanie widoczny na ekranie
+> - Pozycjonowanie: w którym rogu, jak chować/pokazywać
+> - Jak odróżnić od okienek na canvasie (nie ruszają się z canvasem)
+>
+> Dopytaj mnie o szczegóły."
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji Floating Utilities na podstawie naszych ustaleń."
+
+**Jak sprawdzić że działa:**
+- Sticky Notes: zapisz tekst, zamknij i otwórz - powinien przetrwać
+- Audio Recorder: nagraj 10s, odtwórz - powinno działać
+- Timer: start, pauza, reset - powinien liczyć poprawnie
+- Zoomuj canvas - utilities powinny stać w miejscu
+
+**Rezultat:** Działające floating utilities.
+
+---
+
+## Faza 13: Polish i build
+
+### Krok 13.1 - Animacje i UX
+
+**Napisz do AI:**
+> "Poprowadź mnie w dodaniu polishu do całej aplikacji:
+> - Płynne animacje otwierania/zamykania okienek (scale + fade)
+> - Hover efekty na przyciskach i kartach
+> - Animacje przejść między Hub a canvasem
+> - Loading states dla operacji async (ładowanie kampanii, import JSON)
+> - Error handling z przyjaznymi komunikatami
+> - Tooltips na ważnych przyciskach"
+
+**Jak sprawdzić że działa:**
+- Otwórz/zamknij okienko - animacja powinna być płynna (nie skokowa)
+- Najedź na przyciski - hover powinien być widoczny
+- Wywołaj błąd (np. zły JSON) - komunikat powinien być zrozumiały
+
+### Krok 13.2 - Eksport/Import kampanii
+
+**Napisz do AI:**
+> "Poprowadź mnie w implementacji eksportu i importu kampanii:
+> - Eksport: cała kampania jako jeden plik (ZIP? JSON? SQLite dump?)
+> - Import: wczytanie kampanii z pliku na innym komputerze
+> - Co uwzględnić: dane, ustawienia, pliki audio, obrazy
+>
+> Porozmawiaj ze mną o najlepszym formacie i podejściu."
+
+**Jak sprawdzić że działa:**
+- Eksportuj kampanię z danymi
+- Usuń kampanię z aplikacji
+- Importuj z pliku - powinna wrócić ze wszystkimi danymi
+
+### Krok 13.3 - Build i dystrybucja
+
+**Napisz do AI:**
+> "Poprowadź mnie w konfiguracji electron-builder do produkcyjnego builda:
+> - Linux: AppImage + deb
+> - Windows: NSIS installer + portable
+> - Ikona aplikacji
+> - Optymalizacja rozmiaru bundle
+> - Testy podstawowe: uruchomienie, tworzenie kampanii, otwieranie okienek"
+
+**Jak sprawdzić że działa:**
+- Zbuduj na Linux: `npm run build:linux` - powinien powstać AppImage
+- Uruchom AppImage - aplikacja powinna działać identycznie jak w dev
+- Stwórz kampanię w buildzie - dane powinny się zapisywać
+
+---
+
+## Podsumowanie kolejności
+
+| Faza | Co | Priorytet | Zależy od |
+|------|-----|-----------|-----------|
+| 0 | Środowisko + DB + Design System | Krytyczny | - |
+| 1 | Nieskończone płótno (Canvas) | Krytyczny | Faza 0 |
+| 2 | Menu wejściowe (Hub) | Krytyczny | Faza 0, 1 |
+| 3 | Party Tracker | Krytyczny | Faza 1 |
+| 4 | Mapa rozgrywki + FoW | Krytyczny | Faza 1 |
+| 5 | Combat Tracker | Krytyczny | Faza 1, 3 |
+| 6 | LAN Sharing | Krytyczny | Faza 4, 5 |
+| 7 | Bestiariusz | Wysoki | Faza 1, 5 |
+| 8 | Notatnik | Wysoki | Faza 1 |
+| 9 | Soundboard | Średni | Faza 1 |
+| 10 | Kreator map | Średni | Faza 2, 4 |
+| 11 | Pogoda, Czas, Sklep, NPC, PDF, Roll Tables, Dice | Średni | Faza 1 |
+| 12 | Floating Utilities | Średni | Faza 0 |
+| 13 | Polish + Build + Eksport/Import | Krytyczny | Wszystkie |
+
+## Diagram zależności
+
+```mermaid
+graph TD
+    F0[Faza 0: Środowisko + DB + Design] --> F1[Faza 1: Canvas]
+    F0 --> F12[Faza 12: Floating Utilities]
+    F1 --> F2[Faza 2: Hub]
+    F1 --> F3[Faza 3: Party Tracker]
+    F1 --> F4[Faza 4: Mapa]
+    F1 --> F5[Faza 5: Combat Tracker]
+    F3 --> F5
+    F4 --> F6[Faza 6: LAN Sharing]
+    F5 --> F6
+    F1 --> F7[Faza 7: Bestiariusz]
+    F5 --> F7
+    F1 --> F8[Faza 8: Notatnik]
+    F1 --> F9[Faza 9: Soundboard]
+    F2 --> F10[Faza 10: Kreator Map]
+    F4 --> F10
+    F1 --> F11[Faza 11: Pozostałe moduły]
+    F1 --> F13[Faza 13: Polish + Build]
+    F6 --> F13
+    F11 --> F13
+```
+
+---
+
+## Wskazówki
+
+1. **Przed każdą fazą** przeprowadź brainstorm z AI - nie pomijaj tego kroku
+2. **Po każdej fazie** testuj ręcznie czy wszystko działa razem
+3. **Przed każdą fazą** przeczytaj odpowiedni plik z folderu `inspiracja/` jako dodatkową referencję
+4. **Dokument wymagań** (`docs/brainstorms/2026-05-13-game-master-panel-requirements.md`) zawsze dołączaj do kontekstu rozmowy z AI
+5. **Jeśli coś nie działa** - opisz AI dokładnie co się dzieje, wklej błędy, i poproś o pomoc w naprawie
+6. **Każdą fazę** można dalej uszczegółowić w osobnym brainstormie z AI zanim zaczniesz implementację
+7. **Integracje** między modułami testuj jak tylko oba moduły są gotowe - nie czekaj do końca

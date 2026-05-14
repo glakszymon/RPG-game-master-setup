@@ -1,0 +1,164 @@
+/*
+ * Design Tokens — Game Master Panel
+ *
+ * Wszystkie wartości wizualne zdefiniowane w jednym pliku.
+ * Komponenty używają tych zmiennych zamiast hardkodowanych wartości.
+ * Zmiana tutaj = zmiana w całej aplikacji.
+ */
+
+:root {
+  /* ───────────────────────────────────────────
+   * KOLORY — Tła
+   * ─────────────────────────────────────────── */
+  --color-bg-base: #0f1117;
+  --color-bg-surface: rgba(255, 255, 255, 0.05);
+  --color-bg-elevated: rgba(255, 255, 255, 0.08);
+  --color-bg-overlay: rgba(0, 0, 0, 0.6);
+  --color-bg-hover: rgba(255, 255, 255, 0.03);
+
+  /* ───────────────────────────────────────────
+   * KOLORY — Accent (blady złoty / stare złoto)
+   * ─────────────────────────────────────────── */
+  --color-accent: #c9b06b;
+  --color-accent-hover: #d4be7e;
+  --color-accent-active: #b89d5a;
+  --color-accent-muted: rgba(201, 176, 107, 0.15);
+  --color-accent-border: rgba(201, 176, 107, 0.3);
+
+  /* ───────────────────────────────────────────
+   * KOLORY — Tekst
+   * ─────────────────────────────────────────── */
+  --color-text-primary: #e8e6e3;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-text-accent: var(--color-accent);
+  --color-text-inverse: #0f1117;
+
+  /* ───────────────────────────────────────────
+   * KOLORY — Semantyczne
+   * ─────────────────────────────────────────── */
+  --color-success: #4ade80;
+  --color-success-muted: rgba(74, 222, 128, 0.15);
+  --color-error: #f87171;
+  --color-error-muted: rgba(248, 113, 113, 0.15);
+  --color-warning: #fbbf24;
+  --color-warning-muted: rgba(251, 191, 36, 0.15);
+  --color-info: #60a5fa;
+  --color-info-muted: rgba(96, 165, 250, 0.15);
+
+  /* ───────────────────────────────────────────
+   * KOLORY — Obramowania
+   * ─────────────────────────────────────────── */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.15);
+  --color-border-focus: var(--color-accent);
+
+  /* ───────────────────────────────────────────
+   * TYPOGRAFIA — Fonty
+   *
+   * Exo 2: body text — czytelny geometric sans-serif z tech klimatem
+   * Michroma: headingi — uppercase-friendly, dashboard/command center feel
+   * JetBrains Mono: kod — monospace
+   * ─────────────────────────────────────────── */
+  --font-body: 'Exo 2', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Michroma', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code',
+    monospace;
+
+  /* ───────────────────────────────────────────
+   * TYPOGRAFIA — Rozmiary (rem-based, 1rem = 16px)
+   * ─────────────────────────────────────────── */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 1.875rem;   /* 30px */
+  --text-4xl: 2.25rem;    /* 36px */
+
+  /* ───────────────────────────────────────────
+   * TYPOGRAFIA — Wagi
+   * ─────────────────────────────────────────── */
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* ───────────────────────────────────────────
+   * TYPOGRAFIA — Line heights
+   * ─────────────────────────────────────────── */
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  /* ───────────────────────────────────────────
+   * SPACING — Skala 4px
+   *
+   * Spójny system odstępów. Używaj tych zamiast
+   * losowych wartości px.
+   * ─────────────────────────────────────────── */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ───────────────────────────────────────────
+   * BORDER RADIUS
+   * ─────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ───────────────────────────────────────────
+   * GLASSMORPHISM
+   *
+   * Surface = karty, panele (delikatny)
+   * Elevated = modale, dropdowny (mocniejszy)
+   * ─────────────────────────────────────────── */
+  --glass-bg-surface: rgba(255, 255, 255, 0.05);
+  --glass-bg-elevated: rgba(255, 255, 255, 0.08);
+  --glass-blur-surface: blur(12px);
+  --glass-blur-elevated: blur(20px);
+  --glass-border: 1px solid var(--color-border);
+
+  /* ───────────────────────────────────────────
+   * CIENIE
+   * ─────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow-accent: 0 0 20px rgba(201, 176, 107, 0.15);
+
+  /* ───────────────────────────────────────────
+   * ANIMACJE
+   *
+   * Duracje i easing dla transitions.
+   * fast = hover/focus, normal = otwieranie paneli,
+   * slow = modalne animacje
+   * ─────────────────────────────────────────── */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 350ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ───────────────────────────────────────────
+   * Z-INDEX — warstwy
+   * ─────────────────────────────────────────── */
+  --z-base: 0;
+  --z-tool-window: 10;
+  --z-tool-window-active: 20;
+  --z-overlay: 100;
+  --z-modal: 200;
+  --z-tooltip: 300;
+}

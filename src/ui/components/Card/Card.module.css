@@ -1,0 +1,52 @@
+/*
+ * Card — glassmorphism surface
+ *
+ * Warianty:
+ *   surface  — domyślny, subtelny glass
+ *   elevated — mocniejszy blur, dropdowny, flyouty
+ *
+ * Opcjonalnie: hover glow z accent colorem
+ */
+
+.card {
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition:
+    border-color var(--duration-fast) var(--easing-default),
+    box-shadow var(--duration-normal) var(--easing-default);
+}
+
+/* ── Surface (domyślny) ── */
+
+.surface {
+  background: var(--glass-bg-surface);
+  backdrop-filter: var(--glass-blur-surface);
+  border: 1px solid var(--color-border);
+}
+
+/* ── Elevated (modale, dropdowny) ── */
+
+.elevated {
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--glass-blur-elevated);
+  border: 1px solid var(--color-border-hover);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── Interactive: hover efekt ── */
+
+.interactive {
+  cursor: pointer;
+}
+
+.interactive:hover {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--shadow-glow-accent);
+}
+
+/* ── Glow: stały accent border (np. aktywne okno) ── */
+
+.glow {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--shadow-glow-accent);
+}

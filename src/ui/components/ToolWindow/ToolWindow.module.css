@@ -1,0 +1,133 @@
+/*
+ * ToolWindow — draggable panel na canvasie
+ *
+ * Glassmorphism surface z nagłówkiem (title bar),
+ * przyciskami minimize/close, i opcjonalnym glow.
+ *
+ * Drag/resize logika będzie dodana przy implementacji canvasa.
+ * Ten komponent odpowiada za wygląd.
+ */
+
+.window {
+  display: flex;
+  flex-direction: column;
+  background: var(--glass-bg-surface);
+  backdrop-filter: var(--glass-blur-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  min-width: 280px;
+
+  transition:
+    border-color var(--duration-fast) var(--easing-default),
+    box-shadow var(--duration-fast) var(--easing-default);
+
+  /* Animacja otwarcia */
+  animation: windowOpen var(--duration-normal) var(--easing-default);
+}
+
+@keyframes windowOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Aktywne okno — accent glow */
+.active {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--shadow-glow-accent);
+  z-index: var(--z-tool-window-active);
+}
+
+/* ── Title bar ── */
+
+.titleBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  /* Draggable area — cursor grab */
+  cursor: grab;
+  /* Zapobiega zaznaczaniu tekstu podczas drag */
+  user-select: none;
+}
+
+.titleBar:active {
+  cursor: grabbing;
+}
+
+.titleIcon {
+  display: flex;
+  align-items: center;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.controlButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--easing-default),
+    color var(--duration-fast) var(--easing-default);
+}
+
+.controlButton:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.controlButtonClose:hover {
+  background: var(--color-error-muted);
+  color: var(--color-error);
+}
+
+/* ── Body ── */
+
+.body {
+  flex: 1;
+  padding: var(--space-3);
+  overflow-y: auto;
+}
+
+/* ── Minimized state ── */
+
+.minimized .body {
+  display: none;
+}
+
+.minimized {
+  min-width: auto;
+}

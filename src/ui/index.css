@@ -1,0 +1,169 @@
+/*
+ * Global Styles — Game Master Panel
+ *
+ * 1. Import tokenów
+ * 2. CSS Reset (minimalistyczny)
+ * 3. Bazowa typografia
+ * 4. Utility klasy
+ *
+ * Fonty Inter i Playfair Display ładowane w index.html z Google Fonts.
+ */
+
+@import './styles/tokens.css';
+
+/* ───────────────────────────────────────────
+ * CSS RESET
+ *
+ * Minimalistyczny reset — usuwamy domyślne marginesy,
+ * ustawiamy box-sizing, normalizujemy podstawy.
+ * ─────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* 1rem = 16px */
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: var(--font-regular);
+  line-height: var(--leading-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-base);
+
+  /* Electron — nie chcemy text selection na UI */
+  -webkit-user-select: none;
+  user-select: none;
+
+  /* Pełny viewport */
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Pozwalamy na zaznaczanie tekstu w inputach i edytowalnych elementach */
+input,
+textarea,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ───────────────────────────────────────────
+ * TYPOGRAFIA
+ * ─────────────────────────────────────────── */
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  color: var(--color-text-primary);
+  line-height: var(--leading-tight);
+  /* Michroma ma jedną wagę — hierarchię budujemy rozmiarem i spacją */
+  font-weight: var(--font-regular);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+h1 {
+  font-size: var(--text-4xl);
+  letter-spacing: 0.08em;
+}
+
+h2 {
+  font-size: var(--text-2xl);
+  letter-spacing: 0.06em;
+}
+
+h3 {
+  font-size: var(--text-xl);
+}
+
+h4 {
+  font-size: var(--text-lg);
+}
+
+p {
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+small {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-elevated);
+  color: var(--color-accent);
+}
+
+a {
+  color: var(--color-text-accent);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--easing-default);
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+/* ───────────────────────────────────────────
+ * FOCUS
+ *
+ * Wspólny styl focus-visible dla accessibility.
+ * Używamy accent color ring.
+ * ─────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ───────────────────────────────────────────
+ * SCROLLBAR — Custom dark scrollbar
+ * ─────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ───────────────────────────────────────────
+ * ROOT CONTAINER
+ * ─────────────────────────────────────────── */
+
+#root {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,18 @@
+{
+    "appId": "com.szymon.game_master_panel",
+    "icon": "assets/icon",
+    "files": [
+        "dist-electron",
+        "dist-react"
+    ],
+    "mac": {
+        "target": "dmg"
+    },
+    "linux": {
+        "target": "AppImage",
+        "category": "Utility"
+    },
+    "win": {
+        "target": ["portable", "msi"]
+    }
+}

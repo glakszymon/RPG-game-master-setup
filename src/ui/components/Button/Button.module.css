@@ -1,0 +1,150 @@
+/*
+ * Button — warianty i rozmiary
+ *
+ * Warianty:
+ *   primary  — złoty accent, główne akcje (Zapisz, Stwórz)
+ *   secondary — przezroczyste tło z borderem, drugorzędne akcje
+ *   ghost    — bez tła i borderu, minimalistyczny (ikony, toolbary)
+ *   danger   — czerwony, destrukcyjne akcje (Usuń)
+ *
+ * Rozmiary:
+ *   sm — kompaktowy (toolbary, tagi)
+ *   md — domyślny
+ *   lg — duże CTA
+ *
+ * Icon-only: dodaj className iconOnly do props
+ */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--easing-default),
+    border-color var(--duration-fast) var(--easing-default),
+    color var(--duration-fast) var(--easing-default),
+    box-shadow var(--duration-fast) var(--easing-default),
+    opacity var(--duration-fast) var(--easing-default);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Rozmiary ── */
+
+.sm {
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-3);
+  height: 32px;
+}
+
+.md {
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  height: 36px;
+}
+
+.lg {
+  font-size: var(--text-base);
+  padding: var(--space-3) var(--space-6);
+  height: 44px;
+}
+
+/* ── Icon-only ── */
+
+.iconOnly {
+  padding: 0;
+}
+
+.iconOnly.sm {
+  width: 32px;
+}
+
+.iconOnly.md {
+  width: 36px;
+}
+
+.iconOnly.lg {
+  width: 44px;
+}
+
+/* ── Primary: złoty accent ── */
+
+.primary {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  border-color: var(--color-accent);
+}
+
+.primary:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.primary:active {
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+}
+
+/* ── Secondary: przezroczysty z borderem ── */
+
+.secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.secondary:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-hover);
+}
+
+.secondary:active {
+  background: var(--color-bg-surface);
+}
+
+/* ── Ghost: bez tła ── */
+
+.ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-color: transparent;
+}
+
+.ghost:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.ghost:active {
+  background: var(--color-bg-surface);
+}
+
+/* ── Danger: czerwony ── */
+
+.danger {
+  background: var(--color-error-muted);
+  color: var(--color-error);
+  border-color: transparent;
+}
+
+.danger:hover {
+  background: var(--color-error);
+  color: var(--color-text-primary);
+}
+
+.danger:active {
+  background: #dc2626;
+  color: var(--color-text-primary);
+}
