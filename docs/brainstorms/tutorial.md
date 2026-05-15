@@ -779,26 +779,34 @@ Pliki modułu:
 - Ekstremalny parametr (np. -40°C + huragan) - powinien dać sensowny opis
 - Sprawdź czy sugerowany klimat pasuje do parametrów
 
-### Krok 11.2 - Tracker czasu
+### Krok 11.2 - Tracker czasu ✅ BRAINSTORM ZAKOŃCZONY
 
-**Brainstorm z AI:**
-> "Porozmawiaj ze mną o Trackerze Czasu. Omówmy:
-> - Zegar in-game: wizualizacja dnia/nocy (kolory: pomarańczowy dzień, fioletowy noc)
-> - Przyciski przesuwania czasu (+1 min, +10 min, +1h, +4h, +1 dzień, cofnij)
-> - Custom kalendarz: konfigurowalne nazwy miesięcy, długości, święta
-> - Timer sesji real-time (ile czasu gra trwa w realu)
-> - Sprawdź inspiracja/world.md jako referencję
-> - Użyj wymagań R44-R46
->
-> Dopytaj mnie o szczegóły."
+**Dokumenty:**
+- Requirements: `docs/brainstorms/2026-05-15-time-tracker-requirements.md`
+- Plan: `docs/plans/2026-05-15-006-feat-time-tracker-clock-calendar-timers-plan.md`
 
-**Napisz do AI:**
-> "Poprowadź mnie w implementacji Trackera Czasu na podstawie naszych ustaleń."
+**Kluczowe ustalenia z brainstormu:**
+- **3 osobne okna** na canvasie: Zegar In-Game (`time-clock`), Kalendarz (`time-calendar`), Timer Sesji (`time-session-timer`)
+- **Współdzielony stan czasu** na poziomie kampanii (`CampaignTimeState` w `CanvasState`) — nie per-window `toolState`
+- **Zegar:** duży łuk nieba 180° ze słońcem/księżycem, gradient pomarańczowy/fioletowy, konfigurowalne godziny świtu/zmierzchu, stałe przyciski (+/-1min, 10min, 1h, 4h, 1 dzień) + custom, modal ustawień
+- **Kalendarz:** siatka miesięczna, tryb Prosty lub Rozbudowany (z księżycem + solstice), konfigurowalne tygodnie + miesiące + święta (kropka + tooltip), preset "Real-world" jako domyślny
+- **Timer Sesji:** stoper sesji jako część listy timerów, custom timery (real-time lub in-game, up/down), countdown do 0 = czerwony + pulsacja + dźwięk, timery in-game tykają tylko z zegarem (w tym cofanie)
+- **Synchronizacja:** przekroczenie północy auto-przesuwa datę, cofanie symetryczne, stan niezależny od otwartych okien
+
+**Architektura (z planu):**
+- Nowe `timeState` pole w `CanvasState` (nie nowa tabela DB)
+- `UPDATE_TIME_STATE` action w canvas reducer
+- Timestamp-based real-time timery (przeżywają restart aplikacji)
+- Undo/redo integracja za darmo przez istniejący `useUndoRedo`
+- 3 fazy implementacji: Foundation+Clock → Calendar → Session Timer
 
 **Jak sprawdzić że działa:**
-- Przesuń czas o +4h - wizualizacja dnia/nocy powinna się zmienić
-- Skonfiguruj custom kalendarz (np. 13 miesięcy)
+- Przesuń czas o +4h — łuk nieba powinien się zmienić (słońce→księżyc)
+- Przekrocz północ — data w kalendarzu powinna się przesunąć automatycznie
+- Skonfiguruj custom kalendarz (np. 13 miesięcy, 6-dniowy tydzień)
 - Timer sesji: start, poczekaj minutę, sprawdź czy liczy
+- Stwórz countdown timer in-game, przesuń zegar — timer powinien odliczyć
+- Cofnij czas — timer in-game powinien się cofnąć symetrycznie
 
 ### Krok 11.3 - Generator sklepów
 
