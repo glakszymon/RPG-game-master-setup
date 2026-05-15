@@ -7,6 +7,9 @@ import {
   saveCanvasState, loadCanvasState,
   savePreset, loadPresets, deletePreset, renamePreset,
   createCampaign, listCampaigns, updateCampaign, updateCampaignStatus, deleteCampaign, touchCampaignSession,
+  listBestiaryTemplates, saveBestiaryTemplate, deleteBestiaryTemplate,
+  listBestiaryFolders, saveBestiaryFolder, deleteBestiaryFolder,
+  listBestiaryInstances, saveBestiaryInstance, deleteBestiaryInstance,
 } from './database.js';
 
 app.on('ready', async () => {
@@ -113,5 +116,43 @@ app.on('ready', async () => {
     } catch {
       return null;
     }
+  });
+
+  // ── Bestiary IPC handlers ──
+
+  ipcMain.handle('bestiary:list-templates', () => {
+    try { return listBestiaryTemplates(); } catch { return []; }
+  });
+
+  ipcMain.handle('bestiary:save-template', (_event, dataJson: string) => {
+    try { saveBestiaryTemplate(dataJson); return { ok: true }; } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:delete-template', (_event, id: string) => {
+    try { deleteBestiaryTemplate(id); return { ok: true }; } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:list-folders', () => {
+    try { return listBestiaryFolders(); } catch { return []; }
+  });
+
+  ipcMain.handle('bestiary:save-folder', (_event, id: string, parentId: string | null, name: string, sortOrder: number) => {
+    try { saveBestiaryFolder(id, parentId, name, sortOrder); return { ok: true }; } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:delete-folder', (_event, id: string) => {
+    try { deleteBestiaryFolder(id); return { ok: true }; } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:list-instances', () => {
+    try { return listBestiaryInstances(); } catch { return []; }
+  });
+
+  ipcMain.handle('bestiary:save-instance', (_event, id: string, folderId: string, templateId: string | null, instanceName: string | null, overrides: string, sortOrder: number) => {
+    try { saveBestiaryInstance(id, folderId, templateId, instanceName, overrides, sortOrder); return { ok: true }; } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:delete-instance', (_event, id: string) => {
+    try { deleteBestiaryInstance(id); return { ok: true }; } catch { return null; }
   });
 });

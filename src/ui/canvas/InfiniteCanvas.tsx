@@ -28,6 +28,8 @@ import type { PartyTrackerState } from '../tools/party-tracker';
 import styles from './InfiniteCanvas.module.css';
 import type { MapDisplayState } from '../tools/map-display/types';
 import { MapDisplay } from '../tools/map-display/MapDisplay';
+import { Bestiary, EncounterSets } from '../tools/bestiary';
+import type { BestiaryToolState, EncounterSetsToolState } from '../tools/bestiary';
 import { TimeClock } from '../tools/time-clock';
 import { TimeCalendar } from '../tools/time-calendar';
 import { TimeSessionTimer, PinnedTimers } from '../tools/time-session-timer';
@@ -77,6 +79,24 @@ const ToolContent = memo(function ToolContent({
         campaignId={campaignId}
       />
     );
+
+    case 'bestiary':
+      return (
+        <Bestiary
+          toolState={toolState as BestiaryToolState | undefined}
+          onToolStateChange={onToolStateChange}
+          campaignId={campaignId}
+        />
+      );
+
+    case 'encounter-sets':
+      return (
+        <EncounterSets
+          toolState={toolState as EncounterSetsToolState | undefined}
+          onToolStateChange={onToolStateChange}
+          campaignId={campaignId}
+        />
+      );
 
     case 'time-clock':
       return (

@@ -6,6 +6,7 @@ export type ToolType =
   | 'combat-tracker'
   | 'party-tracker'
   | 'bestiary'
+  | 'encounter-sets'
   | 'notepad'
   | 'map-display'
   | 'soundboard'
@@ -70,6 +71,7 @@ export const TOOL_MIN_SIZES: Record<ToolType, { minWidth: number; minHeight: num
   'combat-tracker': { minWidth: 400, minHeight: 300 },
   'party-tracker': { minWidth: 450, minHeight: 350 },
   'bestiary': { minWidth: 350, minHeight: 300 },
+  'encounter-sets': { minWidth: 500, minHeight: 350 },
   'notepad': { minWidth: 300, minHeight: 250 },
   'map-display': { minWidth: 400, minHeight: 400 },
   'soundboard': { minWidth: 350, minHeight: 250 },
@@ -86,6 +88,7 @@ export const TOOL_DEFAULT_SIZES: Record<ToolType, { width: number; height: numbe
   'combat-tracker': { width: 500, height: 400 },
   'party-tracker': { width: 550, height: 400 },
   'bestiary': { width: 450, height: 400 },
+  'encounter-sets': { width: 600, height: 500 },
   'notepad': { width: 400, height: 350 },
   'map-display': { width: 600, height: 500 },
   'soundboard': { width: 400, height: 300 },
@@ -102,6 +105,7 @@ export const TOOL_INFO: Record<ToolType, { name: string; icon: string }> = {
   'combat-tracker': { name: 'Combat Tracker', icon: '⚔️' },
   'party-tracker': { name: 'Party Tracker', icon: '👥' },
   'bestiary': { name: 'Bestiary', icon: '🐉' },
+  'encounter-sets': { name: 'Encounter Sets', icon: '⚔️' },
   'notepad': { name: 'Notepad', icon: '📝' },
   'map-display': { name: 'Map Display', icon: '🗺️' },
   'soundboard': { name: 'Soundboard', icon: '🔊' },
@@ -117,7 +121,7 @@ export const TOOL_INFO: Record<ToolType, { name: string; icon: string }> = {
 export const TOOL_CATEGORIES = [
   {
     label: 'Combat Tools',
-    tools: ['combat-tracker', 'dice-roller'] as ToolType[],
+    tools: ['combat-tracker', 'encounter-sets', 'dice-roller'] as ToolType[],
   },
   {
     label: 'Party & NPCs',

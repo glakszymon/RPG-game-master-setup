@@ -70,6 +70,57 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  // ── Bestiary tables ──
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS bestiary_templates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      creature_type TEXT,
+      cr TEXT,
+      hp_formula TEXT,
+      hp_default INTEGER,
+      ac INTEGER,
+      speed TEXT,
+      ability_scores TEXT,
+      saving_throws TEXT,
+      actions TEXT,
+      actions_mode TEXT NOT NULL DEFAULT 'structured',
+      actions_text TEXT NOT NULL DEFAULT '',
+      traits TEXT,
+      custom_fields TEXT,
+      tags TEXT,
+      avatar_path TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS bestiary_folders (
+      id TEXT PRIMARY KEY,
+      parent_id TEXT,
+      name TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (parent_id) REFERENCES bestiary_folders(id) ON DELETE CASCADE
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS bestiary_instances (
+      id TEXT PRIMARY KEY,
+      folder_id TEXT NOT NULL,
+      template_id TEXT,
+      instance_name TEXT,
+      overrides TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (folder_id) REFERENCES bestiary_folders(id) ON DELETE CASCADE,
+      FOREIGN KEY (template_id) REFERENCES bestiary_templates(id) ON DELETE SET NULL
+    );
+  `);
+
   persist();
 }
 
@@ -271,5 +322,196 @@ export function touchCampaignSession(id: string): void {
   if (!db) throw new Error('Database not initialized');
 
   db.run('UPDATE campaigns SET last_session_at = datetime(\'now\') WHERE id = ?', [id]);
+  persist();
+}
+
+// ── Bestiary Templates ──
+
+export interface BestiaryTemplateRow {
+  id: string;
+  name: string;
+  creature_type: string | null;
+  cr: string | null;
+  hp_formula: string | null;
+  hp_default: number | null;
+  ac: number | null;
+  speed: string | null;
+  ability_scores: string | null;
+  saving_throws: string | null;
+  actions: string | null;
+  actions_mode: string;
+  actions_text: string;
+  traits: string | null;
+  custom_fields: string | null;
+  tags: string | null;
+  avatar_path: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function listBestiaryTemplates(): BestiaryTemplateRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = db.exec(
+    'SELECT id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, created_at, updated_at FROM bestiary_templates ORDER BY name ASC',
+  );
+
+  if (result.length === 0) return [];
+
+  return result[0].values.map(([id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, created_at, updated_at]) => ({
+    id: id as string,
+    name: name as string,
+    creature_type: creature_type as string | null,
+    cr: cr as string | null,
+    hp_formula: hp_formula as string | null,
+    hp_default: hp_default as number | null,
+    ac: ac as number | null,
+    speed: speed as string | null,
+    ability_scores: ability_scores as string | null,
+    saving_throws: saving_throws as string | null,
+    actions: actions as string | null,
+    actions_mode: (actions_mode ?? 'structured') as string,
+    actions_text: (actions_text ?? '') as string,
+    traits: traits as string | null,
+    custom_fields: custom_fields as string | null,
+    tags: tags as string | null,
+    avatar_path: avatar_path as string | null,
+    created_at: created_at as string,
+    updated_at: updated_at as string,
+  }));
+}
+
+export function saveBestiaryTemplate(dataJson: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  const t = JSON.parse(dataJson);
+  db.run(
+    `INSERT INTO bestiary_templates (id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET
+       name = excluded.name, creature_type = excluded.creature_type, cr = excluded.cr,
+       hp_formula = excluded.hp_formula, hp_default = excluded.hp_default, ac = excluded.ac,
+       speed = excluded.speed, ability_scores = excluded.ability_scores, saving_throws = excluded.saving_throws,
+       actions = excluded.actions, actions_mode = excluded.actions_mode, actions_text = excluded.actions_text,
+       traits = excluded.traits, custom_fields = excluded.custom_fields, tags = excluded.tags,
+       avatar_path = excluded.avatar_path, updated_at = datetime('now')`,
+    [
+      t.id, t.name, t.creatureType ?? null, t.cr ?? null,
+      t.hpFormula ?? null, t.hpDefault ?? null, t.ac ?? null,
+      JSON.stringify(t.speed ?? {}), JSON.stringify(t.abilityScores),
+      JSON.stringify(t.savingThrows), JSON.stringify(t.actions ?? []),
+      t.actionsMode ?? 'structured', t.actionsText ?? '',
+      JSON.stringify(t.traits ?? []), JSON.stringify(t.customFields ?? []),
+      JSON.stringify(t.tags ?? []), t.avatarPath ?? null, t.createdAt ?? new Date().toISOString(),
+    ],
+  );
+
+  persist();
+}
+
+export function deleteBestiaryTemplate(id: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM bestiary_templates WHERE id = ?', [id]);
+  persist();
+}
+
+// ── Bestiary Folders ──
+
+export interface BestiaryFolderRow {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export function listBestiaryFolders(): BestiaryFolderRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = db.exec(
+    'SELECT id, parent_id, name, sort_order, created_at FROM bestiary_folders ORDER BY sort_order ASC',
+  );
+
+  if (result.length === 0) return [];
+
+  return result[0].values.map(([id, parent_id, name, sort_order, created_at]) => ({
+    id: id as string,
+    parent_id: parent_id as string | null,
+    name: name as string,
+    sort_order: sort_order as number,
+    created_at: created_at as string,
+  }));
+}
+
+export function saveBestiaryFolder(id: string, parentId: string | null, name: string, sortOrder: number): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT INTO bestiary_folders (id, parent_id, name, sort_order)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET parent_id = excluded.parent_id, name = excluded.name, sort_order = excluded.sort_order`,
+    [id, parentId, name, sortOrder],
+  );
+
+  persist();
+}
+
+export function deleteBestiaryFolder(id: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM bestiary_folders WHERE id = ?', [id]);
+  persist();
+}
+
+// ── Bestiary Instances ──
+
+export interface BestiaryInstanceRow {
+  id: string;
+  folder_id: string;
+  template_id: string | null;
+  instance_name: string | null;
+  overrides: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export function listBestiaryInstances(): BestiaryInstanceRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = db.exec(
+    'SELECT id, folder_id, template_id, instance_name, overrides, sort_order, created_at FROM bestiary_instances ORDER BY sort_order ASC',
+  );
+
+  if (result.length === 0) return [];
+
+  return result[0].values.map(([id, folder_id, template_id, instance_name, overrides, sort_order, created_at]) => ({
+    id: id as string,
+    folder_id: folder_id as string,
+    template_id: template_id as string | null,
+    instance_name: instance_name as string | null,
+    overrides: overrides as string | null,
+    sort_order: sort_order as number,
+    created_at: created_at as string,
+  }));
+}
+
+export function saveBestiaryInstance(id: string, folderId: string, templateId: string | null, instanceName: string | null, overrides: string, sortOrder: number): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT INTO bestiary_instances (id, folder_id, template_id, instance_name, overrides, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET folder_id = excluded.folder_id, template_id = excluded.template_id, instance_name = excluded.instance_name, overrides = excluded.overrides, sort_order = excluded.sort_order`,
+    [id, folderId, templateId, instanceName, overrides, sortOrder],
+  );
+
+  persist();
+}
+
+export function deleteBestiaryInstance(id: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM bestiary_instances WHERE id = ?', [id]);
   persist();
 }

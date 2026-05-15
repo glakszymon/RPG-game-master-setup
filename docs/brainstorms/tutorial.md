@@ -617,41 +617,65 @@ Pliki modułu:
 
 ---
 
-## Faza 7: Bestiariusz
+## Faza 7: Bestiariusz ✅ BRAINSTORM ZAKOŃCZONY
 
 ### Krok 7.0 - Brainstorm
 
-**Napisz do AI:**
-> "Porozmawiaj ze mną o Bestiariuszu - bibliotece potworów. Omówmy:
-> - Struktura danych potwora (customowe pola jak w Party Tracker vs stałe pola)
-> - Wyszukiwarka i filtrowanie po tagach
-> - Organizacja w foldery (drag&drop)
-> - Import JSON: jak mapować pola
-> - Drag&drop na mapę i do Combat Trackera
-> - Czy potwory są per kampania czy globalne?
-> - Sprawdź inspiracja/Bestriariusz.md jako referencję
-> - Użyj wymagań R32-R34
->
-> Dopytaj mnie o szczegóły."
+**Dokument wymagań:** `docs/brainstorms/2026-05-15-bestiary-requirements.md`
+**Plan implementacji:** `docs/plans/2026-05-15-008-feat-bestiary-creature-library-encounter-sets-plan.md`
+
+**Podjęte decyzje:**
+
+| Aspekt | Decyzja |
+|--------|---------|
+| Architektura | Dwu-panelowy layout: Library (lista+search) / Sets (drzewko) + prawy panel szczegółów |
+| Dane | Szablon (template) + instancja (instance) z lazy propagation |
+| Propagacja | Instancja przechowuje tylko nadpisane pola; render merguje template + overrides |
+| Hierarchia | Adjacency list (parent_id) w SQLite, drzewko budowane w JS |
+| Głębokość | Nieograniczona (user decyduje o strukturze) |
+| Statystyki | D&D 5e (HP, AC, abilities, CR, speed, actions, traits) + custom fields (klucz-wartość) |
+| CR | Przechowywany jako TEXT (obsługa frakcji: "1/4", "1/2") |
+| Akcje/Ataki | Hybrid — strukturyzowane (nazwa, to-hit, damage) z opcją free-text |
+| Wymagane pola | Tylko nazwa — reszta opcjonalna |
+| Awatar | Custom image upload + fallback na emoji typu (🐻 beast, 💀 undead, 🧑 humanoid) |
+| Kolorowanie | Auto kolor wg CR w drzewku (zielony/żółty/czerwony) |
+| Usuwanie szablonu | Osierocenie instancji (ON DELETE SET NULL) — zachowują dane, tracą link |
+| Tworzenie folderów | Context menu (prawy klik) |
+| Dodawanie do zestawu | Drag z biblioteki do folderu w drzewku |
+| Reorganizacja | Drag & drop wewnątrz drzewka |
+| Integracja z mapą | Drag & drop instancji → MapDropPayload (type: 'bestiary-creature') |
+| Scope globalny | Jedna biblioteka na aplikację (nie per kampania) |
+| Masowe operacje | Brak na start |
+| Import | Brak na start (tylko ręczne tworzenie) |
+
+**Fazy implementacji:**
+1. Foundation — schemat SQLite, typy, IPC CRUD
+2. UI Shell — dual-panel layout, LibraryPanel, CreatureForm
+3. Encounter Tree — drzewko, context menu, drag reorder, CR kolory
+4. Cross-Tool DnD — drag instancji na mapę / combat tracker
 
 ### Krok 7.1 - Implementacja
 
 **Napisz do AI:**
-> "Poprowadź mnie w implementacji Bestiariusza na podstawie naszych ustaleń."
+> "Zaimplementuj Bestiariusz wg planu `docs/plans/2026-05-15-008-feat-bestiary-creature-library-encounter-sets-plan.md`. Zacznij od Phase 1."
 
 **Jak sprawdzić że działa:**
-- Dodaj 5+ potworów z różnymi tagami
-- Wyszukaj po nazwie - filtrowanie powinno działać
-- Filtruj po tagach - powinny się wyświetlić tylko pasujące
-- Drag&drop potwora na mapę - powinien pojawić się token
-- Drag&drop do Combat Trackera - powinien dodać się jako uczestnik
-- Import JSON z listą potworów - powinny się pojawić w bibliotece
+- Stwórz stworzenie z samą nazwą — powinno się zapisać
+- Dodaj pełne statystyki (HP, AC, abilities, actions) — formularz sekcjami
+- Wyszukaj po nazwie i tagach — filtrowanie działa
+- Stwórz hierarchię folderów (3+ poziomy) — context menu, drzewko się rozwija
+- Przeciągnij stworzenie z biblioteki do folderu — instancja powstaje
+- Edytuj szablon — zmiana propaguje się do instancji
+- Nadpisz pole w instancji — edycja szablonu nie nadpisuje tego pola
+- Usuń szablon — instancje zostają z danymi (osierocone)
+- Drag & drop instancji na mapę — token się pojawia
+- Reorganizuj drzewko drag & drop — foldery i instancje się przesuwają
 
-**Rezultat:** Działający bestiariusz.
+**Rezultat:** Działający bestiariusz z biblioteką szablonów i zestawami encounters.
 
 **Integracje z innymi modułami:**
-- → Mapa: potwory jako tokeny (drag&drop)
-- → Combat Tracker: potwory jako uczestnicy walki (drag&drop)
+- → Mapa: instancje jako tokeny (drag & drop, `MapDropPayload`)
+- → Combat Tracker: instancje jako uczestnicy walki (drag & drop, gdy CT będzie gotowy)
 
 ---
 

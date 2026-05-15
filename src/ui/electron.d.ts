@@ -35,11 +35,64 @@ export interface ElectronDialogAPI {
   readImage: (filePath: string) => Promise<string | null>;
 }
 
+export interface BestiaryTemplateRow {
+  id: string;
+  name: string;
+  creature_type: string | null;
+  cr: string | null;
+  hp_formula: string | null;
+  hp_default: number | null;
+  ac: number | null;
+  speed: string | null;
+  ability_scores: string | null;
+  saving_throws: string | null;
+  actions: string | null;
+  actions_mode: string;
+  actions_text: string;
+  traits: string | null;
+  custom_fields: string | null;
+  tags: string | null;
+  avatar_path: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BestiaryFolderRow {
+  id: string;
+  parent_id: string | null;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface BestiaryInstanceRow {
+  id: string;
+  folder_id: string;
+  template_id: string | null;
+  instance_name: string | null;
+  overrides: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ElectronBestiaryAPI {
+  listTemplates: () => Promise<BestiaryTemplateRow[]>;
+  saveTemplate: (dataJson: string) => Promise<{ ok: boolean } | null>;
+  deleteTemplate: (id: string) => Promise<{ ok: boolean } | null>;
+  listFolders: () => Promise<BestiaryFolderRow[]>;
+  saveFolder: (id: string, parentId: string | null, name: string, sortOrder: number) => Promise<{ ok: boolean } | null>;
+  deleteFolder: (id: string) => Promise<{ ok: boolean } | null>;
+  listInstances: () => Promise<BestiaryInstanceRow[]>;
+  saveInstance: (id: string, folderId: string, templateId: string | null, instanceName: string | null, overrides: string, sortOrder: number) => Promise<{ ok: boolean } | null>;
+  deleteInstance: (id: string) => Promise<{ ok: boolean } | null>;
+}
+
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
   presets: ElectronPresetsAPI;
   campaigns: ElectronCampaignsAPI;
   dialog: ElectronDialogAPI;
+  bestiary: ElectronBestiaryAPI;
 }
 
 declare global {
