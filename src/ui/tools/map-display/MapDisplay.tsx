@@ -1,13 +1,12 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
-import { Sprite, Assets, Container } from 'pixi.js';
-import { usePixiApp } from './hooks/usePixiApp';
-import { useGridLayer } from './hooks/useGridLayer';
-import { useFowLayer } from './hooks/useFowLayer';
-import { useTokenLayer } from './hooks/useTokenLayer';
-import { useVfxLayer, VFX_PRESETS } from './hooks/useVfxLayer';
+import { useRef, useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCanvasRenderer, screenToWorld } from './hooks/useCanvasRenderer';
+import type { RenderContext } from './hooks/useCanvasRenderer';
+import { drawGrid } from './hooks/useGridRenderer';
+import { useFowRenderer } from './hooks/useFowRenderer';
+import { useTokenRenderer, TOKEN_RADIUS } from './hooks/useTokenRenderer';
+import { useVfxRenderer, VFX_PRESETS } from './hooks/useVfxRenderer';
 import { DEFAULT_MAP_STATE } from './types';
-import type { MapDisplayState, GridConfig, MapTool, MapToken, VfxSettings } from './types';
-import type { VfxInstance, VfxPreset } from './hooks/useVfxLayer';
+import type { MapDisplayState, GridConfig, MapTool, MapToken, MapDropPayload, VfxSettings, VfxPreset } from './types';
 import styles from './MapDisplay.module.css';
 
 interface MapDisplayProps {
@@ -21,29 +20,95 @@ const MAX_ZOOM = 5;
 
 export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   const state: MapDisplayState = { ...DEFAULT_MAP_STATE, ...toolState };
+  console.log('[MapDisplay] render — toolState?.imagePath:', (toolState as any)?.imagePath, 'state.imagePath:', state.imagePath);
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
-  const [appRef, isReady] = usePixiApp(canvasAreaRef);
-
-  const worldRef = useRef<Container | null>(null);
-  const mapSpriteRef = useRef<Sprite | null>(null);
 
   const stateRef = useRef(state);
-  useEffect(() => { stateRef.current = state; });
+  useLayoutEffect(() => { stateRef.current = state; });
 
-  const [zoom, setZoom] = useState(state.viewport.zoom);
-  const [mapSize, setMapSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
-
-  // Grid overlay
-  useGridLayer(worldRef, state.grid, mapSize.w, mapSize.h);
-
-  // FoW overlay
-  const handleFowChange = useCallback((dataUrl: string) => {
-    onToolStateChange({ ...stateRef.current, fowDataUrl: dataUrl });
+  /** Patch state atomically — prevents imagePath loss from stale ref */
+  const patchState = useCallback((patch: Partial<MapDisplayState>) => {
+    const current = stateRef.current;
+    const next = { ...current, ...patch };
+    if (current.imagePath && !next.imagePath && !('imagePath' in patch)) {
+      console.warn('[MapDisplay] patchState would erase imagePath — BLOCKED');
+      next.imagePath = current.imagePath;
+    }
+    onToolStateChange(next);
   }, [onToolStateChange]);
 
-  const { revealAll, concealAll } = useFowLayer(
-    appRef,
-    worldRef,
+  const [zoom, setZoom] = useState(state.viewport.zoom);
+  const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null);
+  const [mapSize, setMapSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+
+  /** Cursor world-space position for preview circle (null = cursor outside canvas) */
+  const cursorWorldRef = useRef<{ x: number; y: number } | null>(null);
+
+  // ── Viewport change handler ──
+  const handleViewportChange = useCallback((vp: { x: number; y: number; zoom: number }) => {
+    setZoom(vp.zoom);
+    patchState({ viewport: vp });
+  }, [patchState]);
+
+  // ── Canvas renderer (Phase 1) ──
+  const onDraw = useCallback((rc: RenderContext, time: number) => {
+    // Grid (Phase 2)
+    drawGrid(rc, stateRef.current.grid, mapSize.w, mapSize.h);
+    // Tokens (Phase 4)
+    tokenActions.drawTokens(rc);
+    // FoW (Phase 3)
+    fowActions.drawFow(rc);
+    // VFX (Phase 5)
+    vfxActions.drawVfx(rc, time);
+
+    // ── Cursor preview circle ──
+    const s = stateRef.current;
+    const cursor = cursorWorldRef.current;
+    const showPreview = cursor && (
+      s.activeTool === 'vfx' ||
+      s.activeTool === 'tokens' ||
+      s.activeTool === 'fow-reveal' ||
+      s.activeTool === 'fow-conceal'
+    );
+    if (showPreview) {
+      const { ctx } = rc;
+      let radius: number;
+      if (s.activeTool === 'vfx') {
+        radius = s.vfxSettings.size / 2;
+      } else if (s.activeTool === 'fow-reveal' || s.activeTool === 'fow-conceal') {
+        radius = s.brushSettings.size / 2;
+      } else {
+        // For tokens, show default new-token size (scale=1)
+        radius = TOKEN_RADIUS;
+      }
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cursor.x, cursor.y, radius, 0, Math.PI * 2);
+      ctx.setLineDash([6 / rc.viewport.zoom, 4 / rc.viewport.zoom]);
+      ctx.lineWidth = 2 / rc.viewport.zoom;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }, [mapSize.w, mapSize.h]); // fowActions, tokenActions, vfxActions are stable refs
+
+  const renderer = useCanvasRenderer(
+    canvasAreaRef,
+    state.viewport,
+    mapImage,
+    onDraw,
+    handleViewportChange,
+  );
+
+  // ── FoW (Phase 3) ──
+  const handleFowChange = useCallback((dataUrl: string) => {
+    patchState({ fowDataUrl: dataUrl });
+  }, [patchState]);
+
+  const fowActions = useFowRenderer(
+    renderer,
     mapSize.w,
     mapSize.h,
     state.activeTool,
@@ -52,27 +117,25 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     handleFowChange,
   );
 
-  // Token layer
+  // ── Tokens (Phase 4) ──
   const handleTokensChange = useCallback((newTokens: MapToken[]) => {
-    onToolStateChange({ ...stateRef.current, tokens: newTokens });
-  }, [onToolStateChange]);
+    patchState({ tokens: newTokens });
+  }, [patchState]);
 
-  const { addToken, addTokenWithSync, removeToken } = useTokenLayer(
-    appRef,
-    worldRef,
+  const tokenActions = useTokenRenderer(
+    renderer,
     state.tokens,
     state.activeTool,
     handleTokensChange,
   );
 
-  // VFX layer
-  const handleVfxChange = useCallback((newVfx: VfxInstance[]) => {
-    onToolStateChange({ ...stateRef.current, vfxInstances: newVfx });
-  }, [onToolStateChange]);
+  // ── VFX (Phase 5) ──
+  const handleVfxChange = useCallback((newVfx: typeof state.vfxInstances) => {
+    patchState({ vfxInstances: newVfx });
+  }, [patchState]);
 
-  const { clearAllVfx } = useVfxLayer(
-    appRef,
-    worldRef,
+  const vfxActions = useVfxRenderer(
+    renderer,
     state.vfxInstances,
     state.activeTool,
     state.vfxSettings.selectedPreset,
@@ -83,11 +146,84 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   );
 
   const updateVfxSettings = useCallback((patch: Partial<VfxSettings>) => {
-    onToolStateChange({
-      ...stateRef.current,
+    patchState({
       vfxSettings: { ...stateRef.current.vfxSettings, ...patch },
     });
-  }, [onToolStateChange]);
+  }, [patchState]);
+
+  // ── Load map image ──
+  const loadingImageRef = useRef(false);
+  const loadImage = useCallback(async (filePath: string, shouldFit: boolean, signal?: { cancelled: boolean }): Promise<{ x: number; y: number; zoom: number } | null> => {
+    if (loadingImageRef.current) return null;
+    loadingImageRef.current = true;
+    try {
+      const dataUrl = await window.electronAPI?.dialog.readImage(filePath);
+      if (!dataUrl || signal?.cancelled) return null;
+
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Image load failed'));
+        img.src = dataUrl;
+      });
+
+      if (signal?.cancelled) return null;
+
+      setMapImage(img);
+      setMapSize({ w: img.naturalWidth, h: img.naturalHeight });
+
+      if (shouldFit) {
+        const container = canvasAreaRef.current;
+        if (container) {
+          const cw = container.clientWidth;
+          const ch = container.clientHeight;
+          const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight);
+          const vp = {
+            zoom: scale,
+            x: (cw - img.naturalWidth * scale) / 2,
+            y: (ch - img.naturalHeight * scale) / 2,
+          };
+          renderer.viewportRef.current = vp;
+          setZoom(scale);
+          renderer.markDirty();
+          return vp;
+        }
+      }
+      return null;
+    } finally {
+      loadingImageRef.current = false;
+    }
+  }, [renderer]);
+
+  const loadImageRef = useRef(loadImage);
+  useLayoutEffect(() => { loadImageRef.current = loadImage; });
+
+  // Restore saved map on mount
+  useEffect(() => {
+    const signal = { cancelled: false };
+    console.log('[MapDisplay] restore effect — imagePath:', state.imagePath, 'mapImage:', !!mapImage);
+    if (state.imagePath && !mapImage) {
+      loadImageRef.current(state.imagePath, true, signal).then((vp) => {
+        console.log('[MapDisplay] loadImage resolved — vp:', vp, 'cancelled:', signal.cancelled);
+        if (vp && !signal.cancelled) {
+          patchState({ viewport: vp });
+        }
+      });
+    }
+    return () => {
+      signal.cancelled = true;
+      loadingImageRef.current = false; // Allow next effect run to proceed (StrictMode)
+    };
+  }, [state.imagePath, mapImage, patchState]);
+
+  // File picker handler
+  const handleLoadMap = useCallback(async () => {
+    const filePath = await window.electronAPI?.dialog.openImageFile();
+    if (!filePath) return;
+    const vp = await loadImageRef.current(filePath, true);
+    // Single atomic patchState with both imagePath and viewport
+    patchState({ imagePath: filePath, ...(vp ? { viewport: vp } : {}) });
+  }, [patchState]);
 
   // ── Drop handler (cross-tool: Party Tracker → Map) ──
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -95,36 +231,38 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     const raw = e.dataTransfer.getData('application/json');
     if (!raw) return;
     try {
-      const data = JSON.parse(raw) as { type: string; id: string; name: string; portraitPath: string | null };
-      if (data.type !== 'party-character') return;
+      const data = JSON.parse(raw) as MapDropPayload;
 
-      const world = worldRef.current;
+      let sourceType: MapToken['sourceType'];
+      switch (data.type) {
+        case 'party-character': sourceType = 'party'; break;
+        case 'bestiary-creature': sourceType = 'bestiary'; break;
+        default: return;
+      }
+
       const container = canvasAreaRef.current;
-      if (!world || world.destroyed || !container) return;
+      if (!container) return;
 
-      // Convert drop coords to map coords
       const rect = container.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-      const mapX = (cx - world.x) / world.scale.x;
-      const mapY = (cy - world.y) / world.scale.y;
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      const [mapX, mapY] = screenToWorld(sx, sy, renderer.viewportRef.current);
 
       const token: MapToken = {
         id: `token-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        sourceType: 'party',
+        sourceType,
         sourceId: data.id,
         name: data.name,
-        avatarPath: data.portraitPath,
+        avatarPath: data.portraitPath ?? null,
         x: mapX,
         y: mapY,
         scale: 1,
       };
-      // Sync existing tokens from same character + add new one in a single update
-      addTokenWithSync(token);
-    } catch {
-      // Invalid drop data
+      tokenActions.addTokenWithSync(token);
+    } catch (err) {
+      console.error('[MapDisplay] handleDrop — error:', err);
     }
-  }, [addTokenWithSync]);
+  }, [tokenActions, renderer]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -133,14 +271,12 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
 
   // Add manual token at center of viewport
   const addManualToken = useCallback(() => {
-    const world = worldRef.current;
     const container = canvasAreaRef.current;
-    if (!world || world.destroyed || !container) return;
+    if (!container) return;
 
     const cx = container.clientWidth / 2;
     const cy = container.clientHeight / 2;
-    const mapX = (cx - world.x) / world.scale.x;
-    const mapY = (cy - world.y) / world.scale.y;
+    const [mapX, mapY] = screenToWorld(cx, cy, renderer.viewportRef.current);
 
     const name = `Token ${state.tokens.length + 1}`;
     const token: MapToken = {
@@ -153,171 +289,42 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
       y: mapY,
       scale: 1,
     };
-    addToken(token);
-  }, [addToken, state.tokens.length]);
+    tokenActions.addToken(token);
+  }, [tokenActions, state.tokens.length, renderer]);
 
-  // ── Helpers ──
-
+  // ── Zoom controls ──
   const applyZoom = useCallback((newZoom: number) => {
-    const world = worldRef.current;
     const container = canvasAreaRef.current;
-    if (!world || !container) return;
+    if (!container || !mapImage) return;
 
     const clamped = Math.min(Math.max(newZoom, MIN_ZOOM), MAX_ZOOM);
-    const sprite = mapSpriteRef.current;
-    if (!sprite) return;
-
     const cw = container.clientWidth;
     const ch = container.clientHeight;
-    const mapW = sprite.texture.width * clamped;
-    const mapH = sprite.texture.height * clamped;
+    const mapW = mapImage.naturalWidth * clamped;
+    const mapH = mapImage.naturalHeight * clamped;
 
-    world.scale.set(clamped);
-    world.x = (cw - mapW) / 2;
-    world.y = (ch - mapH) / 2;
-
+    const vp = {
+      zoom: clamped,
+      x: (cw - mapW) / 2,
+      y: (ch - mapH) / 2,
+    };
+    renderer.viewportRef.current = vp;
     setZoom(clamped);
-    onToolStateChange({
-      ...stateRef.current,
-      viewport: { x: world.x, y: world.y, zoom: clamped },
-    });
-  }, [onToolStateChange]);
+    patchState({ viewport: vp });
+    renderer.markDirty();
+  }, [mapImage, renderer, patchState]);
 
   const fitToContainer = useCallback(() => {
-    const sprite = mapSpriteRef.current;
+    if (!mapImage) return;
     const container = canvasAreaRef.current;
-    const world = worldRef.current;
-    if (!sprite || !container || !world || world.destroyed) return;
+    if (!container) return;
 
     const cw = container.clientWidth;
     const ch = container.clientHeight;
-    const iw = sprite.texture.width;
-    const ih = sprite.texture.height;
+    const scale = Math.min(cw / mapImage.naturalWidth, ch / mapImage.naturalHeight);
+    applyZoom(scale);
+  }, [mapImage, applyZoom]);
 
-    const scale = Math.min(cw / iw, ch / ih);
-
-    world.scale.set(scale);
-    world.x = (cw - iw * scale) / 2;
-    world.y = (ch - ih * scale) / 2;
-
-    setZoom(scale);
-    onToolStateChange({
-      ...stateRef.current,
-      viewport: { x: world.x, y: world.y, zoom: scale },
-    });
-  }, [onToolStateChange]);
-
-  // ── Initialize world container once Pixi is ready ──
-  useEffect(() => {
-    const app = appRef.current;
-    if (!isReady || !app || worldRef.current) return;
-
-    const world = new Container();
-    app.stage.addChild(world);
-    worldRef.current = world;
-  }, [isReady, appRef]);
-
-  // ── Load map image ──
-  const loadImage = useCallback(async (filePath: string, shouldFit: boolean) => {
-    const app = appRef.current;
-    const world = worldRef.current;
-    if (!app || !world || world.destroyed) return;
-
-    const dataUrl = await window.electronAPI?.dialog.readImage(filePath);
-    if (!dataUrl) return;
-
-    const texture = await Assets.load(dataUrl);
-    if (world.destroyed) return;
-    if (mapSpriteRef.current) {
-      mapSpriteRef.current.destroy();
-    }
-
-    const sprite = new Sprite(texture);
-    world.addChildAt(sprite, 0);
-    mapSpriteRef.current = sprite;
-    setMapSize({ w: texture.width, h: texture.height });
-
-    if (shouldFit) {
-      fitToContainer();
-    }
-  }, [appRef, fitToContainer]);
-
-  // Restore saved map on mount (once Pixi + world are ready)
-  useEffect(() => {
-    if (state.imagePath && isReady && worldRef.current && !mapSpriteRef.current) {
-      loadImage(state.imagePath, true);
-    }
-  }, [state.imagePath, isReady, loadImage]);
-
-  // File picker handler
-  const handleLoadMap = useCallback(async () => {
-    const filePath = await window.electronAPI?.dialog.openImageFile();
-    if (!filePath) return;
-
-    await loadImage(filePath, true);
-    onToolStateChange({ ...stateRef.current, imagePath: filePath });
-  }, [loadImage, onToolStateChange]);
-
-  // ── Pan (middle mouse drag) ──
-  useEffect(() => {
-    const canvas = appRef.current?.renderer ? appRef.current.canvas : null;
-    if (!isReady || !canvas) return;
-
-    const onWheel = (e: WheelEvent) => { e.preventDefault(); };
-
-    let isPanning = false;
-    let lastX = 0;
-    let lastY = 0;
-
-    const onPointerDown = (e: PointerEvent) => {
-      if (e.button === 1) {
-        isPanning = true;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        canvas.setPointerCapture(e.pointerId);
-        e.preventDefault();
-      }
-    };
-
-    const onPointerMove = (e: PointerEvent) => {
-      if (!isPanning) return;
-      const world = worldRef.current;
-      if (!world || world.destroyed) return;
-
-      world.x += e.clientX - lastX;
-      world.y += e.clientY - lastY;
-      lastX = e.clientX;
-      lastY = e.clientY;
-    };
-
-    const onPointerUp = (e: PointerEvent) => {
-      if (!isPanning) return;
-      isPanning = false;
-      canvas.releasePointerCapture(e.pointerId);
-
-      const world = worldRef.current;
-      if (world && !world.destroyed) {
-        onToolStateChange({
-          ...stateRef.current,
-          viewport: { x: world.x, y: world.y, zoom: world.scale.x },
-        });
-      }
-    };
-
-    canvas.addEventListener('wheel', onWheel, { passive: false });
-    canvas.addEventListener('pointerdown', onPointerDown);
-    canvas.addEventListener('pointermove', onPointerMove);
-    canvas.addEventListener('pointerup', onPointerUp);
-
-    return () => {
-      canvas.removeEventListener('wheel', onWheel);
-      canvas.removeEventListener('pointerdown', onPointerDown);
-      canvas.removeEventListener('pointermove', onPointerMove);
-      canvas.removeEventListener('pointerup', onPointerUp);
-    };
-  }, [isReady, appRef, onToolStateChange]);
-
-  // ── Control handlers ──
   const handleZoomIn = useCallback(() => applyZoom(zoom * 1.25), [zoom, applyZoom]);
   const handleZoomOut = useCallback(() => applyZoom(zoom / 1.25), [zoom, applyZoom]);
   const handleSlider = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -326,10 +333,11 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
 
   const zoomPercent = Math.round(zoom * 100);
 
+  // ── Grid controls ──
   const updateGrid = useCallback((patch: Partial<GridConfig>) => {
     const newGrid = { ...stateRef.current.grid, ...patch };
-    onToolStateChange({ ...stateRef.current, grid: newGrid });
-  }, [onToolStateChange]);
+    patchState({ grid: newGrid });
+  }, [patchState]);
 
   const handleGridTypeChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     updateGrid({ type: e.target.value as GridConfig['type'] });
@@ -346,18 +354,47 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
 
   // ── Tool switching ──
   const setActiveTool = useCallback((tool: MapTool) => {
-    onToolStateChange({ ...stateRef.current, activeTool: tool });
-  }, [onToolStateChange]);
+    patchState({ activeTool: tool });
+  }, [patchState]);
 
   const handleBrushSizeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     if (!Number.isNaN(val) && val > 0) {
-      onToolStateChange({
-        ...stateRef.current,
+      patchState({
         brushSettings: { ...stateRef.current.brushSettings, size: val },
       });
     }
-  }, [onToolStateChange]);
+  }, [patchState]);
+
+  // Mark dirty when grid/state changes that affect rendering
+  useEffect(() => {
+    renderer.markDirty();
+  }, [state.grid, state.tokens, state.activeTool, state.brushSettings, state.vfxInstances, renderer]);
+
+  // ── Cursor tracking for preview circle ──
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const container = canvasAreaRef.current;
+    if (!container) return;
+    const activeTool = stateRef.current.activeTool;
+    if (activeTool !== 'vfx' && activeTool !== 'tokens' && activeTool !== 'fow-reveal' && activeTool !== 'fow-conceal') {
+      if (cursorWorldRef.current !== null) {
+        cursorWorldRef.current = null;
+        renderer.markDirty();
+      }
+      return;
+    }
+    const rect = container.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const [wx, wy] = screenToWorld(sx, sy, renderer.viewportRef.current);
+    cursorWorldRef.current = { x: wx, y: wy };
+    renderer.markDirty();
+  }, [renderer]);
+
+  const handleCanvasMouseLeave = useCallback(() => {
+    cursorWorldRef.current = null;
+    renderer.markDirty();
+  }, [renderer]);
 
   const hasImage = Boolean(state.imagePath);
   const isFowTool = state.activeTool === 'fow-reveal' || state.activeTool === 'fow-conceal';
@@ -479,12 +516,63 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
                   />
                 </label>
                 <div className={styles.toolDivider} />
-                <button className={styles.fowActionBtn} onClick={revealAll}>
+                <button className={styles.fowActionBtn} onClick={fowActions.revealAll}>
                   Reveal All
                 </button>
-                <button className={styles.fowActionBtn} onClick={concealAll}>
+                <button className={styles.fowActionBtn} onClick={fowActions.concealAll}>
                   Conceal All
                 </button>
+              </div>
+            )}
+
+            {/* Tokens context */}
+            {state.activeTool === 'tokens' && (
+              <div className={styles.toolSection}>
+                <span className={styles.sectionLabel}>Tokens</span>
+                <span className={styles.toolHint}>Drag from Party Tracker or add manually</span>
+                <button className={styles.fowActionBtn} onClick={addManualToken}>
+                  + Add Token
+                </button>
+                {state.tokens.length > 0 && (
+                  <>
+                    <div className={styles.toolDivider} />
+                    <div className={styles.tokenList}>
+                      {state.tokens.map((t) => (
+                        <div key={t.id} className={styles.tokenListItem}>
+                          <div className={styles.tokenListRow}>
+                            <span className={styles.tokenName}>{t.name}</span>
+                            <button
+                              className={styles.tokenRemoveBtn}
+                              onClick={() => tokenActions.removeToken(t.id)}
+                              title="Remove token"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className={styles.tokenScaleRow}>
+                            <input
+                              className={styles.toolSlider}
+                              type="range"
+                              min={0.5}
+                              max={3}
+                              step={0.1}
+                              value={t.scale}
+                              onChange={(e) => {
+                                const newScale = parseFloat(e.target.value);
+                                patchState({
+                                  tokens: state.tokens.map((tok) =>
+                                    tok.id === t.id ? { ...tok, scale: newScale } : tok
+                                  ),
+                                });
+                              }}
+                            />
+                            <span className={styles.tokenScaleLabel}>{t.scale.toFixed(1)}×</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -534,29 +622,11 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
                   </select>
                 </label>
 
-                {state.vfxSettings.mode === 'one-shot' && (
-                  <label className={styles.toolLabel}>
-                    Duration (s)
-                    <input
-                      className={styles.toolInput}
-                      type="number"
-                      min={0.5}
-                      max={30}
-                      step={0.5}
-                      value={state.vfxSettings.duration}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        if (!Number.isNaN(v) && v > 0) updateVfxSettings({ duration: v });
-                      }}
-                    />
-                  </label>
-                )}
-
                 {state.vfxInstances.length > 0 && (
                   <>
                     <div className={styles.toolDivider} />
                     <span className={styles.toolHint}>{state.vfxInstances.length} active effect(s)</span>
-                    <button className={styles.fowActionBtn} onClick={clearAllVfx}>
+                    <button className={styles.fowActionBtn} onClick={vfxActions.clearAllVfx}>
                       Clear All VFX
                     </button>
                   </>
@@ -617,6 +687,8 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
         ref={canvasAreaRef}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onMouseMove={handleCanvasMouseMove}
+        onMouseLeave={handleCanvasMouseLeave}
       >
         {!hasImage && (
           <button className={styles.loadButton} onClick={handleLoadMap}>
@@ -641,38 +713,8 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
             <span className={styles.zoomLabel}>{zoomPercent}%</span>
             <button className={styles.zoomBtn} onClick={fitToContainer} title="Fit to window">⊡</button>
           </div>
-            )}
-
-            {/* Token context */}
-            {state.activeTool === 'tokens' && (
-              <div className={styles.toolSection}>
-                <span className={styles.sectionLabel}>Tokens</span>
-                <span className={styles.toolHint}>Drag from Party Tracker or add manually</span>
-                <button className={styles.fowActionBtn} onClick={addManualToken}>
-                  + Add Token
-                </button>
-                {state.tokens.length > 0 && (
-                  <>
-                    <div className={styles.toolDivider} />
-                    <div className={styles.tokenList}>
-                      {state.tokens.map((t) => (
-                        <div key={t.id} className={styles.tokenListItem}>
-                          <span className={styles.tokenName}>{t.name}</span>
-                          <button
-                            className={styles.tokenRemoveBtn}
-                            onClick={() => removeToken(t.id)}
-                            title="Remove token"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,17 @@
-import type { VfxInstance, VfxPreset } from './hooks/useVfxLayer';
-
 export type MapTool = 'navigate' | 'fow-reveal' | 'fow-conceal' | 'tokens' | 'vfx';
+
+export type VfxPreset = 'fire' | 'explosion' | 'smoke' | 'lightning' | 'glow' | 'fog' | 'ice';
+
+export interface VfxInstance {
+  id: string;
+  preset: VfxPreset;
+  x: number;
+  y: number;
+  size: number;
+  mode: 'one-shot' | 'persistent';
+  duration: number; // seconds, 0 = infinite for persistent
+  startTime: number; // performance.now() timestamp when placed
+}
 
 export interface MapToken {
   id: string;
@@ -11,6 +22,15 @@ export interface MapToken {
   x: number;
   y: number;
   scale: number;
+}
+
+/** Standardized drag-drop payload protocol for adding tokens to the map */
+export interface MapDropPayload {
+  type: 'party-character' | 'bestiary-creature';
+  id: string;
+  name: string;
+  portraitPath: string | null;
+  meta?: Record<string, unknown>;
 }
 
 export interface GridConfig {

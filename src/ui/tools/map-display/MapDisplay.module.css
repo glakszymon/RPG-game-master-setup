@@ -163,13 +163,34 @@
 
 .tokenListItem {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 2px;
   padding: 3px 6px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.04);
   font-size: 11px;
   color: var(--text-primary, #E8E6E3);
+}
+
+.tokenListRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.tokenScaleRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tokenScaleLabel {
+  font-size: 9px;
+  color: var(--text-secondary, #9CA3AF);
+  min-width: 24px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .tokenListItem:hover {
