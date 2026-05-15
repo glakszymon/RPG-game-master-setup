@@ -69,8 +69,8 @@ interface TokenLayerActions {
 }
 
 export function useTokenLayer(
-  app: Application | null,
-  worldContainer: Container | null,
+  appRef: React.RefObject<Application | null>,
+  worldContainerRef: React.RefObject<Container | null>,
   tokens: MapToken[],
   activeTool: MapTool,
   onTokensChange: (tokens: MapToken[]) => void,
@@ -78,10 +78,11 @@ export function useTokenLayer(
   const tokenContainerRef = useRef<Container | null>(null);
   const tokenSpritesRef = useRef<Map<string, Container>>(new Map());
   const tokensRef = useRef(tokens);
-  tokensRef.current = tokens;
+  useEffect(() => { tokensRef.current = tokens; });
 
   // ── Create token layer container ──
   useEffect(() => {
+    const worldContainer = worldContainerRef.current;
     if (!worldContainer) return;
 
     const layer = new Container();
@@ -89,18 +90,20 @@ export function useTokenLayer(
     // Add on top of everything (after map, grid, fow)
     worldContainer.addChild(layer);
     tokenContainerRef.current = layer;
+    const sprites = tokenSpritesRef.current;
 
     return () => {
       layer.destroy({ children: true });
       tokenContainerRef.current = null;
-      tokenSpritesRef.current.clear();
+      sprites.clear();
     };
-  }, [worldContainer]);
+  }, [worldContainerRef]);
 
   const tokenDataRef = useRef<Map<string, { name: string; avatarPath: string | null }>>(new Map());
 
   // ── Sync token sprites with token data ──
   useEffect(() => {
+    const app = appRef.current;
     const layer = tokenContainerRef.current;
     if (!app || !layer) return;
 
@@ -150,10 +153,12 @@ export function useTokenLayer(
       // Track current data for change detection
       prevData.set(token.id, { name: token.name, avatarPath: token.avatarPath });
     }
-  }, [app, tokens]);
+  }, [appRef, tokens]);
 
   // ── Drag handling ──
   useEffect(() => {
+    const app = appRef.current;
+    const worldContainer = worldContainerRef.current;
     const canvas = app?.renderer ? app.canvas : null;
     if (!canvas || !worldContainer) return;
 
@@ -248,7 +253,7 @@ export function useTokenLayer(
       canvas.removeEventListener('pointermove', onPointerMove);
       canvas.removeEventListener('pointerup', onPointerUp);
     };
-  }, [app, worldContainer, activeTool, onTokensChange]);
+  }, [appRef, worldContainerRef, activeTool, onTokensChange]);
 
   // ── Public actions ──
   const addToken = useCallback((token: MapToken) => {

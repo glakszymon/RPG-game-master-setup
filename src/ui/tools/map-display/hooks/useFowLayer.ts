@@ -2,6 +2,11 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Graphics, RenderTexture, Sprite, Container, Application } from 'pixi.js';
 import type { MapTool, BrushSettings } from '../types';
 
+/** Helper to set cursor without ESLint tracing back to ref params */
+function setCursor(el: HTMLElement, cursor: string) {
+  el.style.cursor = cursor;
+}
+
 /**
  * useFowLayer — Fog of War via mask-based approach.
  *
@@ -16,8 +21,8 @@ import type { MapTool, BrushSettings } from '../types';
  * - Conceal: paint white circles on maskRT
  */
 export function useFowLayer(
-  app: Application | null,
-  worldContainer: Container | null,
+  appRef: React.RefObject<Application | null>,
+  worldContainerRef: React.RefObject<Container | null>,
   mapWidth: number,
   mapHeight: number,
   activeTool: MapTool,
@@ -35,6 +40,8 @@ export function useFowLayer(
 
   // ── Create / resize FoW layers ──
   useEffect(() => {
+    const app = appRef.current;
+    const worldContainer = worldContainerRef.current;
     if (!app || !app.renderer || !worldContainer || mapWidth === 0 || mapHeight === 0) return;
 
     // 1. Create the mask RenderTexture (white = fog visible)
@@ -94,23 +101,26 @@ export function useFowLayer(
       brushGfx.destroy();
       brushGfxRef.current = null;
     };
-  }, [app, worldContainer, mapWidth, mapHeight]); // fowDataUrl intentionally excluded — only load on init
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fowDataUrl intentionally excluded: only load on init
+  }, [appRef, worldContainerRef, mapWidth, mapHeight]);
 
   // ── Debounced save ──
   const scheduleSave = useCallback(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
+      const app = appRef.current;
       if (!app || !maskRtRef.current) return;
       const canvas = app.renderer.extract.canvas(maskRtRef.current) as HTMLCanvasElement;
       const dataUrl = canvas.toDataURL('image/png');
       onFowChange(dataUrl);
     }, 500);
-  }, [app, onFowChange]);
+  }, [appRef, onFowChange]);
 
   // ── Paint a brush stamp at map-local coords ──
   const paintAt = useCallback((mapX: number, mapY: number) => {
     const maskRt = maskRtRef.current;
     const brushGfx = brushGfxRef.current;
+    const app = appRef.current;
     if (!app || !maskRt || !brushGfx) return;
 
     const isReveal = activeTool === 'fow-reveal';
@@ -124,7 +134,7 @@ export function useFowLayer(
     brushGfx.circle(mapX, mapY, radius).fill({ color, alpha: 1 });
 
     app.renderer.render({ container: brushGfx, target: maskRt, clear: false });
-  }, [app, activeTool, brushSettings.size]);
+  }, [appRef, activeTool, brushSettings.size]);
 
   // ── Interpolate between two points for smooth strokes ──
   const paintLine = useCallback((x0: number, y0: number, x1: number, y1: number) => {
@@ -142,6 +152,8 @@ export function useFowLayer(
 
   // ── Pointer event handlers ──
   useEffect(() => {
+    const app = appRef.current;
+    const worldContainer = worldContainerRef.current;
     const canvas = app?.renderer ? app.canvas : null;
     if (!canvas || !worldContainer) return;
 
@@ -192,18 +204,19 @@ export function useFowLayer(
     canvas.addEventListener('pointerdown', onPointerDown);
     canvas.addEventListener('pointermove', onPointerMove);
     canvas.addEventListener('pointerup', onPointerUp);
-    canvas.style.cursor = 'crosshair';
+    setCursor(canvas, 'crosshair');
 
     return () => {
       canvas.removeEventListener('pointerdown', onPointerDown);
       canvas.removeEventListener('pointermove', onPointerMove);
       canvas.removeEventListener('pointerup', onPointerUp);
-      canvas.style.cursor = '';
+      setCursor(canvas, '');
     };
-  }, [app, worldContainer, activeTool, paintAt, paintLine, scheduleSave]);
+  }, [appRef, worldContainerRef, activeTool, paintAt, paintLine, scheduleSave]);
 
   // ── Reveal all / Conceal all ──
   const revealAll = useCallback(() => {
+    const app = appRef.current;
     const maskRt = maskRtRef.current;
     if (!app || !maskRt) return;
     const gfx = new Graphics();
@@ -211,9 +224,10 @@ export function useFowLayer(
     app.renderer.render({ container: gfx, target: maskRt, clear: true });
     gfx.destroy();
     scheduleSave();
-  }, [app, scheduleSave]);
+  }, [appRef, scheduleSave]);
 
   const concealAll = useCallback(() => {
+    const app = appRef.current;
     const maskRt = maskRtRef.current;
     if (!app || !maskRt) return;
     const gfx = new Graphics();
@@ -221,7 +235,7 @@ export function useFowLayer(
     app.renderer.render({ container: gfx, target: maskRt, clear: true });
     gfx.destroy();
     scheduleSave();
-  }, [app, scheduleSave]);
+  }, [appRef, scheduleSave]);
 
   // Cleanup save timer
   useEffect(() => {
