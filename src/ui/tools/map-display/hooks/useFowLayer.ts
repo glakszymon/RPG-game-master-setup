@@ -1,6 +1,12 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { Graphics, RenderTexture, Sprite, Container, Application } from 'pixi.js';
-import type { MapTool, BrushSettings } from '../types';
+import { useEffect, useRef, useCallback } from "react";
+import {
+  Graphics,
+  RenderTexture,
+  Sprite,
+  Container,
+  Application,
+} from "pixi.js";
+import type { MapTool, BrushSettings } from "../types";
 
 /** Helper to set cursor without ESLint tracing back to ref params */
 function setCursor(el: HTMLElement, cursor: string) {
@@ -42,7 +48,14 @@ export function useFowLayer(
   useEffect(() => {
     const app = appRef.current;
     const worldContainer = worldContainerRef.current;
-    if (!app || !app.renderer || !worldContainer || mapWidth === 0 || mapHeight === 0) return;
+    if (
+      !app ||
+      !app.renderer ||
+      !worldContainer ||
+      mapWidth === 0 ||
+      mapHeight === 0
+    )
+      return;
 
     // 1. Create the mask RenderTexture (white = fog visible)
     const maskRt = RenderTexture.create({
@@ -72,7 +85,7 @@ export function useFowLayer(
 
     const fogSprite = fogContainer as unknown as Sprite;
     fogContainer.alpha = 0.7;
-    fogContainer.label = 'fow-layer';
+    fogContainer.label = "fow-layer";
 
     // Apply mask: maskSprite controls visibility of fogContainer
     fogContainer.mask = maskSprite;
@@ -110,45 +123,57 @@ export function useFowLayer(
     saveTimerRef.current = setTimeout(() => {
       const app = appRef.current;
       if (!app || !maskRtRef.current) return;
-      const canvas = app.renderer.extract.canvas(maskRtRef.current) as HTMLCanvasElement;
-      const dataUrl = canvas.toDataURL('image/png');
+      const canvas = app.renderer.extract.canvas(
+        maskRtRef.current,
+      ) as HTMLCanvasElement;
+      const dataUrl = canvas.toDataURL("image/png");
       onFowChange(dataUrl);
     }, 500);
   }, [appRef, onFowChange]);
 
   // ── Paint a brush stamp at map-local coords ──
-  const paintAt = useCallback((mapX: number, mapY: number) => {
-    const maskRt = maskRtRef.current;
-    const brushGfx = brushGfxRef.current;
-    const app = appRef.current;
-    if (!app || !maskRt || !brushGfx) return;
+  const paintAt = useCallback(
+    (mapX: number, mapY: number) => {
+      const maskRt = maskRtRef.current;
+      const brushGfx = brushGfxRef.current;
+      const app = appRef.current;
+      if (!app || !maskRt || !brushGfx) return;
 
-    const isReveal = activeTool === 'fow-reveal';
-    const radius = brushSettings.size / 2;
+      const isReveal = activeTool === "fow-reveal";
+      const radius = brushSettings.size / 2;
 
-    // Reveal → paint BLACK on mask (hide the fog in that area)
-    // Conceal → paint WHITE on mask (show the fog in that area)
-    const color = isReveal ? 0x000000 : 0xffffff;
+      // Reveal → paint BLACK on mask (hide the fog in that area)
+      // Conceal → paint WHITE on mask (show the fog in that area)
+      const color = isReveal ? 0x000000 : 0xffffff;
 
-    brushGfx.clear();
-    brushGfx.circle(mapX, mapY, radius).fill({ color, alpha: 1 });
+      brushGfx.clear();
+      brushGfx.circle(mapX, mapY, radius).fill({ color, alpha: 1 });
 
-    app.renderer.render({ container: brushGfx, target: maskRt, clear: false });
-  }, [appRef, activeTool, brushSettings.size]);
+      app.renderer.render({
+        container: brushGfx,
+        target: maskRt,
+        clear: false,
+      });
+    },
+    [appRef, activeTool, brushSettings.size],
+  );
 
   // ── Interpolate between two points for smooth strokes ──
-  const paintLine = useCallback((x0: number, y0: number, x1: number, y1: number) => {
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const step = Math.max(brushSettings.size / 4, 2);
-    const steps = Math.ceil(dist / step);
+  const paintLine = useCallback(
+    (x0: number, y0: number, x1: number, y1: number) => {
+      const dx = x1 - x0;
+      const dy = y1 - y0;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const step = Math.max(brushSettings.size / 4, 2);
+      const steps = Math.ceil(dist / step);
 
-    for (let i = 0; i <= steps; i++) {
-      const t = steps === 0 ? 0 : i / steps;
-      paintAt(x0 + dx * t, y0 + dy * t);
-    }
-  }, [paintAt, brushSettings.size]);
+      for (let i = 0; i <= steps; i++) {
+        const t = steps === 0 ? 0 : i / steps;
+        paintAt(x0 + dx * t, y0 + dy * t);
+      }
+    },
+    [paintAt, brushSettings.size],
+  );
 
   // ── Pointer event handlers ──
   useEffect(() => {
@@ -157,7 +182,8 @@ export function useFowLayer(
     const canvas = app?.renderer ? app.canvas : null;
     if (!canvas || !worldContainer) return;
 
-    const isFowTool = activeTool === 'fow-reveal' || activeTool === 'fow-conceal';
+    const isFowTool =
+      activeTool === "fow-reveal" || activeTool === "fow-conceal";
     if (!isFowTool) return;
 
     const toMapCoords = (e: PointerEvent): { x: number; y: number } | null => {
@@ -201,16 +227,16 @@ export function useFowLayer(
       scheduleSave();
     };
 
-    canvas.addEventListener('pointerdown', onPointerDown);
-    canvas.addEventListener('pointermove', onPointerMove);
-    canvas.addEventListener('pointerup', onPointerUp);
-    setCursor(canvas, 'crosshair');
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerup", onPointerUp);
+    setCursor(canvas, "crosshair");
 
     return () => {
-      canvas.removeEventListener('pointerdown', onPointerDown);
-      canvas.removeEventListener('pointermove', onPointerMove);
-      canvas.removeEventListener('pointerup', onPointerUp);
-      setCursor(canvas, '');
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerup", onPointerUp);
+      setCursor(canvas, "");
     };
   }, [appRef, worldContainerRef, activeTool, paintAt, paintLine, scheduleSave]);
 
@@ -220,7 +246,9 @@ export function useFowLayer(
     const maskRt = maskRtRef.current;
     if (!app || !maskRt) return;
     const gfx = new Graphics();
-    gfx.rect(0, 0, maskRt.width, maskRt.height).fill({ color: 0x000000, alpha: 1 });
+    gfx
+      .rect(0, 0, maskRt.width, maskRt.height)
+      .fill({ color: 0x000000, alpha: 1 });
     app.renderer.render({ container: gfx, target: maskRt, clear: true });
     gfx.destroy();
     scheduleSave();
@@ -231,7 +259,9 @@ export function useFowLayer(
     const maskRt = maskRtRef.current;
     if (!app || !maskRt) return;
     const gfx = new Graphics();
-    gfx.rect(0, 0, maskRt.width, maskRt.height).fill({ color: 0xffffff, alpha: 1 });
+    gfx
+      .rect(0, 0, maskRt.width, maskRt.height)
+      .fill({ color: 0xffffff, alpha: 1 });
     app.renderer.render({ container: gfx, target: maskRt, clear: true });
     gfx.destroy();
     scheduleSave();
@@ -254,7 +284,7 @@ async function loadMaskFromDataUrl(
   dataUrl: string,
 ) {
   try {
-    const { Assets, Sprite: SpriteCls } = await import('pixi.js');
+    const { Assets, Sprite: SpriteCls } = await import("pixi.js");
     const texture = await Assets.load(dataUrl);
     const tempSprite = new SpriteCls(texture);
     app.renderer.render({ container: tempSprite, target: rt, clear: true });
