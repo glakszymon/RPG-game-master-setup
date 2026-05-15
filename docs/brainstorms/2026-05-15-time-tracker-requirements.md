@@ -33,10 +33,9 @@ Trzy osobne tool-window na canvasie: Zegar In-Game, Kalendarz, Timer Sesji.
 
 - R45a. DM wybiera tryb kalendarza przy konfiguracji: Prosty lub Rozbudowany. Konfiguracja przez modal ustawień (ikona zębatki, spójne z zegarem).
 - R45b. Tryb Prosty: konfigurowalne nazwy miesięcy, liczba miesięcy, liczba dni w każdym miesiącu, konfigurowalne nazwy dni tygodnia i długość tygodnia, lista świąt/wydarzeń z datą i nazwą.
-- R45c. Tryb Rozbudowany: wszystko z Prostego + cykl lunarny (faza księżyca obliczana automatycznie na podstawie długości cyklu) + solstice/pory roku wpływające na długość dnia i nocy w Zegarze.
+- R45c. Tryb Rozbudowany: wszystko z Prostego + solstice/pory roku wpływające na długość dnia i nocy w Zegarze.
 - R45d. Główny widok: siatka miesięczna z dniami tygodnia jako nagłówkami kolumn. Bieżący dzień wyróżniony. Święta oznaczone kolorową kropką z tooltipem (nazwa święta po najechaniu).
 - R45e. Nawigacja między miesiącami (przód/tył) do przeglądania kalendarza.
-- R45f. W trybie Rozbudowanym: wyświetlanie aktualnej fazy księżyca (ikona przy dacie lub w nagłówku).
 - R45g. Domyślna opcja kalendarza "Real-world" z 12 miesiącami standardowymi i 7-dniowym tygodniem.
 
 ### Timer Sesji (rozszerzenie R46)
@@ -84,7 +83,7 @@ Trzy osobne tool-window na canvasie: Zegar In-Game, Kalendarz, Timer Sesji.
 
 - [Affects R44a][Needs research] Jak renderować łuk nieba — Canvas 2D, SVG, czy czyste CSS/gradient?
 - [Affects R45c][Technical] Model danych solstice: jak DM konfiguruje długość dnia/nocy per pora roku? Dwa punkty (solstice letni/zimowy) z interpolacją, czy per-miesiąc?
-- [Affects R45c][Technical] Jak obliczać fazę księżyca — prosty modulo cyklu czy coś bardziej realistycznego?
+
 - [Affects R44f, R46d][Technical] Architektura współdzielonego stanu czasu — shared context, event bus, czy coś innego?
 - [Affects R46b][Technical] Persystencja timerów — czy przeżywają zamknięcie aplikacji?
 

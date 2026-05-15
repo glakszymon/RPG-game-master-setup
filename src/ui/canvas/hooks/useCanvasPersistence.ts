@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import type { CanvasState } from '../types';
 import type { CanvasAction } from './useCanvasState';
 
-const SAVE_DEBOUNCE_MS = 500;
+const SAVE_DEBOUNCE_MS = 2000;
 
 export function useCanvasPersistence(
   state: CanvasState,
@@ -36,7 +36,7 @@ export function useCanvasPersistence(
       if (!json) {
         console.log('[Persistence] No saved state for campaign:', campaignId);
         // New campaign — reset to empty state
-        dispatch({ type: 'LOAD_STATE', state: { windows: [], background: 'dot-grid', nextWindowId: 0 } });
+        dispatch({ type: 'LOAD_STATE', state: { windows: [], background: 'dot-grid', nextWindowId: 0 } as any });
       } else {
         try {
           const loaded = JSON.parse(json) as CanvasState;

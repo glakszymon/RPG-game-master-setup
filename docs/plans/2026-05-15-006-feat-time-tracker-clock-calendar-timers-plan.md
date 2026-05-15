@@ -123,8 +123,6 @@ interface CalendarConfig {
   weekDays: string[];           // e.g. ["Mon", "Tue", ...] or custom
   holidays: Array<{ month: number; day: number; name: string; color?: string }>;
   // Advanced mode only
-  lunarCycleLength?: number;    // days per full cycle
-  lunarReferenceDay?: number;   // absolute day number of a known new moon
   summerSolstice?: { month: number; day: number; dawnHour: number; duskHour: number };
   winterSolstice?: { month: number; day: number; dawnHour: number; duskHour: number };
 }
@@ -244,8 +242,7 @@ function advanceTime(state: CampaignTimeState, deltaMinutes: number): CampaignTi
 4. Month navigation (forward/back)
 5. Settings modal: calendar mode selection, month/weekday config, holiday editor
 6. Real-world preset auto-applied on first use (no empty state)
-7. Advanced mode: lunar phase display (icon based on modulo calculation)
-8. Advanced mode: solstice config
+7. Advanced mode: solstice config
 
 **Calendar grid algorithm:**
 
@@ -289,7 +286,7 @@ When Advanced mode is active, these calculated dawn/dusk values override the man
 - [ ] Holidays shown as colored dots with tooltip on hover
 - [ ] Month navigation works, current day highlighted
 - [ ] Simple mode: manual month/day/holiday config
-- [ ] Advanced mode: lunar phase icon displayed, solstice affects Clock dawn/dusk
+- [ ] Advanced mode: solstice affects Clock dawn/dusk
 - [ ] Real-world preset works as default
 - [ ] Date auto-advances when Clock crosses midnight
 - [ ] Edge cases: 1-day week, 1-day month, 50+ day month all render correctly

@@ -19,6 +19,8 @@ const IGNORED_ACTIONS: Set<CanvasAction['type']> = new Set([
   'UPDATE_TOOL_STATE',
   'LOAD_STATE',
   'SET_BACKGROUND',
+  'ADVANCE_TIME',
+  'SET_TIME_STATE',
 ]);
 
 /** Actions that are coalesced while dragging/resizing */

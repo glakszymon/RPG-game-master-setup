@@ -1,0 +1,391 @@
+/* ── Time Calendar ── */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 12px 12px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* ── Top Bar ── */
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.gearBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  transition: color var(--duration-fast) var(--easing-default);
+}
+
+.gearBtn:hover {
+  color: var(--color-text-primary);
+}
+
+.todayBtn {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.todayBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--color-text-primary);
+}
+
+.todayBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.separator {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Month Navigation ── */
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.monthTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-align: center;
+  flex: 1;
+}
+
+.navBtn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1;
+}
+
+.navBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--color-text-primary);
+}
+
+/* ── Seasonal Daylight ── */
+
+.seasonalRow {
+  text-align: center;
+}
+
+.seasonalLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* ── Calendar Grid ── */
+
+.gridWrapper {
+  width: 100%;
+}
+
+.weekdayRow {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.weekdayHeader {
+  font-size: 0.65rem;
+  color: var(--color-text-tertiary, rgba(255, 255, 255, 0.4));
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dayGrid {
+  display: grid;
+  gap: 2px;
+}
+
+.dayCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 2px;
+  border-radius: 4px;
+  min-height: 28px;
+  cursor: default;
+  transition: background 0.15s;
+}
+
+.dayCell:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.currentDay {
+  border: 1px solid var(--color-accent, #6C8EEF);
+  background: rgba(108, 142, 239, 0.12);
+}
+
+.dayNumber {
+  font-size: 0.75rem;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.dayCellIcons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 8px;
+}
+
+.holidayDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-accent, #6C8EEF);
+}
+
+.emptyCell {
+  min-height: 28px;
+}
+
+/* ── Date Label ── */
+
+.dateLabel {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* ── Settings Modal ── */
+
+.wideModal {
+  max-width: 600px;
+}
+
+.settingsContent {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.settingsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settingsField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settingsLabel {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.settingsInput {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+}
+
+.settingsHint {
+  font-size: 0.72rem;
+  color: var(--color-text-tertiary, rgba(255, 255, 255, 0.4));
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+
+.settingsSelect {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(30, 30, 40, 0.95);
+  color: var(--color-text-primary);
+  appearance: auto;
+}
+
+.settingsSelect option {
+  background: rgb(30, 30, 40);
+  color: var(--color-text-primary);
+}
+
+select.settingsInput {
+  appearance: none;
+  padding-right: 20px;
+}
+
+/* ── Mode Toggle ── */
+
+.modeToggle {
+  display: flex;
+  gap: 4px;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.modeBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.modeBtnActive {
+  border-color: var(--color-accent, #6C8EEF);
+  background: rgba(108, 142, 239, 0.12);
+  color: var(--color-text-primary);
+}
+
+/* ── Months Editor ── */
+
+.monthsList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.monthEditRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.daysUnit {
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary, rgba(255, 255, 255, 0.4));
+  white-space: nowrap;
+}
+
+/* ── Holidays Editor ── */
+
+.holidaysList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.holidayRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+
+.holidayText {
+  font-size: 0.8rem;
+  color: var(--color-text-primary);
+}
+
+.holidayAddRow {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* ── Solstice Config ── */
+
+.solsticeBlock {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.solsticeTitle {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.solsticeRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Shared Buttons ── */
+
+.removeBtn {
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  border: none;
+  background: rgba(255, 80, 80, 0.15);
+  color: rgba(255, 80, 80, 0.8);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.removeBtn:hover {
+  background: rgba(255, 80, 80, 0.25);
+}
+
+.addBtn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.addBtn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--color-text-primary);
+}
