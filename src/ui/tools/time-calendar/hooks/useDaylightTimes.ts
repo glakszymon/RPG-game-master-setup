@@ -17,7 +17,7 @@ function lerp(a: number, b: number, t: number): number {
 export function computeDaylightTimes(
   day: number,
   monthIndex: number,
-  year: number,
+  _year: number,
   calendar: CalendarConfig,
 ): { dawn: number; dusk: number } | null {
   const { summerSolstice, winterSolstice, months } = calendar;

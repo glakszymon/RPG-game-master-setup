@@ -144,8 +144,6 @@ export interface CalendarConfig {
   weekDays: string[];
   holidays: Array<{ month: number; day: number; name: string; color?: string }>;
   /** Advanced mode only */
-  lunarCycleLength?: number;
-  lunarReferenceDay?: number;
   summerSolstice?: { month: number; day: number; dawnHour: number; duskHour: number };
   winterSolstice?: { month: number; day: number; dawnHour: number; duskHour: number };
 }
@@ -161,6 +159,7 @@ export interface CustomTimer {
   accumulatedMs: number;
   soundEnabled: boolean;
   completed: boolean;
+  pinned: boolean;
 }
 
 export interface CampaignTimeState {

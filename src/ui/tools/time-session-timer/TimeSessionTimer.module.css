@@ -1,0 +1,457 @@
+/* ── Time Session Timer ── */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px 12px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* ── Timer Grid ── */
+
+.timerGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  flex: 1;
+  align-content: start;
+}
+
+/* ── Grid Cell (drag wrapper) ── */
+
+.gridCell {
+  cursor: grab;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.gridCell:active {
+  cursor: grabbing;
+}
+
+.gridCell.dragging {
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+
+.gridCell.dragOver {
+  outline: 2px dashed var(--color-accent, #6C8EEF);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+/* ── Timer Card ── */
+
+.timerCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.3s, box-shadow 0.3s;
+  min-height: 120px;
+}
+
+.timerCard.expired {
+  animation: pulseGlow 1.5s ease-in-out infinite;
+  border-color: rgba(255, 80, 80, 0.4);
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(255, 80, 80, 0.3);
+    border-color: rgba(255, 80, 80, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 80, 80, 0.6), 0 0 32px rgba(255, 80, 80, 0.2);
+    border-color: rgba(255, 80, 80, 0.8);
+  }
+}
+
+/* ── Card Header (mode label + delete) ── */
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* ── Card Controls (footer row of buttons) ── */
+
+.cardControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.actionDelete {
+  color: rgba(255, 80, 80, 0.5);
+}
+
+.actionDelete:hover {
+  color: rgba(255, 80, 80, 1);
+}
+
+.pinActive {
+  color: var(--color-accent, #6C8EEF);
+  border-color: var(--color-accent, #6C8EEF);
+}
+
+/* ── Compact card (pinned overlay) ── */
+
+.timerCardCompact {
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  min-height: auto;
+}
+
+/* ── Progress Bar (for pinned/compact view) ── */
+
+.progressBarTrack {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: 2px;
+  background: rgba(108, 142, 239, 0.7);
+  transition: width 0.5s ease;
+}
+
+.progressBarExpired {
+  background: rgba(255, 80, 80, 0.8);
+}
+
+/* ── Card Dragging ── */
+
+.cardDragging {
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+
+/* ── Edit Overlay ── */
+
+.editOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: rgba(20, 20, 30, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 2;
+  justify-content: center;
+}
+
+.editInput {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-primary);
+  transition: border-color 0.15s;
+}
+
+.editInput:focus {
+  outline: none;
+  border-color: var(--color-accent, #6C8EEF);
+}
+
+.editSelect {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(30, 30, 40, 0.9);
+  color: var(--color-text-primary);
+}
+
+.editSelect:focus {
+  outline: none;
+  border-color: var(--color-accent, #6C8EEF);
+}
+
+.editSelect option {
+  background: rgb(30, 30, 40);
+  color: var(--color-text-primary);
+}
+
+.editRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editUnit {
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary, rgba(255, 255, 255, 0.4));
+}
+
+.editActions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.editCancel {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.editCancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.editSave {
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  border: 1px solid var(--color-accent, #6C8EEF);
+  border-radius: 6px;
+  background: rgba(108, 142, 239, 0.15);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.editSave:hover {
+  background: rgba(108, 142, 239, 0.25);
+}
+
+/* ── Card Center (ring or value) ── */
+
+.cardCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.ringWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring {
+  display: block;
+}
+
+.ringProgress {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.ringValue {
+  position: absolute;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cardValue {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Card Name ── */
+
+.cardName {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* ── Card Mode Label ── */
+
+.cardMode {
+  font-size: 0.6rem;
+  color: var(--color-text-tertiary, rgba(255, 255, 255, 0.4));
+}
+
+.controlBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.controlBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Material Symbols icon inside buttons */
+.icon {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 18px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Add Button ── */
+
+.addBtn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  text-align: center;
+}
+
+.addBtn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--color-text-primary);
+}
+
+/* ── Add Form ── */
+
+.addForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.formInput {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-primary);
+  backdrop-filter: blur(4px);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--color-accent, #6C8EEF);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.formSelect {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(30, 30, 40, 0.9);
+  color: var(--color-text-primary);
+  backdrop-filter: blur(4px);
+  transition: border-color 0.15s;
+}
+
+.formSelect:focus {
+  outline: none;
+  border-color: var(--color-accent, #6C8EEF);
+}
+
+.formSelect option {
+  background: rgb(30, 30, 40);
+  color: var(--color-text-primary);
+}
+
+.formRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.formUnit {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary, rgba(255, 255, 255, 0.4));
+}
+
+.formActions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.formCancel {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.formCancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.formAdd {
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  border: 1px solid var(--color-accent, #6C8EEF);
+  border-radius: 6px;
+  background: rgba(108, 142, 239, 0.15);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.formAdd:hover {
+  background: rgba(108, 142, 239, 0.25);
+}

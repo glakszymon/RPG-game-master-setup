@@ -779,34 +779,84 @@ Pliki modułu:
 - Ekstremalny parametr (np. -40°C + huragan) - powinien dać sensowny opis
 - Sprawdź czy sugerowany klimat pasuje do parametrów
 
-### Krok 11.2 - Tracker czasu ✅ BRAINSTORM ZAKOŃCZONY
+### Krok 11.2 - Tracker czasu ✅ ZAKOŃCZONE
 
 **Dokumenty:**
 - Requirements: `docs/brainstorms/2026-05-15-time-tracker-requirements.md`
 - Plan: `docs/plans/2026-05-15-006-feat-time-tracker-clock-calendar-timers-plan.md`
 
-**Kluczowe ustalenia z brainstormu:**
-- **3 osobne okna** na canvasie: Zegar In-Game (`time-clock`), Kalendarz (`time-calendar`), Timer Sesji (`time-session-timer`)
-- **Współdzielony stan czasu** na poziomie kampanii (`CampaignTimeState` w `CanvasState`) — nie per-window `toolState`
-- **Zegar:** duży łuk nieba 180° ze słońcem/księżycem, gradient pomarańczowy/fioletowy, konfigurowalne godziny świtu/zmierzchu, stałe przyciski (+/-1min, 10min, 1h, 4h, 1 dzień) + custom, modal ustawień
-- **Kalendarz:** siatka miesięczna, tryb Prosty lub Rozbudowany (z księżycem + solstice), konfigurowalne tygodnie + miesiące + święta (kropka + tooltip), preset "Real-world" jako domyślny
-- **Timer Sesji:** stoper sesji jako część listy timerów, custom timery (real-time lub in-game, up/down), countdown do 0 = czerwony + pulsacja + dźwięk, timery in-game tykają tylko z zegarem (w tym cofanie)
-- **Synchronizacja:** przekroczenie północy auto-przesuwa datę, cofanie symetryczne, stan niezależny od otwartych okien
+**Co zostało zaimplementowane:**
 
-**Architektura (z planu):**
-- Nowe `timeState` pole w `CanvasState` (nie nowa tabela DB)
-- `UPDATE_TIME_STATE` action w canvas reducer
+3 osobne okna narzędziowe na canvasie, współdzielące jeden `CampaignTimeState` w `CanvasState.timeState`:
+
+**1. Time Clock (`time-clock`)** — Zegar in-game:
+- Łuk nieba 180° (Canvas 2D) ze słońcem i księżycem, gradient dawn/day/dusk/night
+- Przyciski przesuwania czasu: ±1min, ±10min, ±1h, ±4h, ±1 dzień, custom input
+- Modal ustawień: godziny świtu/zmierzchu
+- Przekroczenie północy automatycznie przesuwa datę w kalendarzu
+- Cofanie czasu działa symetrycznie
+
+**2. Time Calendar (`time-calendar`)** — Kalendarz fantasy:
+- Siatka miesięczna z dniami tygodnia jako nagłówkami
+- Bieżący dzień wyróżniony, święta jako kolorowe kropki z tooltipem
+- Nawigacja między miesiącami
+- Tryb Prosty: konfigurowalne nazwy miesięcy, dni tygodnia, długość tygodnia, święta
+- Tryb Rozbudowany: solstice letni/zimowy wpływający na dawn/dusk w zegarze (interpolacja sinusoidalna via `useDaylightTimes`)
+- Preset "Real-world" (12 miesięcy, 7 dni) jako domyślny
+- Modal ustawień z edytorem miesięcy, dni tygodnia, świąt, solstice
+
+**3. Time Session Timer (`time-session-timer`)** — Timery sesji:
+- Grid layout kart timerów z drag & drop reorderem (HTML5 DnD)
+- Dwa tryby: real-time (tyka z zegarem systemowym) i in-game (tyka tylko przy ADVANCE_TIME)
+- Dwa kierunki: count-up (stoper) i count-down (z targetem H/M/S)
+- Countdown ring (SVG kołowy progress) na karcie + linear progress bar w pinned view
+- Expiration: czerwona pulsacja + 3-notowy chime (C6→E6→G6, Web Audio oscillators)
+- Pin to overlay: przypięte timery wyświetlane jako kompaktowy pasek nad canvasem (PinnedTimers.tsx)
+- Inline edit (nazwa + czas docelowy), restart, play/pause, delete
+- Material Symbols Outlined ikony (play_arrow, pause, replay, keep, edit, close) — 28×28px buttony
+- Sekundy w duration (targetMinutes przechowuje wartości ułamkowe)
+
+**Architektura:**
+- `CampaignTimeState` w `CanvasState` (nie per-window toolState) — współdzielone między oknami
+- `ADVANCE_TIME` action w canvas reducer — przesuwa czas + tyka timery in-game
+- `SET_TIME_STATE` action — dla zmian kalendarza/konfiguracji
+- Oba w `IGNORED_ACTIONS` dla undo/redo (czas nie jest cofany przez Ctrl+Z)
 - Timestamp-based real-time timery (przeżywają restart aplikacji)
-- Undo/redo integracja za darmo przez istniejący `useUndoRedo`
-- 3 fazy implementacji: Foundation+Clock → Calendar → Session Timer
+- `useTimerEngine` — singleton requestAnimationFrame loop z Set subskrybentów
+- `useExpirationBatcher` — 100ms batch window na expiration events
+- `useChimePlayer` — shared AudioContext tworzony eagerly + resume na click/keydown
+
+**Zmiany w istniejącym kodzie:**
+- `useSpacePan.ts` — zmieniony z Space+drag na Alt+drag (Space koliduje z inputami w timerach)
+- `InfiniteCanvas.tsx` — importuje PinnedTimers, renderuje po PresetToolbar
+- `index.html` — dodany Material Symbols Outlined font link
+
+**Pliki:**
+```
+src/ui/tools/time-clock/
+  TimeClock.tsx, TimeClock.module.css, types.ts, index.ts
+  hooks/useSkyRenderer.ts
+
+src/ui/tools/time-calendar/
+  TimeCalendar.tsx, TimeCalendar.module.css, types.ts, index.ts
+  hooks/useCalendarGrid.ts, hooks/useDaylightTimes.ts
+
+src/ui/tools/time-session-timer/
+  TimeSessionTimer.tsx, TimeSessionTimer.module.css, types.ts, index.ts
+  TimerItem.tsx, PinnedTimers.tsx, PinnedTimers.module.css
+  hooks/useTimerEngine.ts, hooks/useExpirationBatcher.ts, hooks/useChimePlayer.ts
+```
 
 **Jak sprawdzić że działa:**
 - Przesuń czas o +4h — łuk nieba powinien się zmienić (słońce→księżyc)
 - Przekrocz północ — data w kalendarzu powinna się przesunąć automatycznie
 - Skonfiguruj custom kalendarz (np. 13 miesięcy, 6-dniowy tydzień)
-- Timer sesji: start, poczekaj minutę, sprawdź czy liczy
-- Stwórz countdown timer in-game, przesuń zegar — timer powinien odliczyć
+- Stwórz countdown timer real-time, poczekaj — ring się zapełnia, po expiration chime gra
+- Stwórz countdown timer in-game, przesuń zegar o target — timer expiruje
 - Cofnij czas — timer in-game powinien się cofnąć symetrycznie
+- Przypnij timer — pojawia się kompaktowy pasek nad canvasem
+- Drag & drop timerów — kolejność się zmienia
+- Alt+drag na canvasie — pan (nie Space)
 
 ### Krok 11.3 - Generator sklepów
 

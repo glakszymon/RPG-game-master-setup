@@ -29,6 +29,8 @@ import styles from './InfiniteCanvas.module.css';
 import type { MapDisplayState } from '../tools/map-display/types';
 import { MapDisplay } from '../tools/map-display/MapDisplay';
 import { TimeClock } from '../tools/time-clock';
+import { TimeCalendar } from '../tools/time-calendar';
+import { TimeSessionTimer, PinnedTimers } from '../tools/time-session-timer';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
 function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
@@ -86,8 +88,22 @@ const ToolContent = memo(function ToolContent({
       );
 
     case 'time-calendar':
+      return (
+        <TimeCalendar
+          timeState={timeState!}
+          onAdvanceTime={onAdvanceTime!}
+          onSetTimeState={onSetTimeState!}
+        />
+      );
+
     case 'time-session-timer':
-      return <ToolPlaceholder toolType={toolType} />;
+      return (
+        <TimeSessionTimer
+          timeState={timeState!}
+          onAdvanceTime={onAdvanceTime!}
+          onSetTimeState={onSetTimeState!}
+        />
+      );
 
     default:
       return <ToolPlaceholder toolType={toolType} />;
@@ -371,6 +387,12 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
         onRename={renamePreset}
         onOverwrite={overwritePreset}
       />
+      {state.timeState && (
+        <PinnedTimers
+          timeState={state.timeState}
+          onSetTimeState={(ts) => dispatch({ type: 'SET_TIME_STATE', timeState: ts })}
+        />
+      )}
       <Minimap
         windows={state.windows}
         viewport={minimapTransform}

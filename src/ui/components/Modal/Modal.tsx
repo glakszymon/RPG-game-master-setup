@@ -18,6 +18,9 @@ export interface ModalProps {
 
   /** Przyciski na dole (np. Zapisz / Anuluj) */
   footer?: ReactNode;
+
+  /** Optional extra class on the content panel (for size overrides) */
+  contentClassName?: string;
 }
 
 /**
@@ -47,12 +50,13 @@ function Modal({
   description,
   children,
   footer,
+  contentClassName,
 }: ModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className={styles.overlay} />
-        <Dialog.Content className={styles.content}>
+        <Dialog.Content className={`${styles.content}${contentClassName ? ` ${contentClassName}` : ''}`}>
           <div className={styles.header}>
             <div>
               <Dialog.Title className={styles.title}>{title}</Dialog.Title>
