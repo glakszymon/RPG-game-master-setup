@@ -476,16 +476,31 @@ Odkrycia techniczne:
 3. `'erase'` blend mode NIE DZIAŁA z `renderer.render()` na RenderTexture w Pixi v8 — rozwiązanie: mask-based FoW (biały=fog widoczny, czarny=odsłonięty)
 4. Kontener DOM może mieć wymiary 0 podczas async init — ResizeObserver naprawia to
 5. HTML5 DnD `dataTransfer.setData('application/json', ...)` działa jako cross-tool communication między React components a Pixi canvas
+6. **React StrictMode + async guard deadlock:** Jeśli useEffect uruchamia async operację chronioną `loadingRef.current` (guard zapobiegający podwójnemu wywołaniu), StrictMode powoduje deadlock: 1. pierwszy run ustawia guard=true i startuje async, 2. cleanup ustawia cancelled=true, 3. drugi run widzi guard=true → zablokowany, 4. pierwszy async widzi cancelled=true → nic nie robi. **Fix:** W cleanup efektu resetuj `loadingRef.current = false` żeby drugi run mógł kontynuować.
+7. **patchState pattern** — `useCallback((patch: Partial<State>) => onToolStateChange({...current, ...patch}))` z `stateRef` + `useLayoutEffect` zapobiega utracie pól stanu (np. imagePath) przez stale closures
+8. **Persistence readyRef guard** — `useCanvasPersistence` używa `readyRef` żeby nie zapisywać pustego stanu przed zakończeniem loadowania z SQLite
+
+**Pixi.js → Canvas 2D rewrite (2026-05-15):**
+Mapa została przepisana z Pixi.js WebGL na natywny HTML Canvas 2D API. Powody: uproszczenie architektury, mniejszy bundle, brak problemów z WebGL context loss. Hooki zostały przepisane:
+- `useCanvasRenderer.ts` — render loop z requestAnimationFrame, viewport transform, background image
+- `useTokenRenderer.ts` — rysowanie tokenów (arc + clip + drawImage), drag, `TOKEN_RADIUS = 24`
+- `useFowRenderer.ts` — Fog of War na offscreen canvas (compositing operations)
+- `useVfxRenderer.ts` — particle effects rysowane na canvas 2D
+
+Dodatkowe funkcje (2026-05-15):
+- ✅ **Per-token scale slider** — suwak 0.5×–3.0× w panelu Tokens, zmienia `MapToken.scale`
+- ✅ **Cursor preview circle** — dashed white circle pod kursorem dla narzędzi VFX, Tokens, FoW (reveal/conceal)
+- ✅ **Map image persistence fix** — readyRef guard + loadingRef StrictMode deadlock fix
 
 Pliki modułu:
 - `src/ui/tools/map-display/MapDisplay.tsx` — główny komponent z toolbar + canvas
 - `src/ui/tools/map-display/MapDisplay.module.css` — style
 - `src/ui/tools/map-display/types.ts` — interfejsy + DEFAULT_MAP_STATE
-- `src/ui/tools/map-display/hooks/usePixiApp.ts` — Pixi lifecycle
-- `src/ui/tools/map-display/hooks/useGridLayer.ts` — grid overlay
-- `src/ui/tools/map-display/hooks/useFowLayer.ts` — Fog of War (mask-based)
-- `src/ui/tools/map-display/hooks/useTokenLayer.ts` — token rendering + drag
-- `src/ui/tools/map-display/hooks/useVfxLayer.ts` — VFX particle system
+- `src/ui/tools/map-display/hooks/useCanvasRenderer.ts` — render loop, viewport, background
+- `src/ui/tools/map-display/hooks/useTokenRenderer.ts` — token rendering + drag
+- `src/ui/tools/map-display/hooks/useFowRenderer.ts` — Fog of War
+- `src/ui/tools/map-display/hooks/useVfxRenderer.ts` — VFX particle system
+- `src/ui/tools/map-display/hooks/useGridRenderer.ts` — grid overlay (square + hex)
 
 **Jak sprawdzić że działa:**
 - Załaduj mapę — obraz wyświetla się z zoom/pan
