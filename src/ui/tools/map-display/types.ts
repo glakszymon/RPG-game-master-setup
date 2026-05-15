@@ -1,6 +1,16 @@
-import type { VfxInstance, VfxPreset } from './hooks/useVfxLayer';
-
 export type MapTool = 'navigate' | 'fow-reveal' | 'fow-conceal' | 'tokens' | 'vfx';
+
+export type VfxPreset = 'fire' | 'explosion' | 'smoke' | 'lightning' | 'glow' | 'fog' | 'ice';
+
+export interface VfxInstance {
+  id: string;
+  preset: VfxPreset;
+  x: number;
+  y: number;
+  size: number;
+  mode: 'one-shot' | 'persistent';
+  duration: number; // seconds, 0 = infinite for persistent
+}
 
 export interface MapToken {
   id: string;

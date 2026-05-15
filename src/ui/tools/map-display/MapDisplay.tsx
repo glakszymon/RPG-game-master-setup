@@ -1,13 +1,12 @@
 import { useRef, useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { Sprite, Assets, Container } from 'pixi.js';
-import { usePixiApp } from './hooks/usePixiApp';
-import { useGridLayer } from './hooks/useGridLayer';
-import { useFowLayer } from './hooks/useFowLayer';
-import { useTokenLayer } from './hooks/useTokenLayer';
-import { useVfxLayer, VFX_PRESETS } from './hooks/useVfxLayer';
+import { useCanvasRenderer, screenToWorld } from './hooks/useCanvasRenderer';
+import type { RenderContext } from './hooks/useCanvasRenderer';
+import { drawGrid } from './hooks/useGridRenderer';
+import { useFowRenderer } from './hooks/useFowRenderer';
+import { useTokenRenderer } from './hooks/useTokenRenderer';
+import { useVfxRenderer, VFX_PRESETS } from './hooks/useVfxRenderer';
 import { DEFAULT_MAP_STATE } from './types';
-import type { MapDisplayState, GridConfig, MapTool, MapToken, MapDropPayload, VfxSettings } from './types';
-import type { VfxInstance, VfxPreset } from './hooks/useVfxLayer';
+import type { MapDisplayState, GridConfig, MapTool, MapToken, MapDropPayload, VfxSettings, VfxPreset } from './types';
 import styles from './MapDisplay.module.css';
 
 interface MapDisplayProps {
@@ -22,21 +21,14 @@ const MAX_ZOOM = 5;
 export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   const state: MapDisplayState = { ...DEFAULT_MAP_STATE, ...toolState };
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
-  const [appRef, isReady] = usePixiApp(canvasAreaRef);
-
-  const worldRef = useRef<Container | null>(null);
-  const mapSpriteRef = useRef<Sprite | null>(null);
 
   const stateRef = useRef(state);
-  useLayoutEffect(() => {
-    stateRef.current = state;
-  });
+  useLayoutEffect(() => { stateRef.current = state; });
 
   /** Patch state atomically — prevents imagePath loss from stale ref */
   const patchState = useCallback((patch: Partial<MapDisplayState>) => {
     const current = stateRef.current;
     const next = { ...current, ...patch };
-    // Safety: never silently erase imagePath if it existed
     if (current.imagePath && !next.imagePath && !('imagePath' in patch)) {
       console.warn('[MapDisplay] patchState would erase imagePath — BLOCKED');
       next.imagePath = current.imagePath;
@@ -45,19 +37,42 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   }, [onToolStateChange]);
 
   const [zoom, setZoom] = useState(state.viewport.zoom);
+  const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null);
   const [mapSize, setMapSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
-  // Grid overlay
-  useGridLayer(worldRef, state.grid, mapSize.w, mapSize.h);
+  // ── Viewport change handler ──
+  const handleViewportChange = useCallback((vp: { x: number; y: number; zoom: number }) => {
+    setZoom(vp.zoom);
+    patchState({ viewport: vp });
+  }, [patchState]);
 
-  // FoW overlay
+  // ── Canvas renderer (Phase 1) ──
+  const onDraw = useCallback((rc: RenderContext, time: number) => {
+    // Grid (Phase 2)
+    drawGrid(rc, stateRef.current.grid, mapSize.w, mapSize.h);
+    // Tokens (Phase 4)
+    tokenActions.drawTokens(rc);
+    // FoW (Phase 3)
+    fowActions.drawFow(rc);
+    // VFX (Phase 5)
+    vfxActions.drawVfx(rc, time);
+  }, [mapSize.w, mapSize.h]); // fowActions, tokenActions, vfxActions are stable refs
+
+  const renderer = useCanvasRenderer(
+    canvasAreaRef,
+    state.viewport,
+    mapImage,
+    onDraw,
+    handleViewportChange,
+  );
+
+  // ── FoW (Phase 3) ──
   const handleFowChange = useCallback((dataUrl: string) => {
     patchState({ fowDataUrl: dataUrl });
   }, [patchState]);
 
-  const { revealAll, concealAll } = useFowLayer(
-    appRef,
-    worldRef,
+  const fowActions = useFowRenderer(
+    renderer,
     mapSize.w,
     mapSize.h,
     state.activeTool,
@@ -66,27 +81,25 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     handleFowChange,
   );
 
-  // Token layer
+  // ── Tokens (Phase 4) ──
   const handleTokensChange = useCallback((newTokens: MapToken[]) => {
     patchState({ tokens: newTokens });
   }, [patchState]);
 
-  const { addToken, addTokenWithSync, removeToken } = useTokenLayer(
-    appRef,
-    worldRef,
+  const tokenActions = useTokenRenderer(
+    renderer,
     state.tokens,
     state.activeTool,
     handleTokensChange,
   );
 
-  // VFX layer
-  const handleVfxChange = useCallback((newVfx: VfxInstance[]) => {
+  // ── VFX (Phase 5) ──
+  const handleVfxChange = useCallback((newVfx: typeof state.vfxInstances) => {
     patchState({ vfxInstances: newVfx });
   }, [patchState]);
 
-  const { clearAllVfx } = useVfxLayer(
-    appRef,
-    worldRef,
+  const vfxActions = useVfxRenderer(
+    renderer,
     state.vfxInstances,
     state.activeTool,
     state.vfxSettings.selectedPreset,
@@ -102,37 +115,97 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     });
   }, [patchState]);
 
+  // ── Load map image ──
+  const loadingImageRef = useRef(false);
+  const loadImage = useCallback(async (filePath: string, shouldFit: boolean, signal?: { cancelled: boolean }): Promise<{ x: number; y: number; zoom: number } | null> => {
+    if (loadingImageRef.current) return null;
+    loadingImageRef.current = true;
+    try {
+      const dataUrl = await window.electronAPI?.dialog.readImage(filePath);
+      if (!dataUrl || signal?.cancelled) return null;
+
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Image load failed'));
+        img.src = dataUrl;
+      });
+
+      if (signal?.cancelled) return null;
+
+      setMapImage(img);
+      setMapSize({ w: img.naturalWidth, h: img.naturalHeight });
+
+      if (shouldFit) {
+        const container = canvasAreaRef.current;
+        if (container) {
+          const cw = container.clientWidth;
+          const ch = container.clientHeight;
+          const scale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight);
+          const vp = {
+            zoom: scale,
+            x: (cw - img.naturalWidth * scale) / 2,
+            y: (ch - img.naturalHeight * scale) / 2,
+          };
+          renderer.viewportRef.current = vp;
+          setZoom(scale);
+          renderer.markDirty();
+          return vp;
+        }
+      }
+      return null;
+    } finally {
+      loadingImageRef.current = false;
+    }
+  }, [renderer]);
+
+  const loadImageRef = useRef(loadImage);
+  useLayoutEffect(() => { loadImageRef.current = loadImage; });
+
+  // Restore saved map on mount
+  useEffect(() => {
+    const signal = { cancelled: false };
+    if (state.imagePath && !mapImage) {
+      loadImageRef.current(state.imagePath, true, signal).then((vp) => {
+        if (vp && !signal.cancelled) {
+          patchState({ viewport: vp });
+        }
+      });
+    }
+    return () => { signal.cancelled = true; };
+  }, [state.imagePath, mapImage, patchState]);
+
+  // File picker handler
+  const handleLoadMap = useCallback(async () => {
+    const filePath = await window.electronAPI?.dialog.openImageFile();
+    if (!filePath) return;
+    const vp = await loadImageRef.current(filePath, true);
+    // Single atomic patchState with both imagePath and viewport
+    patchState({ imagePath: filePath, ...(vp ? { viewport: vp } : {}) });
+  }, [patchState]);
+
   // ── Drop handler (cross-tool: Party Tracker → Map) ──
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const raw = e.dataTransfer.getData('application/json');
-    console.log('[MapDisplay] handleDrop — raw:', raw);
     if (!raw) return;
     try {
       const data = JSON.parse(raw) as MapDropPayload;
-    console.log('[MapDisplay] handleDrop — parsed:', data.type, data.name);
 
       let sourceType: MapToken['sourceType'];
       switch (data.type) {
-        case 'party-character':
-          sourceType = 'party';
-          break;
-        case 'bestiary-creature':
-          sourceType = 'bestiary';
-          break;
-        default:
-          return; // Unknown drop type — ignore
+        case 'party-character': sourceType = 'party'; break;
+        case 'bestiary-creature': sourceType = 'bestiary'; break;
+        default: return;
       }
 
-      const world = worldRef.current;
       const container = canvasAreaRef.current;
-      if (!world || world.destroyed || !container) return;
+      if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-      const mapX = (cx - world.x) / world.scale.x;
-      const mapY = (cy - world.y) / world.scale.y;
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      const [mapX, mapY] = screenToWorld(sx, sy, renderer.viewportRef.current);
 
       const token: MapToken = {
         id: `token-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -144,12 +217,11 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
         y: mapY,
         scale: 1,
       };
-      console.log('[MapDisplay] handleDrop — adding token:', token.name, 'at', mapX, mapY);
-      addTokenWithSync(token);
+      tokenActions.addTokenWithSync(token);
     } catch (err) {
       console.error('[MapDisplay] handleDrop — error:', err);
     }
-  }, [addTokenWithSync]);
+  }, [tokenActions, renderer]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -158,14 +230,12 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
 
   // Add manual token at center of viewport
   const addManualToken = useCallback(() => {
-    const world = worldRef.current;
     const container = canvasAreaRef.current;
-    if (!world || world.destroyed || !container) return;
+    if (!container) return;
 
     const cx = container.clientWidth / 2;
     const cy = container.clientHeight / 2;
-    const mapX = (cx - world.x) / world.scale.x;
-    const mapY = (cy - world.y) / world.scale.y;
+    const [mapX, mapY] = screenToWorld(cx, cy, renderer.viewportRef.current);
 
     const name = `Token ${state.tokens.length + 1}`;
     const token: MapToken = {
@@ -178,194 +248,42 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
       y: mapY,
       scale: 1,
     };
-    addToken(token);
-  }, [addToken, state.tokens.length]);
+    tokenActions.addToken(token);
+  }, [tokenActions, state.tokens.length, renderer]);
 
-  // ── Helpers ──
-
+  // ── Zoom controls ──
   const applyZoom = useCallback((newZoom: number) => {
-    const world = worldRef.current;
     const container = canvasAreaRef.current;
-    if (!world || !container) return;
+    if (!container || !mapImage) return;
 
     const clamped = Math.min(Math.max(newZoom, MIN_ZOOM), MAX_ZOOM);
-    const sprite = mapSpriteRef.current;
-    if (!sprite || sprite.destroyed) return;
-
     const cw = container.clientWidth;
     const ch = container.clientHeight;
-    const mapW = sprite.texture.width * clamped;
-    const mapH = sprite.texture.height * clamped;
+    const mapW = mapImage.naturalWidth * clamped;
+    const mapH = mapImage.naturalHeight * clamped;
 
-    world.scale.set(clamped);
-    world.x = (cw - mapW) / 2;
-    world.y = (ch - mapH) / 2;
-
+    const vp = {
+      zoom: clamped,
+      x: (cw - mapW) / 2,
+      y: (ch - mapH) / 2,
+    };
+    renderer.viewportRef.current = vp;
     setZoom(clamped);
-    patchState({
-      viewport: { x: world.x, y: world.y, zoom: clamped },
-    });
-  }, [patchState]);
+    patchState({ viewport: vp });
+    renderer.markDirty();
+  }, [mapImage, renderer, patchState]);
 
   const fitToContainer = useCallback(() => {
-    const sprite = mapSpriteRef.current;
+    if (!mapImage) return;
     const container = canvasAreaRef.current;
-    const world = worldRef.current;
-    if (!sprite || sprite.destroyed || !container || !world || world.destroyed) return;
+    if (!container) return;
 
     const cw = container.clientWidth;
     const ch = container.clientHeight;
-    const iw = sprite.texture.width;
-    const ih = sprite.texture.height;
+    const scale = Math.min(cw / mapImage.naturalWidth, ch / mapImage.naturalHeight);
+    applyZoom(scale);
+  }, [mapImage, applyZoom]);
 
-    const scale = Math.min(cw / iw, ch / ih);
-
-    world.scale.set(scale);
-    world.x = (cw - iw * scale) / 2;
-    world.y = (ch - ih * scale) / 2;
-
-    setZoom(scale);
-    patchState({
-      viewport: { x: world.x, y: world.y, zoom: scale },
-    });
-  }, [patchState]);
-
-  // Ref to break loadImage → fitToContainer → patchState dependency chain
-  const fitToContainerRef = useRef(fitToContainer);
-  useLayoutEffect(() => { fitToContainerRef.current = fitToContainer; });
-
-  // ── Initialize world container once Pixi is ready ──
-  useEffect(() => {
-    const app = appRef.current;
-    if (!isReady || !app) return;
-
-    // Check if existing world is still valid (strict mode may have destroyed it)
-    if (worldRef.current && !worldRef.current.destroyed) return;
-
-    const world = new Container();
-    world.label = 'world';
-    app.stage.addChild(world);
-    worldRef.current = world;
-    // Reset map sprite ref since old one was destroyed with previous world
-    mapSpriteRef.current = null;
-
-    // No cleanup — world is destroyed when app is destroyed.
-    // Nulling refs here causes cascading restore effects in strict mode.
-  }, [isReady, appRef]);
-
-  // ── Load map image ──
-  const loadingImageRef = useRef(false);
-  const loadImage = useCallback(async (filePath: string, shouldFit: boolean, signal?: { cancelled: boolean }) => {
-    if (loadingImageRef.current) return;
-    loadingImageRef.current = true;
-    try {
-      const app = appRef.current;
-      const world = worldRef.current;
-      if (!app || !world || world.destroyed) return;
-
-      const dataUrl = await window.electronAPI?.dialog.readImage(filePath);
-      if (!dataUrl || signal?.cancelled) return;
-
-      const texture = await Assets.load(dataUrl);
-      if (world.destroyed || signal?.cancelled) return;
-      if (mapSpriteRef.current) {
-        mapSpriteRef.current.destroy();
-      }
-
-      const sprite = new Sprite(texture);
-      world.addChildAt(sprite, 0);
-      mapSpriteRef.current = sprite;
-      setMapSize({ w: texture.width, h: texture.height });
-
-      if (shouldFit) {
-        fitToContainerRef.current();
-      }
-    } finally {
-      loadingImageRef.current = false;
-    }
-  }, [appRef]);
-
-  // Ref to break restore/handler dependency on loadImage identity
-  const loadImageRef = useRef(loadImage);
-  useLayoutEffect(() => { loadImageRef.current = loadImage; });
-
-  // Restore saved map on mount (once Pixi + world are ready)
-  useEffect(() => {
-    const signal = { cancelled: false };
-    if (state.imagePath && isReady && worldRef.current && !mapSpriteRef.current) {
-      loadImageRef.current(state.imagePath, true, signal);
-    }
-    return () => { signal.cancelled = true; };
-  }, [state.imagePath, isReady]);
-
-  // File picker handler
-  const handleLoadMap = useCallback(async () => {
-    const filePath = await window.electronAPI?.dialog.openImageFile();
-    if (!filePath) return;
-
-    await loadImageRef.current(filePath, true);
-    patchState({ imagePath: filePath });
-  }, [patchState]);
-
-  // ── Pan (middle mouse drag) ──
-  useEffect(() => {
-    const canvas = appRef.current?.renderer ? appRef.current.canvas : null;
-    if (!isReady || !canvas) return;
-
-    const onWheel = (e: WheelEvent) => { e.preventDefault(); };
-
-    let isPanning = false;
-    let lastX = 0;
-    let lastY = 0;
-
-    const onPointerDown = (e: PointerEvent) => {
-      if (e.button === 1) {
-        isPanning = true;
-        lastX = e.clientX;
-        lastY = e.clientY;
-        canvas.setPointerCapture(e.pointerId);
-        e.preventDefault();
-      }
-    };
-
-    const onPointerMove = (e: PointerEvent) => {
-      if (!isPanning) return;
-      const world = worldRef.current;
-      if (!world || world.destroyed) return;
-
-      world.x += e.clientX - lastX;
-      world.y += e.clientY - lastY;
-      lastX = e.clientX;
-      lastY = e.clientY;
-    };
-
-    const onPointerUp = (e: PointerEvent) => {
-      if (!isPanning) return;
-      isPanning = false;
-      canvas.releasePointerCapture(e.pointerId);
-
-      const world = worldRef.current;
-      if (world && !world.destroyed) {
-        patchState({
-          viewport: { x: world.x, y: world.y, zoom: world.scale.x },
-        });
-      }
-    };
-
-    canvas.addEventListener('wheel', onWheel, { passive: false });
-    canvas.addEventListener('pointerdown', onPointerDown);
-    canvas.addEventListener('pointermove', onPointerMove);
-    canvas.addEventListener('pointerup', onPointerUp);
-
-    return () => {
-      canvas.removeEventListener('wheel', onWheel);
-      canvas.removeEventListener('pointerdown', onPointerDown);
-      canvas.removeEventListener('pointermove', onPointerMove);
-      canvas.removeEventListener('pointerup', onPointerUp);
-    };
-  }, [isReady, appRef, patchState]);
-
-  // ── Control handlers ──
   const handleZoomIn = useCallback(() => applyZoom(zoom * 1.25), [zoom, applyZoom]);
   const handleZoomOut = useCallback(() => applyZoom(zoom / 1.25), [zoom, applyZoom]);
   const handleSlider = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -374,6 +292,7 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
 
   const zoomPercent = Math.round(zoom * 100);
 
+  // ── Grid controls ──
   const updateGrid = useCallback((patch: Partial<GridConfig>) => {
     const newGrid = { ...stateRef.current.grid, ...patch };
     patchState({ grid: newGrid });
@@ -405,6 +324,11 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
       });
     }
   }, [patchState]);
+
+  // Mark dirty when grid/state changes that affect rendering
+  useEffect(() => {
+    renderer.markDirty();
+  }, [state.grid, state.tokens, state.activeTool, state.brushSettings, state.vfxInstances, renderer]);
 
   const hasImage = Boolean(state.imagePath);
   const isFowTool = state.activeTool === 'fow-reveal' || state.activeTool === 'fow-conceal';
@@ -526,10 +450,10 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
                   />
                 </label>
                 <div className={styles.toolDivider} />
-                <button className={styles.fowActionBtn} onClick={revealAll}>
+                <button className={styles.fowActionBtn} onClick={fowActions.revealAll}>
                   Reveal All
                 </button>
-                <button className={styles.fowActionBtn} onClick={concealAll}>
+                <button className={styles.fowActionBtn} onClick={fowActions.concealAll}>
                   Conceal All
                 </button>
               </div>
@@ -603,7 +527,7 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
                   <>
                     <div className={styles.toolDivider} />
                     <span className={styles.toolHint}>{state.vfxInstances.length} active effect(s)</span>
-                    <button className={styles.fowActionBtn} onClick={clearAllVfx}>
+                    <button className={styles.fowActionBtn} onClick={vfxActions.clearAllVfx}>
                       Clear All VFX
                     </button>
                   </>
@@ -707,7 +631,7 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
                           <span className={styles.tokenName}>{t.name}</span>
                           <button
                             className={styles.tokenRemoveBtn}
-                            onClick={() => removeToken(t.id)}
+                            onClick={() => tokenActions.removeToken(t.id)}
                             title="Remove token"
                           >
                             ×
