@@ -6,8 +6,8 @@
  */
 
 import { useReducer, useCallback } from 'react';
-import type { CanvasState, WindowState, ToolType, BackgroundType } from '../types';
-import { TOOL_DEFAULT_SIZES } from '../types';
+import type { CanvasState, WindowState, ToolType, BackgroundType, CampaignTimeState } from '../types';
+import { TOOL_DEFAULT_SIZES, DEFAULT_TIME_STATE } from '../types';
 
 // ── Actions ──
 
@@ -22,6 +22,8 @@ type CanvasAction =
   | { type: 'TOGGLE_PIN'; id: string }
   | { type: 'UPDATE_TOOL_STATE'; id: string; toolState: unknown }
   | { type: 'SET_BACKGROUND'; background: BackgroundType }
+  | { type: 'ADVANCE_TIME'; minutes: number }
+  | { type: 'SET_TIME_STATE'; timeState: CampaignTimeState }
   | { type: 'LOAD_STATE'; state: CanvasState };
 
 export type { CanvasAction };
@@ -73,6 +75,69 @@ function bringToFront(windows: WindowState[], id: string): WindowState[] {
   } else {
     return [...unpinned, win, ...pinned];
   }
+}
+
+// ── Time Advancement (pure) ──
+
+/** Advance campaign time by deltaMinutes, cascading day/month/year changes and in-game timers */
+export function advanceTime(state: CampaignTimeState, deltaMinutes: number): CampaignTimeState {
+  const { calendar } = state;
+  let totalMinutes = state.currentHour * 60 + state.currentMinute + deltaMinutes;
+  let day = state.currentDay;
+  let month = state.currentMonth;
+  let year = state.currentYear;
+
+  // Cascade day overflow
+  while (totalMinutes >= 1440) {
+    totalMinutes -= 1440;
+    day++;
+    const daysInMonth = calendar.months[month]?.days ?? 30;
+    if (day > daysInMonth) {
+      day = 1;
+      month++;
+      if (month >= calendar.months.length) {
+        month = 0;
+        year++;
+      }
+    }
+  }
+
+  // Cascade day underflow (time reversal)
+  while (totalMinutes < 0) {
+    totalMinutes += 1440;
+    day--;
+    if (day < 1) {
+      month--;
+      if (month < 0) {
+        month = calendar.months.length - 1;
+        year--;
+      }
+      day = calendar.months[month]?.days ?? 30;
+    }
+  }
+
+  const currentHour = Math.floor(totalMinutes / 60);
+  const currentMinute = totalMinutes % 60;
+
+  // Advance in-game timers
+  const customTimers = state.customTimers.map((t) => {
+    if (t.mode !== 'in-game') return t;
+    const newElapsed = t.elapsedMinutes + deltaMinutes;
+    const isCompleted = t.direction === 'down'
+      ? newElapsed >= t.targetMinutes
+      : false;
+    return { ...t, elapsedMinutes: newElapsed, completed: isCompleted };
+  });
+
+  return {
+    ...state,
+    currentHour,
+    currentMinute,
+    currentDay: day,
+    currentMonth: month,
+    currentYear: year,
+    customTimers,
+  };
 }
 
 // ── Reducer ──
@@ -175,8 +240,17 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
     case 'SET_BACKGROUND':
       return { ...state, background: action.background };
 
+    case 'ADVANCE_TIME':
+      return { ...state, timeState: advanceTime(state.timeState, action.minutes) };
+
+    case 'SET_TIME_STATE':
+      return { ...state, timeState: action.timeState };
+
     case 'LOAD_STATE':
-      return action.state;
+      return {
+        ...action.state,
+        timeState: action.state.timeState ?? DEFAULT_TIME_STATE,
+      };
 
     default:
       return state;
@@ -191,6 +265,7 @@ export const initialCanvasState: CanvasState = {
   windows: [],
   background: 'dot-grid',
   nextWindowId: 0,
+  timeState: DEFAULT_TIME_STATE,
 };
 
 export function useCanvasState() {

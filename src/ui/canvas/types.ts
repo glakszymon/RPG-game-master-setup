@@ -10,7 +10,9 @@ export type ToolType =
   | 'map-display'
   | 'soundboard'
   | 'weather-generator'
-  | 'time-tracker'
+  | 'time-clock'
+  | 'time-calendar'
+  | 'time-session-timer'
   | 'shop-generator'
   | 'dice-roller';
 
@@ -33,6 +35,8 @@ export interface CanvasState {
   background: BackgroundType;
   /** Monotonic counter for z-order — index in windows array determines render order */
   nextWindowId: number;
+  /** Shared time state across all time tool windows */
+  timeState: CampaignTimeState;
 }
 
 export interface ViewportTransform {
@@ -70,7 +74,9 @@ export const TOOL_MIN_SIZES: Record<ToolType, { minWidth: number; minHeight: num
   'map-display': { minWidth: 400, minHeight: 400 },
   'soundboard': { minWidth: 350, minHeight: 250 },
   'weather-generator': { minWidth: 300, minHeight: 200 },
-  'time-tracker': { minWidth: 280, minHeight: 200 },
+  'time-clock': { minWidth: 280, minHeight: 320 },
+  'time-calendar': { minWidth: 320, minHeight: 350 },
+  'time-session-timer': { minWidth: 280, minHeight: 250 },
   'shop-generator': { minWidth: 350, minHeight: 300 },
   'dice-roller': { minWidth: 250, minHeight: 200 },
 };
@@ -84,7 +90,9 @@ export const TOOL_DEFAULT_SIZES: Record<ToolType, { width: number; height: numbe
   'map-display': { width: 600, height: 500 },
   'soundboard': { width: 400, height: 300 },
   'weather-generator': { width: 350, height: 280 },
-  'time-tracker': { width: 320, height: 250 },
+  'time-clock': { width: 320, height: 400 },
+  'time-calendar': { width: 420, height: 450 },
+  'time-session-timer': { width: 350, height: 350 },
   'shop-generator': { width: 450, height: 380 },
   'dice-roller': { width: 300, height: 250 },
 };
@@ -98,7 +106,9 @@ export const TOOL_INFO: Record<ToolType, { name: string; icon: string }> = {
   'map-display': { name: 'Map Display', icon: '🗺️' },
   'soundboard': { name: 'Soundboard', icon: '🔊' },
   'weather-generator': { name: 'Weather Generator', icon: '🌤️' },
-  'time-tracker': { name: 'Time Tracker', icon: '⏰' },
+  'time-clock': { name: 'Time Clock', icon: '🌅' },
+  'time-calendar': { name: 'Calendar', icon: '📅' },
+  'time-session-timer': { name: 'Session Timer', icon: '⏱️' },
   'shop-generator': { name: 'Shop Generator', icon: '🏪' },
   'dice-roller': { name: 'Dice Roller', icon: '🎲' },
 };
@@ -115,7 +125,7 @@ export const TOOL_CATEGORIES = [
   },
   {
     label: 'World & Time',
-    tools: ['weather-generator', 'time-tracker', 'shop-generator'] as ToolType[],
+    tools: ['weather-generator', 'time-clock', 'time-calendar', 'time-session-timer', 'shop-generator'] as ToolType[],
   },
   {
     label: 'Notes & Content',
@@ -126,3 +136,83 @@ export const TOOL_CATEGORIES = [
     tools: ['soundboard'] as ToolType[],
   },
 ] as const;
+
+// ── Time State ──
+
+export interface CalendarConfig {
+  months: Array<{ name: string; days: number }>;
+  weekDays: string[];
+  holidays: Array<{ month: number; day: number; name: string; color?: string }>;
+  /** Advanced mode only */
+  lunarCycleLength?: number;
+  lunarReferenceDay?: number;
+  summerSolstice?: { month: number; day: number; dawnHour: number; duskHour: number };
+  winterSolstice?: { month: number; day: number; dawnHour: number; duskHour: number };
+}
+
+export interface CustomTimer {
+  id: string;
+  name: string;
+  mode: 'real-time' | 'in-game';
+  direction: 'up' | 'down';
+  targetMinutes: number;
+  elapsedMinutes: number;
+  startedAt: number | null;
+  accumulatedMs: number;
+  soundEnabled: boolean;
+  completed: boolean;
+}
+
+export interface CampaignTimeState {
+  currentMinute: number;
+  currentHour: number;
+  currentDay: number;
+  currentMonth: number;
+  currentYear: number;
+
+  dawnHour: number;
+  duskHour: number;
+  customTimeButtons: Array<{ label: string; minutes: number }>;
+
+  calendarMode: 'simple' | 'advanced';
+  calendar: CalendarConfig;
+
+  sessionTimer: {
+    startedAt: number | null;
+    accumulatedMs: number;
+  };
+  customTimers: CustomTimer[];
+}
+
+const REAL_WORLD_MONTHS = [
+  { name: 'January', days: 31 }, { name: 'February', days: 28 },
+  { name: 'March', days: 31 }, { name: 'April', days: 30 },
+  { name: 'May', days: 31 }, { name: 'June', days: 30 },
+  { name: 'July', days: 31 }, { name: 'August', days: 31 },
+  { name: 'September', days: 30 }, { name: 'October', days: 31 },
+  { name: 'November', days: 30 }, { name: 'December', days: 31 },
+];
+
+const REAL_WORLD_WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+export const DEFAULT_TIME_STATE: CampaignTimeState = {
+  currentMinute: 0,
+  currentHour: 12,
+  currentDay: 1,
+  currentMonth: 0,
+  currentYear: 1,
+
+  dawnHour: 6,
+  duskHour: 18,
+  customTimeButtons: [],
+
+  calendarMode: 'simple',
+  calendar: {
+    months: REAL_WORLD_MONTHS,
+    weekDays: REAL_WORLD_WEEKDAYS,
+    holidays: [],
+  },
+
+  sessionTimer: { startedAt: null, accumulatedMs: 0 },
+  customTimers: [],
+};

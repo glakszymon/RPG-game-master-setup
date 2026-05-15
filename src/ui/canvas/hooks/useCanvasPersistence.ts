@@ -36,7 +36,7 @@ export function useCanvasPersistence(
       if (!json) {
         console.log('[Persistence] No saved state for campaign:', campaignId);
         // New campaign — reset to empty state
-        dispatch({ type: 'LOAD_STATE', state: { windows: [], background: 'dot-grid', nextWindowId: 0 } });
+        dispatch({ type: 'LOAD_STATE', state: { windows: [], background: 'dot-grid', nextWindowId: 0 } as any });
       } else {
         try {
           const loaded = JSON.parse(json) as CanvasState;
