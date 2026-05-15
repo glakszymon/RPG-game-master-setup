@@ -158,6 +158,7 @@ export interface CustomTimer {
   startedAt: number | null;
   accumulatedMs: number;
   soundEnabled: boolean;
+  paused: boolean;
   completed: boolean;
   pinned: boolean;
 }
@@ -175,6 +176,11 @@ export interface CampaignTimeState {
 
   calendarMode: 'simple' | 'advanced';
   calendar: CalendarConfig;
+
+  autoAdvance: {
+    enabled: boolean;
+    ratio: number;
+  };
 
   sessionTimer: {
     startedAt: number | null;
@@ -211,6 +217,8 @@ export const DEFAULT_TIME_STATE: CampaignTimeState = {
     weekDays: REAL_WORLD_WEEKDAYS,
     holidays: [],
   },
+
+  autoAdvance: { enabled: false, ratio: 10 },
 
   sessionTimer: { startedAt: null, accumulatedMs: 0 },
   customTimers: [],

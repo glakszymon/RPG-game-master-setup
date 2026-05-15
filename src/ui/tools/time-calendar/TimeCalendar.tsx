@@ -96,6 +96,11 @@ export function TimeCalendar({
     () => calendar.winterSolstice ?? { month: 11, day: 21, dawnHour: 8, duskHour: 16 },
   );
 
+  // Starting date editor
+  const [editDay, setEditDay] = useState(String(currentDay));
+  const [editMonth, setEditMonth] = useState(String(currentMonth));
+  const [editYear, setEditYear] = useState(String(currentYear));
+
   const handleOpenSettings = useCallback(() => {
     setEditMode(calendarMode);
     setEditMonths(calendar.months.map((m) => ({ ...m })));
@@ -107,8 +112,11 @@ export function TimeCalendar({
     setEditWinterSolstice(
       calendar.winterSolstice ?? { month: 11, day: 21, dawnHour: 8, duskHour: 16 },
     );
+    setEditDay(String(currentDay));
+    setEditMonth(String(currentMonth));
+    setEditYear(String(currentYear));
     setSettingsOpen(true);
-  }, [calendarMode, calendar]);
+  }, [calendarMode, calendar, currentDay, currentMonth, currentYear]);
 
   const handleSaveSettings = useCallback(() => {
     const updated: CalendarConfig = {
@@ -120,15 +128,26 @@ export function TimeCalendar({
       updated.summerSolstice = editSummerSolstice;
       updated.winterSolstice = editWinterSolstice;
     }
+    // Apply starting date
+    const monthIdx = Math.max(0, Math.min(updated.months.length - 1, parseInt(editMonth, 10) || 0));
+    const maxDay = updated.months[monthIdx]?.days ?? 30;
+    const day = Math.max(1, Math.min(maxDay, parseInt(editDay, 10) || 1));
+    const year = parseInt(editYear, 10) || 1;
+
     onSetTimeState({
       ...timeState,
       calendarMode: editMode,
       calendar: updated,
+      currentDay: day,
+      currentMonth: monthIdx,
+      currentYear: year,
     });
     setSettingsOpen(false);
   }, [
     editMode, editMonths, editWeekDays, editHolidays,
-    editSummerSolstice, editWinterSolstice, timeState, onSetTimeState,
+    editSummerSolstice, editWinterSolstice,
+    editDay, editMonth, editYear,
+    timeState, onSetTimeState,
   ]);
 
   const handleAddHoliday = useCallback(() => {
@@ -228,6 +247,42 @@ export function TimeCalendar({
       >
         <div className={styles.settingsContent}>
           <div className={styles.settingsGrid}>
+            {/* Starting Date */}
+            <div className={styles.settingsField}>
+              <label className={styles.settingsLabel}>Current Date</label>
+              <div className={styles.solsticeRow}>
+                <span className={styles.daysUnit}>Day</span>
+                <input
+                  className={styles.settingsInput}
+                  style={{ width: 50 }}
+                  type="number"
+                  min="1"
+                  value={editDay}
+                  onChange={(e) => setEditDay(e.target.value)}
+                />
+                <span className={styles.daysUnit}>Month</span>
+                <select
+                  className={styles.settingsSelect}
+                  value={editMonth}
+                  onChange={(e) => setEditMonth(e.target.value)}
+                >
+                  {editMonths.map((m, i) => (
+                    <option key={i} value={i}>{m.name}</option>
+                  ))}
+                </select>
+                <span className={styles.daysUnit}>Year</span>
+                <input
+                  className={styles.settingsInput}
+                  style={{ width: 60 }}
+                  type="number"
+                  value={editYear}
+                  onChange={(e) => setEditYear(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className={styles.separator} />
+
             {/* Seasonal Daylight Toggle */}
             <div className={styles.settingsField}>
               <label className={styles.settingsLabel}>Seasonal Daylight Adjustment</label>

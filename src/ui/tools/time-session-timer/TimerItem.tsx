@@ -231,11 +231,9 @@ function CardLayout({
           <button className={styles.controlBtn} onClick={() => onRestart(timer.id)} title="Restart">
             <span className={styles.icon}>replay</span>
           </button>
-          {timer.mode === 'real-time' && (
-            <button className={styles.controlBtn} onClick={() => onTogglePause(timer.id)} title={isRunning ? 'Pause' : 'Resume'}>
-              <span className={styles.icon}>{isRunning ? 'pause' : 'play_arrow'}</span>
-            </button>
-          )}
+          <button className={styles.controlBtn} onClick={() => onTogglePause(timer.id)} title={isRunning ? 'Pause' : 'Resume'}>
+            <span className={styles.icon}>{isRunning ? 'pause' : 'play_arrow'}</span>
+          </button>
           <button className={styles.controlBtn} onClick={() => setEditing(true)} title="Edit">
             <span className={styles.icon}>edit</span>
           </button>
@@ -279,11 +277,9 @@ function CardLayout({
         <button className={styles.controlBtn} onClick={() => onRestart(timer.id)} title="Restart">
           <span className={styles.icon}>replay</span>
         </button>
-        {timer.mode === 'real-time' && (
-          <button className={styles.controlBtn} onClick={() => onTogglePause(timer.id)} title={isRunning ? 'Pause' : 'Resume'}>
-            <span className={styles.icon}>{isRunning ? 'pause' : 'play_arrow'}</span>
-          </button>
-        )}
+        <button className={styles.controlBtn} onClick={() => onTogglePause(timer.id)} title={isRunning ? 'Pause' : 'Resume'}>
+          <span className={styles.icon}>{isRunning ? 'pause' : 'play_arrow'}</span>
+        </button>
         <button className={styles.controlBtn} onClick={() => setEditing(true)} title="Edit">
           <span className={styles.icon}>edit</span>
         </button>
@@ -321,7 +317,9 @@ const RealTimeTimerItem = memo(function RealTimeTimerItem({
 
   useEffect(() => { expiredRef.current = timer.completed; }, [timer.completed]);
 
-  const isRunning = timer.startedAt !== null;
+  const isRunning = timer.mode === 'real-time'
+    ? timer.startedAt !== null
+    : !(timer.paused ?? false);
   const targetMs = timer.targetMinutes * 60 * 1000;
   const isCountdown = timer.direction === 'down';
 
@@ -383,7 +381,7 @@ const InGameTimerItem = memo(function InGameTimerItem({
         displayValue={displayValue}
         progress={progress}
         isCountdown={isCountdown}
-        isRunning={false}
+        isRunning={!(timer.paused ?? false)}
         editing={editing}
         setEditing={setEditing}
         onTogglePause={onTogglePause}

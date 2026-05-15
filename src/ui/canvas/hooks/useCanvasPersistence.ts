@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import type { CanvasState } from '../types';
 import type { CanvasAction } from './useCanvasState';
 
-const SAVE_DEBOUNCE_MS = 500;
+const SAVE_DEBOUNCE_MS = 2000;
 
 export function useCanvasPersistence(
   state: CanvasState,

@@ -62,6 +62,7 @@ export function TimeSessionTimer({
       startedAt: form.mode === 'real-time' ? Date.now() : null,
       accumulatedMs: 0,
       soundEnabled: true,
+      paused: false,
       completed: false,
       pinned: false,
     };
@@ -84,12 +85,16 @@ export function TimeSessionTimer({
     onSetTimeState({
       ...timeState,
       customTimers: timeState.customTimers.map((t) => {
-        if (t.id !== id || t.mode !== 'real-time') return t;
-        if (t.startedAt !== null) {
-          const elapsed = Date.now() - t.startedAt;
-          return { ...t, startedAt: null, accumulatedMs: t.accumulatedMs + elapsed };
+        if (t.id !== id) return t;
+        if (t.mode === 'real-time') {
+          if (t.startedAt !== null) {
+            const elapsed = Date.now() - t.startedAt;
+            return { ...t, startedAt: null, accumulatedMs: t.accumulatedMs + elapsed };
+          }
+          return { ...t, startedAt: Date.now() };
         }
-        return { ...t, startedAt: Date.now() };
+        // in-game mode: toggle paused
+        return { ...t, paused: !t.paused };
       }),
     });
   }, [timeState, onSetTimeState]);
@@ -104,6 +109,7 @@ export function TimeSessionTimer({
           elapsedMinutes: 0,
           accumulatedMs: 0,
           startedAt: t.mode === 'real-time' ? Date.now() : null,
+          paused: false,
           completed: false,
         };
       }),

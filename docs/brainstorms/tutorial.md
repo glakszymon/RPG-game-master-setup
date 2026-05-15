@@ -792,9 +792,11 @@ Pliki modułu:
 **1. Time Clock (`time-clock`)** — Zegar in-game:
 - Łuk nieba 180° (Canvas 2D) ze słońcem i księżycem, gradient dawn/day/dusk/night
 - Przyciski przesuwania czasu: ±1min, ±10min, ±1h, ±4h, ±1 dzień, custom input
-- Modal ustawień: godziny świtu/zmierzchu
+- Modal ustawień: godziny świtu/zmierzchu, custom buttons, auto-advance
 - Przekroczenie północy automatycznie przesuwa datę w kalendarzu
 - Cofanie czasu działa symetrycznie
+- **Auto-advance:** opcja w ustawieniach — czas gry płynie automatycznie w konfigurowalnym ratio (np. 1 real min = 10 game min). Przycisk play/pause na głównym widoku gdy włączony. Przelicznik w ustawieniach pokazuje ile realnego czasu zajmie: 1h gry, 4h odpoczynek, 8h long rest, pełna doba, runda walki
+- Czas zawsze w pełnych minutach (Math.round w `advanceTime`), reset do normy przy restarcie
 
 **2. Time Calendar (`time-calendar`)** — Kalendarz fantasy:
 - Siatka miesięczna z dniami tygodnia jako nagłówkami
@@ -804,6 +806,7 @@ Pliki modułu:
 - Tryb Rozbudowany: solstice letni/zimowy wpływający na dawn/dusk w zegarze (interpolacja sinusoidalna via `useDaylightTimes`)
 - Preset "Real-world" (12 miesięcy, 7 dni) jako domyślny
 - Modal ustawień z edytorem miesięcy, dni tygodnia, świąt, solstice
+- **Ustawianie daty początkowej:** w modalu ustawień sekcja "Current Date" z polami Day/Month/Year — pozwala ustawić dowolną datę startową kampanii
 
 **3. Time Session Timer (`time-session-timer`)** — Timery sesji:
 - Grid layout kart timerów z drag & drop reorderem (HTML5 DnD)
@@ -813,6 +816,9 @@ Pliki modułu:
 - Expiration: czerwona pulsacja + 3-notowy chime (C6→E6→G6, Web Audio oscillators)
 - Pin to overlay: przypięte timery wyświetlane jako kompaktowy pasek nad canvasem (PinnedTimers.tsx)
 - Inline edit (nazwa + czas docelowy), restart, play/pause, delete
+- Play/pause działa dla OBU trybów: real-time (toggle startedAt) i in-game (toggle `paused` boolean)
+- In-game timery z `paused: true` są pomijane w `advanceTime()` — nie tykają gdy czas płynie
+- `isRunning` w UI: real-time → `startedAt !== null`, in-game → `!(timer.paused ?? false)`
 - Material Symbols Outlined ikony (play_arrow, pause, replay, keep, edit, close) — 28×28px buttony
 - Sekundy w duration (targetMinutes przechowuje wartości ułamkowe)
 
@@ -825,6 +831,9 @@ Pliki modułu:
 - `useTimerEngine` — singleton requestAnimationFrame loop z Set subskrybentów
 - `useExpirationBatcher` — 100ms batch window na expiration events
 - `useChimePlayer` — shared AudioContext tworzony eagerly + resume na click/keydown
+- `useAutoAdvance` — setInterval 1s, akumuluje czas do pełnej minuty, local ref dla timing (nie w state — unika zapisów co sekundę)
+- Persistence debounce: 2000ms (zmieniony z 500ms — unika obciążania CPU przy auto-advance)
+- `LOAD_STATE` zaokrągla minuty/godziny i resetuje autoAdvance do stanu wyłączonego-runtime (bezpieczny restart)
 
 **Zmiany w istniejącym kodzie:**
 - `useSpacePan.ts` — zmieniony z Space+drag na Alt+drag (Space koliduje z inputami w timerach)
@@ -835,7 +844,7 @@ Pliki modułu:
 ```
 src/ui/tools/time-clock/
   TimeClock.tsx, TimeClock.module.css, types.ts, index.ts
-  hooks/useSkyRenderer.ts
+  hooks/useSkyRenderer.ts, hooks/useAutoAdvance.ts
 
 src/ui/tools/time-calendar/
   TimeCalendar.tsx, TimeCalendar.module.css, types.ts, index.ts
@@ -857,6 +866,9 @@ src/ui/tools/time-session-timer/
 - Przypnij timer — pojawia się kompaktowy pasek nad canvasem
 - Drag & drop timerów — kolejność się zmienia
 - Alt+drag na canvasie — pan (nie Space)
+- Włącz auto-advance w ustawieniach zegara (ratio 10) — po odpauzie czas powinien skakać o minutę co ~6s
+- Sprawdź przelicznik: 4h rest przy ratio 10 = 24 min realnego czasu
+- Ustaw datę początkową w kalendarzu (np. Day 15, Month 3, Year 1402) — data powinna się zmienić natychmiast
 
 ### Krok 11.3 - Generator sklepów
 

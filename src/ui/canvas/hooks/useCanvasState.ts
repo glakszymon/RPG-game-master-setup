@@ -82,7 +82,10 @@ function bringToFront(windows: WindowState[], id: string): WindowState[] {
 /** Advance campaign time by deltaMinutes, cascading day/month/year changes and in-game timers */
 export function advanceTime(state: CampaignTimeState, deltaMinutes: number): CampaignTimeState {
   const { calendar } = state;
-  let totalMinutes = state.currentHour * 60 + state.currentMinute + deltaMinutes;
+  // Always work with whole minutes to avoid fractional display issues
+  const roundedDelta = Math.round(deltaMinutes);
+  if (roundedDelta === 0) return state;
+  let totalMinutes = state.currentHour * 60 + state.currentMinute + roundedDelta;
   let day = state.currentDay;
   let month = state.currentMonth;
   let year = state.currentYear;
@@ -122,6 +125,7 @@ export function advanceTime(state: CampaignTimeState, deltaMinutes: number): Cam
   // Advance in-game timers
   const customTimers = state.customTimers.map((t) => {
     if (t.mode !== 'in-game') return t;
+    if (t.paused ?? false) return t;
     const newElapsed = t.elapsedMinutes + deltaMinutes;
     const isCompleted = t.direction === 'down'
       ? newElapsed >= t.targetMinutes
@@ -246,11 +250,22 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
     case 'SET_TIME_STATE':
       return { ...state, timeState: action.timeState };
 
-    case 'LOAD_STATE':
+    case 'LOAD_STATE': {
+      const loadedTime = action.state.timeState ?? DEFAULT_TIME_STATE;
       return {
         ...action.state,
-        timeState: action.state.timeState ?? DEFAULT_TIME_STATE,
+        timeState: {
+          ...loadedTime,
+          // Ensure whole minutes + reset auto-advance running state on load
+          currentMinute: Math.round(loadedTime.currentMinute ?? 0),
+          currentHour: Math.round(loadedTime.currentHour ?? 12),
+          autoAdvance: {
+            enabled: loadedTime.autoAdvance?.enabled ?? false,
+            ratio: loadedTime.autoAdvance?.ratio ?? 10,
+          },
+        },
       };
+    }
 
     default:
       return state;

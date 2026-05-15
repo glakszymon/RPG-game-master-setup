@@ -180,3 +180,77 @@
   border-color: rgba(255, 255, 255, 0.3);
   color: var(--color-text-primary);
 }
+
+/* ── Auto-Advance ── */
+
+.autoAdvanceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.autoAdvanceBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.autoAdvanceBtn:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: var(--color-text-primary);
+}
+
+.autoAdvanceActive {
+  background: rgba(80, 200, 120, 0.2);
+  border-color: rgba(80, 200, 120, 0.5);
+  color: rgb(80, 200, 120);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.autoAdvanceLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ratioInput {
+  width: 48px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.ratioInput:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.ratioCalc {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
