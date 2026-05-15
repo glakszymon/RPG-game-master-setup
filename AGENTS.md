@@ -55,6 +55,7 @@ docs/
 ## tutorial.md Protocol
 
 **Critical:** `docs/brainstorms/tutorial.md` is the project knowledge base.
+
 - After every feature, discovery, or architectural decision — append to tutorial.md
 - Preserve existing structure; add to the relevant section
 - If your changes contradict something in tutorial.md — ask the user before overwriting
@@ -63,6 +64,7 @@ docs/
 ## Code Style
 
 ### TypeScript
+
 - **Strict mode** — `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`
 - **Target:** ES2023, module ESNext, `verbatimModuleSyntax: true`
 - **No `any`** — use `unknown` for untyped data, then narrow
@@ -71,23 +73,25 @@ docs/
 - **Explicit return types** on exported DB/utility functions; implicit on components and hooks
 
 ### Naming
-| Element | Convention | Example |
-|---------|-----------|---------|
-| Component files | PascalCase.tsx | `MapDisplay.tsx` |
-| Hook files | camelCase use*.ts | `useTokenRenderer.ts` |
-| Type files | lowercase types.ts | `types.ts` |
-| CSS module files | PascalCase.module.css | `MapDisplay.module.css` |
-| Tool folders | kebab-case | `map-display/`, `party-tracker/` |
-| Components | PascalCase functions | `export function MapDisplay()` |
-| Hooks | use prefix camelCase | `useCanvasRenderer` |
-| Types/Interfaces | PascalCase | `MapToken`, `WindowState` |
-| Reducer actions | SCREAMING_SNAKE | `'OPEN_WINDOW'`, `'LOAD_STATE'` |
-| Constants | SCREAMING_SNAKE | `TOKEN_RADIUS`, `MIN_ZOOM` |
-| CSS classes | camelCase | `.canvasArea`, `.toolSection` |
-| CSS variables | kebab-case | `--color-bg-base`, `--glass-blur` |
-| IPC channels | domain:verb kebab | `'canvas:save'`, `'dialog:read-image'` |
+
+| Element          | Convention            | Example                                |
+| ---------------- | --------------------- | -------------------------------------- |
+| Component files  | PascalCase.tsx        | `MapDisplay.tsx`                       |
+| Hook files       | camelCase use\*.ts    | `useTokenRenderer.ts`                  |
+| Type files       | lowercase types.ts    | `types.ts`                             |
+| CSS module files | PascalCase.module.css | `MapDisplay.module.css`                |
+| Tool folders     | kebab-case            | `map-display/`, `party-tracker/`       |
+| Components       | PascalCase functions  | `export function MapDisplay()`         |
+| Hooks            | use prefix camelCase  | `useCanvasRenderer`                    |
+| Types/Interfaces | PascalCase            | `MapToken`, `WindowState`              |
+| Reducer actions  | SCREAMING_SNAKE       | `'OPEN_WINDOW'`, `'LOAD_STATE'`        |
+| Constants        | SCREAMING_SNAKE       | `TOKEN_RADIUS`, `MIN_ZOOM`             |
+| CSS classes      | camelCase             | `.canvasArea`, `.toolSection`          |
+| CSS variables    | kebab-case            | `--color-bg-base`, `--glass-blur`      |
+| IPC channels     | domain:verb kebab     | `'canvas:save'`, `'dialog:read-image'` |
 
 ### Import Order
+
 1. React / external libraries (`react`, `@radix-ui/*`, `sql.js`)
 2. Local hooks (`./hooks/useCanvasRenderer`)
 3. Local components (`./CanvasWindow`)
@@ -95,6 +99,7 @@ docs/
 5. CSS modules last (`import styles from './Component.module.css'`)
 
 ### State Management
+
 - **useReducer** with discriminated union actions — no external state library
 - Tool state stored as `unknown` in `WindowState.toolState`; each tool casts to its own type
 - **useUndoRedo** wraps useReducer for undo/redo + action coalescing
@@ -104,6 +109,7 @@ docs/
 - `useLayoutEffect` to keep callback refs fresh without retriggering effects
 
 ### CSS
+
 - CSS Modules exclusively — one `.module.css` per component
 - Design tokens via CSS custom properties in global styles
 - Glassmorphism: `backdrop-filter: blur()`, `rgba()` backgrounds
@@ -111,6 +117,7 @@ docs/
 - 4px spacing scale: 4, 8, 12, 16, 20, 24, 32, 40, 48, 64
 
 ### Error Handling
+
 - **Database layer:** Guard clause `if (!db) throw new Error(...)` at function start
 - **IPC main process:** Silent try/catch returning `null` on failure
 - **Renderer/hooks:** Null checks + early returns, `console.error` for diagnostics
