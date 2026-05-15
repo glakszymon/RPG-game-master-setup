@@ -10,6 +10,7 @@ export interface VfxInstance {
   size: number;
   mode: 'one-shot' | 'persistent';
   duration: number; // seconds, 0 = infinite for persistent
+  startTime: number; // performance.now() timestamp when placed
 }
 
 export interface MapToken {

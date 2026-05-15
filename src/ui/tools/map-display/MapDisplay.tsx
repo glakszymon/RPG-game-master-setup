@@ -505,24 +505,6 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
                   </select>
                 </label>
 
-                {state.vfxSettings.mode === 'one-shot' && (
-                  <label className={styles.toolLabel}>
-                    Duration (s)
-                    <input
-                      className={styles.toolInput}
-                      type="number"
-                      min={0.5}
-                      max={30}
-                      step={0.5}
-                      value={state.vfxSettings.duration}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        if (!Number.isNaN(v) && v > 0) updateVfxSettings({ duration: v });
-                      }}
-                    />
-                  </label>
-                )}
-
                 {state.vfxInstances.length > 0 && (
                   <>
                     <div className={styles.toolDivider} />
