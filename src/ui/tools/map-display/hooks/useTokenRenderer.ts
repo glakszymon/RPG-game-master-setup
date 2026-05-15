@@ -3,7 +3,7 @@ import type { MapToken, MapTool } from '../types';
 import type { CanvasRendererHandle, RenderContext } from './useCanvasRenderer';
 import { screenToWorld } from './useCanvasRenderer';
 
-const TOKEN_RADIUS = 24;
+export const TOKEN_RADIUS = 24;
 
 /** Simple hash → HSL → hex string for consistent token colors */
 function nameToColor(name: string): string {

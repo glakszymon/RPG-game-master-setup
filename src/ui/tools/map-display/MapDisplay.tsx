@@ -3,7 +3,7 @@ import { useCanvasRenderer, screenToWorld } from './hooks/useCanvasRenderer';
 import type { RenderContext } from './hooks/useCanvasRenderer';
 import { drawGrid } from './hooks/useGridRenderer';
 import { useFowRenderer } from './hooks/useFowRenderer';
-import { useTokenRenderer } from './hooks/useTokenRenderer';
+import { useTokenRenderer, TOKEN_RADIUS } from './hooks/useTokenRenderer';
 import { useVfxRenderer, VFX_PRESETS } from './hooks/useVfxRenderer';
 import { DEFAULT_MAP_STATE } from './types';
 import type { MapDisplayState, GridConfig, MapTool, MapToken, MapDropPayload, VfxSettings, VfxPreset } from './types';
@@ -20,6 +20,7 @@ const MAX_ZOOM = 5;
 
 export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   const state: MapDisplayState = { ...DEFAULT_MAP_STATE, ...toolState };
+  console.log('[MapDisplay] render — toolState?.imagePath:', (toolState as any)?.imagePath, 'state.imagePath:', state.imagePath);
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
 
   const stateRef = useRef(state);
@@ -40,6 +41,9 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null);
   const [mapSize, setMapSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
+  /** Cursor world-space position for preview circle (null = cursor outside canvas) */
+  const cursorWorldRef = useRef<{ x: number; y: number } | null>(null);
+
   // ── Viewport change handler ──
   const handleViewportChange = useCallback((vp: { x: number; y: number; zoom: number }) => {
     setZoom(vp.zoom);
@@ -56,6 +60,38 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     fowActions.drawFow(rc);
     // VFX (Phase 5)
     vfxActions.drawVfx(rc, time);
+
+    // ── Cursor preview circle ──
+    const s = stateRef.current;
+    const cursor = cursorWorldRef.current;
+    const showPreview = cursor && (
+      s.activeTool === 'vfx' ||
+      s.activeTool === 'tokens' ||
+      s.activeTool === 'fow-reveal' ||
+      s.activeTool === 'fow-conceal'
+    );
+    if (showPreview) {
+      const { ctx } = rc;
+      let radius: number;
+      if (s.activeTool === 'vfx') {
+        radius = s.vfxSettings.size / 2;
+      } else if (s.activeTool === 'fow-reveal' || s.activeTool === 'fow-conceal') {
+        radius = s.brushSettings.size / 2;
+      } else {
+        // For tokens, show default new-token size (scale=1)
+        radius = TOKEN_RADIUS;
+      }
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cursor.x, cursor.y, radius, 0, Math.PI * 2);
+      ctx.setLineDash([6 / rc.viewport.zoom, 4 / rc.viewport.zoom]);
+      ctx.lineWidth = 2 / rc.viewport.zoom;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
   }, [mapSize.w, mapSize.h]); // fowActions, tokenActions, vfxActions are stable refs
 
   const renderer = useCanvasRenderer(
@@ -165,14 +201,19 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   // Restore saved map on mount
   useEffect(() => {
     const signal = { cancelled: false };
+    console.log('[MapDisplay] restore effect — imagePath:', state.imagePath, 'mapImage:', !!mapImage);
     if (state.imagePath && !mapImage) {
       loadImageRef.current(state.imagePath, true, signal).then((vp) => {
+        console.log('[MapDisplay] loadImage resolved — vp:', vp, 'cancelled:', signal.cancelled);
         if (vp && !signal.cancelled) {
           patchState({ viewport: vp });
         }
       });
     }
-    return () => { signal.cancelled = true; };
+    return () => {
+      signal.cancelled = true;
+      loadingImageRef.current = false; // Allow next effect run to proceed (StrictMode)
+    };
   }, [state.imagePath, mapImage, patchState]);
 
   // File picker handler
@@ -330,6 +371,31 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     renderer.markDirty();
   }, [state.grid, state.tokens, state.activeTool, state.brushSettings, state.vfxInstances, renderer]);
 
+  // ── Cursor tracking for preview circle ──
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const container = canvasAreaRef.current;
+    if (!container) return;
+    const activeTool = stateRef.current.activeTool;
+    if (activeTool !== 'vfx' && activeTool !== 'tokens' && activeTool !== 'fow-reveal' && activeTool !== 'fow-conceal') {
+      if (cursorWorldRef.current !== null) {
+        cursorWorldRef.current = null;
+        renderer.markDirty();
+      }
+      return;
+    }
+    const rect = container.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const [wx, wy] = screenToWorld(sx, sy, renderer.viewportRef.current);
+    cursorWorldRef.current = { x: wx, y: wy };
+    renderer.markDirty();
+  }, [renderer]);
+
+  const handleCanvasMouseLeave = useCallback(() => {
+    cursorWorldRef.current = null;
+    renderer.markDirty();
+  }, [renderer]);
+
   const hasImage = Boolean(state.imagePath);
   const isFowTool = state.activeTool === 'fow-reveal' || state.activeTool === 'fow-conceal';
 
@@ -459,6 +525,57 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
               </div>
             )}
 
+            {/* Tokens context */}
+            {state.activeTool === 'tokens' && (
+              <div className={styles.toolSection}>
+                <span className={styles.sectionLabel}>Tokens</span>
+                <span className={styles.toolHint}>Drag from Party Tracker or add manually</span>
+                <button className={styles.fowActionBtn} onClick={addManualToken}>
+                  + Add Token
+                </button>
+                {state.tokens.length > 0 && (
+                  <>
+                    <div className={styles.toolDivider} />
+                    <div className={styles.tokenList}>
+                      {state.tokens.map((t) => (
+                        <div key={t.id} className={styles.tokenListItem}>
+                          <div className={styles.tokenListRow}>
+                            <span className={styles.tokenName}>{t.name}</span>
+                            <button
+                              className={styles.tokenRemoveBtn}
+                              onClick={() => tokenActions.removeToken(t.id)}
+                              title="Remove token"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <div className={styles.tokenScaleRow}>
+                            <input
+                              className={styles.toolSlider}
+                              type="range"
+                              min={0.5}
+                              max={3}
+                              step={0.1}
+                              value={t.scale}
+                              onChange={(e) => {
+                                const newScale = parseFloat(e.target.value);
+                                patchState({
+                                  tokens: state.tokens.map((tok) =>
+                                    tok.id === t.id ? { ...tok, scale: newScale } : tok
+                                  ),
+                                });
+                              }}
+                            />
+                            <span className={styles.tokenScaleLabel}>{t.scale.toFixed(1)}×</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* VFX context */}
             {state.activeTool === 'vfx' && (
               <div className={styles.toolSection}>
@@ -570,6 +687,8 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
         ref={canvasAreaRef}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onMouseMove={handleCanvasMouseMove}
+        onMouseLeave={handleCanvasMouseLeave}
       >
         {!hasImage && (
           <button className={styles.loadButton} onClick={handleLoadMap}>
@@ -594,38 +713,8 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
             <span className={styles.zoomLabel}>{zoomPercent}%</span>
             <button className={styles.zoomBtn} onClick={fitToContainer} title="Fit to window">⊡</button>
           </div>
-            )}
-
-            {/* Token context */}
-            {state.activeTool === 'tokens' && (
-              <div className={styles.toolSection}>
-                <span className={styles.sectionLabel}>Tokens</span>
-                <span className={styles.toolHint}>Drag from Party Tracker or add manually</span>
-                <button className={styles.fowActionBtn} onClick={addManualToken}>
-                  + Add Token
-                </button>
-                {state.tokens.length > 0 && (
-                  <>
-                    <div className={styles.toolDivider} />
-                    <div className={styles.tokenList}>
-                      {state.tokens.map((t) => (
-                        <div key={t.id} className={styles.tokenListItem}>
-                          <span className={styles.tokenName}>{t.name}</span>
-                          <button
-                            className={styles.tokenRemoveBtn}
-                            onClick={() => tokenActions.removeToken(t.id)}
-                            title="Remove token"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+        )}
+      </div>
     </div>
   );
 }
