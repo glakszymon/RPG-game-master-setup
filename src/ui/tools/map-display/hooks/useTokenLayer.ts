@@ -80,32 +80,34 @@ export function useTokenLayer(
   const tokensRef = useRef(tokens);
   useEffect(() => { tokensRef.current = tokens; });
 
-  // ── Create token layer container ──
-  useEffect(() => {
-    const worldContainer = worldContainerRef.current;
-    if (!worldContainer) return;
-
-    const layer = new Container();
-    layer.label = 'token-layer';
-    // Add on top of everything (after map, grid, fow)
-    worldContainer.addChild(layer);
-    tokenContainerRef.current = layer;
-    const sprites = tokenSpritesRef.current;
-
-    return () => {
-      layer.destroy({ children: true });
-      tokenContainerRef.current = null;
-      sprites.clear();
-    };
-  }, [worldContainerRef]);
-
   const tokenDataRef = useRef<Map<string, { name: string; avatarPath: string | null }>>(new Map());
+
+  /** Lazily ensure token layer exists on the world container. */
+  const ensureLayer = (): Container | null => {
+    const world = worldContainerRef.current;
+    if (!world || world.destroyed) return null;
+
+    // If existing layer is still a child of the current world, reuse it
+    let layer = tokenContainerRef.current;
+    if (layer && !layer.destroyed && layer.parent === world) return layer;
+
+    // Create fresh layer
+    layer = new Container();
+    layer.label = 'token-layer';
+    world.addChild(layer);
+    tokenContainerRef.current = layer;
+    tokenSpritesRef.current.clear();
+    tokenDataRef.current.clear();
+    return layer;
+  };
 
   // ── Sync token sprites with token data ──
   useEffect(() => {
     const app = appRef.current;
-    const layer = tokenContainerRef.current;
-    if (!app || !layer) return;
+    if (!app) return;
+
+    const layer = ensureLayer();
+    if (!layer) return;
 
     const existing = tokenSpritesRef.current;
     const prevData = tokenDataRef.current;
@@ -338,6 +340,7 @@ async function loadTokenAvatar(
     if (container.destroyed) return;
 
     const texture = await Assets.load(dataUrl);
+    if (container.destroyed) return;
     const sprite = new Sprite(texture);
 
     // Fit into circle — scale to TOKEN_RADIUS * 2

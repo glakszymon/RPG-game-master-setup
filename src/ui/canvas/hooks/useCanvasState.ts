@@ -161,13 +161,16 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
       return { ...state, windows: [...unpinned, ...pinned] };
     }
 
-    case 'UPDATE_TOOL_STATE':
+    case 'UPDATE_TOOL_STATE': {
+      const ts = action.toolState as Record<string, unknown> | undefined;
+      console.log('[canvasReducer] UPDATE_TOOL_STATE — winId:', action.id, 'imagePath:', ts?.imagePath, 'tokens:', Array.isArray(ts?.tokens) ? (ts.tokens as unknown[]).length : 'N/A');
       return {
         ...state,
         windows: state.windows.map((w) =>
           w.id === action.id ? { ...w, toolState: action.toolState } : w,
         ),
       };
+    }
 
     case 'SET_BACKGROUND':
       return { ...state, background: action.background };

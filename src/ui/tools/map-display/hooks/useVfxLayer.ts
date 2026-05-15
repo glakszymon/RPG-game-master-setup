@@ -73,31 +73,28 @@ export function useVfxLayer(
   const particlesRef = useRef<Map<string, Particle[]>>(new Map());
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  // ── Create VFX layer ──
-  useEffect(() => {
-    const worldContainer = worldContainerRef.current;
-    if (!worldContainer) return;
-    const layer = new Container();
+  /** Lazily ensure VFX layer exists on the world container. */
+  const ensureLayer = (): Container | null => {
+    const world = worldContainerRef.current;
+    if (!world || world.destroyed) return null;
+    let layer = layerRef.current;
+    if (layer && !layer.destroyed && layer.parent === world) return layer;
+    layer = new Container();
     layer.label = 'vfx-layer';
-    worldContainer.addChild(layer);
+    world.addChild(layer);
     layerRef.current = layer;
-    const particles = particlesRef.current;
-    const timers = timersRef.current;
-
-    return () => {
-      layer.destroy({ children: true });
-      layerRef.current = null;
-      particles.clear();
-      for (const t of timers.values()) clearTimeout(t);
-      timers.clear();
-    };
-  }, [worldContainerRef]);
+    particlesRef.current.clear();
+    for (const t of timersRef.current.values()) clearTimeout(t);
+    timersRef.current.clear();
+    return layer;
+  };
 
   // ── Spawn particles for each VFX instance ──
   useEffect(() => {
     const app = appRef.current;
-    const layer = layerRef.current;
-    if (!app || !layer) return;
+    if (!app) return;
+    const layer = ensureLayer();
+    if (!layer) return;
 
     const existing = particlesRef.current;
     const currentIds = new Set(vfxInstances.map((v) => v.id));

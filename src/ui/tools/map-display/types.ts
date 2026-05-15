@@ -13,6 +13,15 @@ export interface MapToken {
   scale: number;
 }
 
+/** Standardized drag-drop payload protocol for adding tokens to the map */
+export interface MapDropPayload {
+  type: 'party-character' | 'bestiary-creature';
+  id: string;
+  name: string;
+  portraitPath: string | null;
+  meta?: Record<string, unknown>;
+}
+
 export interface GridConfig {
   type: 'square' | 'hex' | 'none';
   cellSize: number;

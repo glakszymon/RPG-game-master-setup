@@ -6,7 +6,7 @@
  * minimap, and minimize tray.
  */
 
-import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { useCallback, useMemo, useState, useRef, useEffect, memo } from 'react';
 import { usePanZoom } from './hooks/usePanZoom';
 import { canvasReducer, initialCanvasState } from './hooks/useCanvasState';
 import { useUndoRedo } from './hooks/useUndoRedo';
@@ -39,7 +39,7 @@ function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
 }
 
 /** Render the correct tool component based on toolType */
-function ToolContent({
+const ToolContent = memo(function ToolContent({
   toolType,
   toolState,
   onToolStateChange,
@@ -71,7 +71,7 @@ function ToolContent({
     default:
       return <ToolPlaceholder toolType={toolType} />;
   }
-}
+});
 
 function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignId?: string }) {
   const { canvasRef, getTransform, setTransformCallback, zoomIn, zoomOut, resetView, panTo } = usePanZoom();
@@ -121,6 +121,18 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
     (id: string) => dispatch({ type: 'TOGGLE_PIN', id }),
     [dispatch],
   );
+
+  // Stable per-window onToolStateChange callbacks (avoids re-render cascade)
+  // Built as a memo keyed on window ids + dispatch so no ref is read during render.
+  const windowIds = state.windows.map((w) => w.id);
+  const toolStateHandlers = useMemo(() => {
+    const map = new Map<string, (s: unknown) => void>();
+    for (const id of windowIds) {
+      map.set(id, (s: unknown) => dispatch({ type: 'UPDATE_TOOL_STATE', id, toolState: s }));
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [windowIds.join(','), dispatch]);
 
   useCanvasPersistence(state, dispatch, campaignId ?? 'default');
 
@@ -298,7 +310,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
                 <ToolContent
                   toolType={win.toolType}
                   toolState={win.toolState}
-                  onToolStateChange={(s) => dispatch({ type: 'UPDATE_TOOL_STATE', id: win.id, toolState: s })}
+                  onToolStateChange={toolStateHandlers.get(win.id)!}
                   campaignId={campaignId ?? 'default'}
                 />
               </CanvasWindow>
