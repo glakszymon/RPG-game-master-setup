@@ -35,9 +35,7 @@ const MINIMAP_WIDTH = 180;
 const MINIMAP_HEIGHT = 120;
 
 function Minimap({ windows, viewport, viewportWidth, viewportHeight, visible }: MinimapProps) {
-  if (!visible) return null;
-
-  const visibleWindows = windows.filter((w) => !w.minimized);
+  const visibleWindows = useMemo(() => windows.filter((w) => !w.minimized), [windows]);
 
   const { scale: mapScale, offsetX, offsetY } = useMemo(() => {
     if (visibleWindows.length === 0) {
@@ -75,6 +73,8 @@ function Minimap({ windows, viewport, viewportWidth, viewportHeight, visible }: 
 
     return { scale: s, offsetX: -minX, offsetY: -minY };
   }, [visibleWindows, viewport, viewportWidth, viewportHeight]);
+
+  if (!visible) return null;
 
   // Viewport indicator in canvas space
   const vpLeft = -viewport.x / viewport.scale;

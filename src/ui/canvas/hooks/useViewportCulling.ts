@@ -112,13 +112,16 @@ export function useViewportCulling(
   // Recalculate when windows array changes
   useEffect(() => {
     const nowVisible = computeVisible();
-    setVisibleIds(nowVisible);
+    startTransition(() => {
+      setVisibleIds(nowVisible);
+    });
   }, [computeVisible]);
 
   // Cleanup timers on unmount
   useEffect(() => {
+    const pending = pendingRemoveRef.current;
     return () => {
-      for (const timer of pendingRemoveRef.current.values()) {
+      for (const timer of pending.values()) {
         clearTimeout(timer);
       }
     };

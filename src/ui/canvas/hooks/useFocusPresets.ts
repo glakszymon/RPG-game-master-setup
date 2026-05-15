@@ -42,7 +42,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo, campaign
         // ignore
       }
     });
-  }, []);
+  }, [campaignId]);
 
   // Auto-save "Last Setup" on state changes (debounced)
   useEffect(() => {
@@ -88,7 +88,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo, campaign
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [state, getTransform]);
+  }, [state, getTransform, campaignId]);
 
   /** Save current layout as a named preset */
   const savePreset = useCallback(async (name: string): Promise<FocusPreset> => {
@@ -119,7 +119,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo, campaign
 
     setPresets((prev) => [...prev, newPreset]);
     return newPreset;
-  }, [state, getTransform]);
+  }, [state, getTransform, campaignId]);
 
   /** Activate a preset (additive by default, clean if specified) */
   const activatePreset = useCallback((presetId: string, clean = false) => {
@@ -152,7 +152,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo, campaign
   const deletePreset = useCallback(async (presetId: string) => {
     await window.electronAPI?.presets?.delete(campaignId, presetId);
     setPresets((prev) => prev.filter((p) => p.id !== presetId));
-  }, []);
+  }, [campaignId]);
 
   /** Rename a user preset */
   const renamePreset = useCallback(async (presetId: string, newName: string) => {
@@ -160,7 +160,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo, campaign
     setPresets((prev) =>
       prev.map((p) => (p.id === presetId ? { ...p, name: newName } : p)),
     );
-  }, []);
+  }, [campaignId]);
 
   /** Overwrite an existing preset with current layout */
   const overwritePreset = useCallback(async (presetId: string) => {
@@ -188,7 +188,7 @@ export function useFocusPresets({ state, dispatch, getTransform, panTo, campaign
           : p,
       ),
     );
-  }, [presets, state, getTransform]);
+  }, [presets, state, getTransform, campaignId]);
 
   return {
     presets,

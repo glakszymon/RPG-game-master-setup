@@ -19,7 +19,7 @@ interface MapDisplayProps {
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 5;
 
-export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaignId }: MapDisplayProps) {
+export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   const state: MapDisplayState = { ...DEFAULT_MAP_STATE, ...toolState };
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
   const [appRef, isReady] = usePixiApp(canvasAreaRef);
@@ -28,13 +28,13 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
   const mapSpriteRef = useRef<Sprite | null>(null);
 
   const stateRef = useRef(state);
-  stateRef.current = state;
+  useEffect(() => { stateRef.current = state; });
 
   const [zoom, setZoom] = useState(state.viewport.zoom);
   const [mapSize, setMapSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   // Grid overlay
-  useGridLayer(worldRef.current, state.grid, mapSize.w, mapSize.h);
+  useGridLayer(worldRef, state.grid, mapSize.w, mapSize.h);
 
   // FoW overlay
   const handleFowChange = useCallback((dataUrl: string) => {
@@ -42,8 +42,8 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
   }, [onToolStateChange]);
 
   const { revealAll, concealAll } = useFowLayer(
-    appRef.current,
-    worldRef.current,
+    appRef,
+    worldRef,
     mapSize.w,
     mapSize.h,
     state.activeTool,
@@ -58,8 +58,8 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
   }, [onToolStateChange]);
 
   const { addToken, addTokenWithSync, removeToken } = useTokenLayer(
-    appRef.current,
-    worldRef.current,
+    appRef,
+    worldRef,
     state.tokens,
     state.activeTool,
     handleTokensChange,
@@ -70,9 +70,9 @@ export function MapDisplay({ toolState, onToolStateChange, campaignId: _campaign
     onToolStateChange({ ...stateRef.current, vfxInstances: newVfx });
   }, [onToolStateChange]);
 
-  const { removeVfx: _removeVfx, clearAllVfx } = useVfxLayer(
-    appRef.current,
-    worldRef.current,
+  const { clearAllVfx } = useVfxLayer(
+    appRef,
+    worldRef,
     state.vfxInstances,
     state.activeTool,
     state.vfxSettings.selectedPreset,
