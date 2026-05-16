@@ -1,0 +1,176 @@
+/* ── Campaign Settings Modal ── */
+
+.modalContent {
+  max-width: 700px;
+  width: 90vw;
+  height: 85vh;
+  max-height: 85vh;
+  transition: max-width var(--duration-normal) var(--easing-default);
+}
+
+.modalWide {
+  max-width: 1100px;
+}
+
+/* ── Tabs (vertical sidebar layout) ── */
+
+.tabs {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  gap: 0;
+}
+
+.tabList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 180px;
+  padding: var(--space-2) var(--space-2) var(--space-2) 0;
+  border-right: 1px solid var(--color-border);
+  border-bottom: none;
+}
+
+.tabTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    color var(--duration-fast) var(--easing-default),
+    background var(--duration-fast) var(--easing-default),
+    border-color var(--duration-fast) var(--easing-default);
+}
+
+.tabTrigger .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.tabTrigger:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-hover);
+}
+
+.tabTrigger[data-state='active'] {
+  color: var(--color-text-accent);
+  background: var(--glass-bg);
+  border-left-color: var(--color-accent-border);
+}
+
+/* ── Tab content area ── */
+
+.tabContentArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+.tabContent {
+  outline: none;
+}
+
+/* ── Placeholder tab ── */
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+  gap: var(--space-2);
+}
+
+.placeholderText {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.placeholderSub {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── Main settings tab ── */
+
+.mainTab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin: 0;
+}
+
+.legend {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  padding: 0 var(--space-1);
+}
+
+.iconGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.iconBtn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--easing-default),
+    box-shadow var(--duration-fast) var(--easing-default);
+}
+
+.iconBtn:hover {
+  border-color: var(--color-border-hover);
+}
+
+.iconBtnActive {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--shadow-glow-accent);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.loading {
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+  text-align: center;
+}

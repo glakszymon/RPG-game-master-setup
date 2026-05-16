@@ -45,4 +45,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('bestiary:save-instance', id, folderId, templateId, instanceName, overrides, sortOrder),
     deleteInstance: (id: string) => ipcRenderer.invoke('bestiary:delete-instance', id),
   },
+  settings: {
+    load: (campaignId: string, key: string) =>
+      ipcRenderer.invoke('settings:load', campaignId, key),
+    save: (campaignId: string, key: string, valueJson: string) =>
+      ipcRenderer.invoke('settings:save', campaignId, key, valueJson),
+  },
 });

@@ -30,6 +30,7 @@ function parseTemplateRow(row: BestiaryTemplateRow): CreatureTemplate {
     customFields: row.custom_fields ? JSON.parse(row.custom_fields) as CustomField[] : [],
     tags: row.tags ? JSON.parse(row.tags) as string[] : [],
     avatarPath: row.avatar_path,
+    fieldValues: row.field_values ? JSON.parse(row.field_values) as Record<string, unknown> : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -214,6 +215,7 @@ export function useBestiaryState() {
           customFields: (o.customFields as CustomField[]) ?? [],
           tags: (o.tags as string[]) ?? [],
           avatarPath: (o.avatarPath as string) ?? null,
+          fieldValues: (o.fieldValues as Record<string, unknown>) ?? null,
           createdAt: instance.createdAt,
           updatedAt: instance.createdAt,
         };

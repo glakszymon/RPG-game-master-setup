@@ -7,13 +7,13 @@
 
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { createDefaultFieldValues } from '../../components/dynamic-fields';
 import type {
   Character,
-  CardStructure,
   CardSizePreset,
+  CardStructure,
   FieldValue,
   PartyTrackerState,
-  RadioFieldSettings,
 } from './types';
 import { DEFAULT_CARD_STRUCTURE } from './types';
 import { CharacterCard } from './CharacterCard';
@@ -29,36 +29,6 @@ interface PartyTrackerProps {
 /** Generate a unique ID */
 function uid(): string {
   return crypto.randomUUID();
-}
-
-/** Create default field values for a given card structure */
-function createDefaultFieldValues(structure: CardStructure): Record<string, FieldValue> {
-  const values: Record<string, FieldValue> = {};
-  for (const field of structure.fields) {
-    switch (field.type) {
-      case 'number':
-        values[field.id] = { type: 'number', value: 0 };
-        break;
-      case 'bubbles':
-        values[field.id] = { type: 'bubbles', filled: 0 };
-        break;
-      case 'text-field':
-        values[field.id] = { type: 'text-field', value: '' };
-        break;
-      case 'text-box':
-        values[field.id] = { type: 'text-box', value: '' };
-        break;
-      case 'radio': {
-        const opts = (field.settings as RadioFieldSettings)?.options ?? [];
-        values[field.id] = { type: 'radio', selected: opts[0] ?? '' };
-        break;
-      }
-      case 'checkbox':
-        values[field.id] = { type: 'checkbox', checked: false };
-        break;
-    }
-  }
-  return values;
 }
 
 export function PartyTracker({ toolState, onToolStateChange }: PartyTrackerProps) {
@@ -90,7 +60,7 @@ export function PartyTracker({ toolState, onToolStateChange }: PartyTrackerProps
       id: uid(),
       name: 'New Character',
       portraitPath: null,
-      fieldValues: createDefaultFieldValues(cardStructure),
+      fieldValues: createDefaultFieldValues(cardStructure.fields),
       order: characters.length,
     };
     updateState({ characters: [...characters, newChar] });

@@ -70,6 +70,18 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  // ── Campaign Settings table ──
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS campaign_settings (
+      campaign_id TEXT NOT NULL,
+      key TEXT NOT NULL,
+      value_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (campaign_id, key)
+    );
+  `);
+
   // ── Bestiary tables ──
 
   db.run(`
@@ -95,6 +107,9 @@ export async function initDatabase(): Promise<void> {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  // ── Migration: add field_values column if missing ──
+  migrateBestiaryFieldValues();
 
   db.run(`
     CREATE TABLE IF NOT EXISTS bestiary_folders (
@@ -327,6 +342,105 @@ export function touchCampaignSession(id: string): void {
 
 // ── Bestiary Templates ──
 
+/** Migrate bestiary_templates to include field_values column */
+function migrateBestiaryFieldValues(): void {
+  if (!db) return;
+
+  // Check if field_values column exists
+  const pragma = db.exec("PRAGMA table_info(bestiary_templates)");
+  if (pragma.length === 0) return;
+  const columns = pragma[0].values.map(row => row[1] as string);
+  if (columns.includes('field_values')) {
+    // Column exists — migrate any rows that haven't been converted yet
+    migrateExistingRows();
+    return;
+  }
+
+  // Add column
+  db.run('ALTER TABLE bestiary_templates ADD COLUMN field_values TEXT');
+
+  // Migrate existing rows
+  migrateExistingRows();
+  persist();
+}
+
+function migrateExistingRows(): void {
+  if (!db) return;
+
+  const result = db.exec(
+    "SELECT id, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, traits, custom_fields, tags FROM bestiary_templates WHERE field_values IS NULL"
+  );
+  if (result.length === 0) return;
+
+  let count = 0;
+  for (const row of result[0].values) {
+    const [id, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, traits, _custom_fields, tags] = row;
+
+    const vals: Record<string, unknown> = {};
+
+    if (creature_type) vals['creature_type'] = { type: 'radio', selected: creature_type };
+    if (cr) vals['cr'] = { type: 'text-field', value: cr };
+    if (hp_default != null) vals['hp_default'] = { type: 'number', value: hp_default };
+    if (hp_formula) vals['hp_formula'] = { type: 'text-field', value: hp_formula };
+    if (ac != null) vals['ac'] = { type: 'number', value: ac };
+
+    if (speed) {
+      try {
+        const speedObj = JSON.parse(speed as string) as Record<string, number>;
+        const speedTags = Object.entries(speedObj).map(([mode, val]) =>
+          mode === 'walk' ? `${val} ft.` : `${mode} ${val} ft.`
+        );
+        if (speedTags.length > 0) vals['speed'] = { type: 'tag-list', tags: speedTags };
+      } catch { /* skip */ }
+    }
+
+    if (ability_scores) {
+      try {
+        const scores = JSON.parse(ability_scores as string);
+        const saves = saving_throws ? JSON.parse(saving_throws as string) : {};
+        vals['ability_scores'] = { type: 'stat-block', scores, saves: saves ?? {} };
+      } catch { /* skip */ }
+    }
+
+    if (actions) {
+      try {
+        const actionArr = JSON.parse(actions as string) as Array<{ id: string; name: string; description: string; toHit?: number; damage?: string; isLegendary?: boolean }>;
+        const regular = actionArr.filter(a => !a.isLegendary);
+        const legendary = actionArr.filter(a => a.isLegendary);
+        if (regular.length > 0) {
+          vals['actions'] = { type: 'action-list', actions: regular.map(a => ({ id: a.id, name: a.name, description: a.description, toHit: a.toHit, damage: a.damage })) };
+        }
+        if (legendary.length > 0) {
+          vals['legendary_actions'] = { type: 'action-list', actions: legendary.map(a => ({ id: a.id, name: a.name, description: a.description, toHit: a.toHit, damage: a.damage })) };
+        }
+      } catch { /* skip */ }
+    }
+
+    if (traits) {
+      try {
+        const traitArr = JSON.parse(traits as string) as Array<{ id: string; name: string; description: string }>;
+        if (traitArr.length > 0) {
+          vals['traits'] = { type: 'action-list', actions: traitArr.map(t => ({ id: t.id, name: t.name, description: t.description })) };
+        }
+      } catch { /* skip */ }
+    }
+
+    if (tags) {
+      try {
+        const tagArr = JSON.parse(tags as string) as string[];
+        if (tagArr.length > 0) vals['descriptive_tags'] = { type: 'tag-list', tags: tagArr };
+      } catch { /* skip */ }
+    }
+
+    db!.run('UPDATE bestiary_templates SET field_values = ? WHERE id = ?', [JSON.stringify(vals), id]);
+    count++;
+  }
+
+  if (count > 0) {
+    console.log(`[bestiary] Migrated ${count} template(s) to field_values format`);
+  }
+}
+
 export interface BestiaryTemplateRow {
   id: string;
   name: string;
@@ -345,6 +459,7 @@ export interface BestiaryTemplateRow {
   custom_fields: string | null;
   tags: string | null;
   avatar_path: string | null;
+  field_values: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -353,12 +468,12 @@ export function listBestiaryTemplates(): BestiaryTemplateRow[] {
   if (!db) throw new Error('Database not initialized');
 
   const result = db.exec(
-    'SELECT id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, created_at, updated_at FROM bestiary_templates ORDER BY name ASC',
+    'SELECT id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, field_values, created_at, updated_at FROM bestiary_templates ORDER BY name ASC',
   );
 
   if (result.length === 0) return [];
 
-  return result[0].values.map(([id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, created_at, updated_at]) => ({
+  return result[0].values.map(([id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, field_values, created_at, updated_at]) => ({
     id: id as string,
     name: name as string,
     creature_type: creature_type as string | null,
@@ -376,6 +491,7 @@ export function listBestiaryTemplates(): BestiaryTemplateRow[] {
     custom_fields: custom_fields as string | null,
     tags: tags as string | null,
     avatar_path: avatar_path as string | null,
+    field_values: field_values as string | null,
     created_at: created_at as string,
     updated_at: updated_at as string,
   }));
@@ -386,15 +502,15 @@ export function saveBestiaryTemplate(dataJson: string): void {
 
   const t = JSON.parse(dataJson);
   db.run(
-    `INSERT INTO bestiary_templates (id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `INSERT INTO bestiary_templates (id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, field_values, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name, creature_type = excluded.creature_type, cr = excluded.cr,
        hp_formula = excluded.hp_formula, hp_default = excluded.hp_default, ac = excluded.ac,
        speed = excluded.speed, ability_scores = excluded.ability_scores, saving_throws = excluded.saving_throws,
        actions = excluded.actions, actions_mode = excluded.actions_mode, actions_text = excluded.actions_text,
        traits = excluded.traits, custom_fields = excluded.custom_fields, tags = excluded.tags,
-       avatar_path = excluded.avatar_path, updated_at = datetime('now')`,
+       avatar_path = excluded.avatar_path, field_values = excluded.field_values, updated_at = datetime('now')`,
     [
       t.id, t.name, t.creatureType ?? null, t.cr ?? null,
       t.hpFormula ?? null, t.hpDefault ?? null, t.ac ?? null,
@@ -402,7 +518,9 @@ export function saveBestiaryTemplate(dataJson: string): void {
       JSON.stringify(t.savingThrows), JSON.stringify(t.actions ?? []),
       t.actionsMode ?? 'structured', t.actionsText ?? '',
       JSON.stringify(t.traits ?? []), JSON.stringify(t.customFields ?? []),
-      JSON.stringify(t.tags ?? []), t.avatarPath ?? null, t.createdAt ?? new Date().toISOString(),
+      JSON.stringify(t.tags ?? []), t.avatarPath ?? null,
+      t.fieldValues ? JSON.stringify(t.fieldValues) : null,
+      t.createdAt ?? new Date().toISOString(),
     ],
   );
 
@@ -513,5 +631,32 @@ export function deleteBestiaryInstance(id: string): void {
   if (!db) throw new Error('Database not initialized');
 
   db.run('DELETE FROM bestiary_instances WHERE id = ?', [id]);
+  persist();
+}
+
+// ── Campaign Settings ──
+
+export function loadCampaignSetting(campaignId: string, key: string): string | null {
+  if (!db) throw new Error('Database not initialized');
+
+  const results = db.exec(
+    'SELECT value_json FROM campaign_settings WHERE campaign_id = ? AND key = ?',
+    [campaignId, key],
+  );
+
+  if (results.length === 0 || results[0].values.length === 0) return null;
+  return results[0].values[0][0] as string;
+}
+
+export function saveCampaignSetting(campaignId: string, key: string, valueJson: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT INTO campaign_settings (campaign_id, key, value_json, updated_at)
+     VALUES (?, ?, ?, datetime('now'))
+     ON CONFLICT(campaign_id, key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at`,
+    [campaignId, key, valueJson],
+  );
+
   persist();
 }

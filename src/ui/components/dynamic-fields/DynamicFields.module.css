@@ -1,0 +1,408 @@
+/* ── Dynamic Fields — shared styles ── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Field widths (auto-flow) */
+.fieldWidth_1_3 {
+  width: calc(33.333% - var(--space-1));
+}
+
+.fieldWidth_1_2 {
+  width: calc(50% - var(--space-1));
+}
+
+.fieldWidth_2_3 {
+  width: calc(66.666% - var(--space-1));
+}
+
+.fieldWidth_full {
+  width: 100%;
+}
+
+.fieldLabel {
+  font-size: 9px;
+  font-family: var(--font-body);
+  font-weight: var(--font-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fieldValue {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+}
+
+/* ── Number Input ── */
+
+.numberInput {
+  width: 100%;
+  background: var(--color-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  padding: 2px 4px;
+  text-align: inherit;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--easing-default);
+  -moz-appearance: textfield;
+}
+
+.numberInput::-webkit-outer-spin-button,
+.numberInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.numberInput:focus {
+  border-color: var(--color-accent-border);
+}
+
+.slider {
+  width: 100%;
+  accent-color: var(--color-accent);
+  color-scheme: dark;
+}
+
+/* ── Text Input ── */
+
+.textInput {
+  width: 100%;
+  background: var(--color-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  padding: 2px 4px;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--easing-default);
+}
+
+.textInput:focus {
+  border-color: var(--color-accent-border);
+}
+
+/* ── Text Box ── */
+
+.textBox {
+  width: 100%;
+  min-height: 40px;
+  resize: vertical;
+  background: var(--color-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  padding: 4px;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--easing-default);
+}
+
+.textBox:focus {
+  border-color: var(--color-accent-border);
+}
+
+/* ── Bubbles ── */
+
+.bubbles {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.bubble {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: all var(--duration-fast) var(--easing-default);
+}
+
+.bubble:hover {
+  border-color: var(--color-accent);
+}
+
+.bubbleFilled {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* ── Radio ── */
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.radioLabel input[type="radio"] {
+  accent-color: var(--color-accent);
+}
+
+/* ── Checkbox ── */
+
+.checkbox {
+  accent-color: var(--color-accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ── Tag List ── */
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.tagRemove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.tagRemove:hover {
+  color: var(--color-error);
+}
+
+.tagInput {
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+  padding: 2px 4px;
+  outline: none;
+  min-width: 60px;
+  flex: 1;
+}
+
+/* ── Stat Block ── */
+
+.statBlock {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  width: 100%;
+}
+
+.statCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 4px;
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.statLabel {
+  font-size: 8px;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statScore {
+  width: 32px;
+  text-align: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.statScore:focus {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-sm);
+}
+
+.statMod {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+.statSave {
+  font-size: 8px;
+  color: var(--color-text-muted);
+}
+
+/* ── Action List ── */
+
+.actionList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.actionEntry {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+}
+
+.actionHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actionName {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  outline: none;
+  padding: 0;
+}
+
+.actionName:focus {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 0 4px;
+}
+
+.actionToggle {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 2px;
+  font-size: 10px;
+}
+
+.actionRemove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 2px;
+  font-size: 12px;
+}
+
+.actionRemove:hover {
+  color: var(--color-error);
+}
+
+.actionBody {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.actionDesc {
+  width: 100%;
+  min-height: 28px;
+  resize: vertical;
+  background: var(--color-bg-surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  padding: 4px;
+  outline: none;
+}
+
+.actionDesc:focus {
+  border-color: var(--color-accent-border);
+}
+
+.actionCombatRow {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.actionCombatField {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.actionCombatLabel {
+  font-size: 8px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.actionCombatInput {
+  width: 60px;
+  background: var(--color-bg-surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 2px 4px;
+  outline: none;
+}
+
+.actionCombatInput:focus {
+  border-color: var(--color-accent-border);
+}
+
+.actionAdd {
+  background: none;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  font-size: var(--text-xs);
+  transition: all var(--duration-fast) var(--easing-default);
+}
+
+.actionAdd:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+}
