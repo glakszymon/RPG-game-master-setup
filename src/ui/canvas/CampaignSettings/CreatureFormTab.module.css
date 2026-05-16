@@ -1,0 +1,667 @@
+/* ── Creature Form Tab (Builder + Preview) ── */
+
+.container {
+  display: flex;
+  gap: var(--space-4);
+  height: 100%;
+  min-height: 0;
+}
+
+.loading {
+  padding: var(--space-4);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* ── Builder Panel (left) ── */
+
+.builderPanel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-y: auto;
+}
+
+.builderHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-1);
+}
+
+.title {
+  font-size: var(--text-md);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  padding: 4px;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--easing-default), border-color var(--duration-fast) var(--easing-default);
+}
+
+.resetBtn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-hover);
+}
+
+.resetBtn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* ── Section List ── */
+
+.sectionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.section {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.sectionHidden {
+  opacity: 0.5;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid transparent;
+}
+
+.section:not(.sectionHidden) .sectionHeader {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sectionLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sectionIcon {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+}
+
+.sectionLabel {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.sectionRight {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Toggle & Arrow buttons ── */
+
+.toggleBtn,
+.toggleBtnSmall {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast) var(--easing-default);
+}
+
+.toggleBtn:hover,
+.toggleBtnSmall:hover {
+  color: var(--color-text-primary);
+}
+
+.toggleBtn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.toggleBtnSmall .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.arrowBtn,
+.arrowBtnSmall {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast) var(--easing-default);
+}
+
+.arrowBtn:hover:not(:disabled),
+.arrowBtnSmall:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
+
+.arrowBtn:disabled,
+.arrowBtnSmall:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.arrowBtn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.arrowBtnSmall .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── Field List ── */
+
+.fieldList {
+  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 20px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.fieldRow:last-of-type {
+  border-bottom: none;
+}
+
+.fieldHidden {
+  opacity: 0.5;
+}
+
+.fieldLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.fieldLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.fieldRight {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Preview Panel (right) ── */
+
+.previewPanel {
+  width: 300px;
+  min-width: 300px;
+  border-left: 1px solid var(--color-border);
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.previewHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.previewTitle {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.previewBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ── Preview 1:1 Layout ── */
+
+.preview {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Avatar + Name */
+.pvAvatarRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.pvAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pvNameInput {
+  flex: 1;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+  padding: 4px 8px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+}
+
+/* CR Derived */
+.pvCrDerived {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.pvCrBadge {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+/* Section */
+.pvSection {
+  margin-bottom: var(--space-3);
+}
+
+.pvSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) 0;
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pvSectionTitle {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pvChevron {
+  color: var(--color-text-muted);
+  transform: rotate(90deg);
+}
+
+/* Fields Grid (mirrors dynamicFieldsGrid flex-wrap) */
+.pvFieldsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pvField {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pvFieldLabel {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Mock inputs */
+.pvInput {
+  height: 24px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+}
+
+.pvTextarea {
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+}
+
+.pvBubbles {
+  display: flex;
+  gap: 3px;
+  padding: 4px 0;
+}
+
+.pvBubble {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: none;
+}
+
+.pvRadioRow {
+  display: flex;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.pvRadioDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+}
+
+.pvTags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 2px 0;
+}
+
+.pvTag {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.pvActionList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pvActionItem {
+  height: 20px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+}
+
+.pvStatBlock {
+  display: flex;
+  gap: 2px;
+}
+
+.pvStatCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.pvStatLabel {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.pvStatValue {
+  width: 100%;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+}
+
+/* ── Section Title Input ── */
+
+.sectionTitleInput {
+  background: none;
+  border: none;
+  border-bottom: 1px dashed transparent;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  padding: 2px 4px;
+  width: 140px;
+  letter-spacing: 0.02em;
+  transition: border-color var(--duration-fast) var(--easing-default);
+}
+
+.sectionTitleInput:hover {
+  border-bottom-color: var(--color-border);
+}
+
+.sectionTitleInput:focus {
+  outline: none;
+  border-bottom-style: solid;
+  border-bottom-color: var(--color-border-hover);
+}
+
+.fieldCount {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-left: var(--space-1);
+}
+
+/* ── Field Type Badge ── */
+
+.fieldTypeBadge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.02em;
+}
+
+/* ── Add Field ── */
+
+.addFieldContainer {
+  padding: var(--space-1) 0;
+}
+
+.addFieldToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--easing-default), border-color var(--duration-fast) var(--easing-default);
+}
+
+.addFieldToggle:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-hover);
+}
+
+.addFieldMenu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.addFieldOption {
+  font-size: var(--text-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--easing-default);
+}
+
+.addFieldOption:hover {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+/* ── Field Config Panel ── */
+
+.fieldConfigPanel {
+  width: 100%;
+  padding: var(--space-2) 0 var(--space-2) 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-top: 1px dashed var(--color-border);
+  margin-top: var(--space-1);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.configRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.configColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.configLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.configInput {
+  flex: 1;
+  min-width: 80px;
+  font-size: var(--text-xs);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.configInput:focus {
+  outline: none;
+  border-color: var(--color-border-hover);
+}
+
+.configInputSmall {
+  width: 50px;
+  font-size: var(--text-xs);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.configInputSmall:focus {
+  outline: none;
+  border-color: var(--color-border-hover);
+}
+
+.configSelect {
+  font-size: var(--text-xs);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.checkLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.alignGroup {
+  display: inline-flex;
+  gap: 1px;
+}
+
+.alignBtn {
+  font-size: 10px;
+  padding: 2px 5px;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.alignBtn:first-child {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.alignBtn:last-child {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.alignActive {
+  background: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

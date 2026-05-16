@@ -53,6 +53,7 @@ export interface BestiaryTemplateRow {
   custom_fields: string | null;
   tags: string | null;
   avatar_path: string | null;
+  field_values: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -87,12 +88,18 @@ export interface ElectronBestiaryAPI {
   deleteInstance: (id: string) => Promise<{ ok: boolean } | null>;
 }
 
+export interface ElectronSettingsAPI {
+  load: (campaignId: string, key: string) => Promise<string | null>;
+  save: (campaignId: string, key: string, valueJson: string) => Promise<{ ok: boolean } | null>;
+}
+
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
   presets: ElectronPresetsAPI;
   campaigns: ElectronCampaignsAPI;
   dialog: ElectronDialogAPI;
   bestiary: ElectronBestiaryAPI;
+  settings: ElectronSettingsAPI;
 }
 
 declare global {

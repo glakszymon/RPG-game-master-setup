@@ -10,6 +10,7 @@ import {
   listBestiaryTemplates, saveBestiaryTemplate, deleteBestiaryTemplate,
   listBestiaryFolders, saveBestiaryFolder, deleteBestiaryFolder,
   listBestiaryInstances, saveBestiaryInstance, deleteBestiaryInstance,
+  loadCampaignSetting, saveCampaignSetting,
 } from './database.js';
 
 app.on('ready', async () => {
@@ -154,5 +155,15 @@ app.on('ready', async () => {
 
   ipcMain.handle('bestiary:delete-instance', (_event, id: string) => {
     try { deleteBestiaryInstance(id); return { ok: true }; } catch { return null; }
+  });
+
+  // ── Campaign Settings IPC handlers ──
+
+  ipcMain.handle('settings:load', (_event, campaignId: string, key: string) => {
+    try { return loadCampaignSetting(campaignId, key); } catch { return null; }
+  });
+
+  ipcMain.handle('settings:save', (_event, campaignId: string, key: string, valueJson: string) => {
+    try { saveCampaignSetting(campaignId, key, valueJson); return { ok: true }; } catch { return null; }
   });
 });

@@ -22,6 +22,7 @@ import { Minimap } from './Minimap';
 import { MinimizeTray } from './MinimizeTray';
 import { PresetToolbar } from './PresetToolbar';
 import { ShortcutsOverlay } from './ShortcutsOverlay';
+import { CampaignSettings } from './CampaignSettings/CampaignSettings';
 import type { ToolType, ViewportTransform, CampaignTimeState } from './types';
 import { PartyTracker } from '../tools/party-tracker';
 import type { PartyTrackerState } from '../tools/party-tracker';
@@ -216,6 +217,9 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
   // Shortcuts help overlay state
   const [showShortcuts, setShowShortcuts] = useState(false);
 
+  // Campaign settings modal state
+  const [showSettings, setShowSettings] = useState(false);
+
   // Close topmost non-pinned window
   const closeTopmostWindow = useCallback(() => {
     const topmost = [...state.windows]
@@ -234,6 +238,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
       zoomReset: resetView,
       escape: closeTopmostWindow,
       helpPanel: () => setShowShortcuts((s) => !s),
+      settings: () => setShowSettings((s) => !s),
       preset1: () => { const p = presets.filter((pr) => !pr.isAutoSave)[0]; if (p) activatePreset(p.id); },
       preset2: () => { const p = presets.filter((pr) => !pr.isAutoSave)[1]; if (p) activatePreset(p.id); },
       preset3: () => { const p = presets.filter((pr) => !pr.isAutoSave)[2]; if (p) activatePreset(p.id); },
@@ -244,7 +249,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
       preset8: () => { const p = presets.filter((pr) => !pr.isAutoSave)[7]; if (p) activatePreset(p.id); },
       preset9: () => { const p = presets.filter((pr) => !pr.isAutoSave)[8]; if (p) activatePreset(p.id); },
     }),
-    [undo, redo, zoomIn, zoomOut, resetView, closeTopmostWindow, presets, activatePreset],
+    [undo, redo, zoomIn, zoomOut, resetView, closeTopmostWindow, presets, activatePreset, setShowShortcuts, setShowSettings],
   );
   useKeyboardShortcuts(shortcutHandlers);
 
@@ -421,6 +426,18 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
         visible={true}
       />
       <ShortcutsOverlay open={showShortcuts} onOpenChange={setShowShortcuts} />
+      <button
+        className={styles.settingsBtn}
+        onClick={() => setShowSettings(true)}
+        title="Campaign Settings"
+      >
+        <span className="material-symbols-outlined">settings</span>
+      </button>
+      <CampaignSettings
+        open={showSettings}
+        onOpenChange={setShowSettings}
+        campaignId={campaignId ?? 'default'}
+      />
     </div>
   );
 }

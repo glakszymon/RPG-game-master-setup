@@ -53,6 +53,9 @@ const FIELD_TYPE_ICONS: Record<FieldType, string> = {
   'text-box': '\u00B6',  // ¶
   'radio': '\u25C9',     // ◉
   'checkbox': '\u2611',  // ☑
+  'action-list': '\u2694', // ⚔
+  'tag-list': '\u{1F3F7}', // 🏷
+  'stat-block': '\u2B22', // ⬢
 };
 
 function uid(): string {
@@ -67,6 +70,7 @@ function createDefaultField(type: FieldType): FieldDefinition {
     width: 'full',
     textAlign: 'left',
     positionAlign: 'left',
+    sortOrder: 0,
   };
 
   switch (type) {

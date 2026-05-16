@@ -2,15 +2,18 @@
  * Bestiary — creature library tool.
  *
  * Left panel: creature list grouped by type.
- * Right panel: creature detail/edit form.
+ * Right panel: creature detail/edit form (dynamic fields).
  */
 
 import { useCallback, useMemo } from 'react';
 import { useBestiaryState } from './hooks/useBestiaryState';
+import { useCreatureStructure } from './hooks/useCreatureStructure';
 import { LibraryPanel } from './components/LibraryPanel';
 import { CreatureForm } from './components/CreatureForm';
 import { createBlankTemplate } from './types';
-import type { BestiaryToolState, CreatureTemplate } from './types';
+import { templateToFieldValues, fieldValuesToTemplate } from './templateConversion';
+import type { BestiaryToolState } from './types';
+import type { FieldValue } from '../../components/dynamic-fields';
 import { DEFAULT_BESTIARY_STATE } from './types';
 import styles from './Bestiary.module.css';
 
@@ -24,9 +27,9 @@ function uid(): string {
   return crypto.randomUUID();
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function Bestiary({ toolState, onToolStateChange, campaignId: _campaignId }: BestiaryProps) {
+export function Bestiary({ toolState, onToolStateChange, campaignId }: BestiaryProps) {
   const state = toolState ?? DEFAULT_BESTIARY_STATE;
+  const { structure } = useCreatureStructure(campaignId);
 
   const patchState = useCallback(
     (patch: Partial<BestiaryToolState>) => onToolStateChange({ ...state, ...patch }),
@@ -46,6 +49,13 @@ export function Bestiary({ toolState, onToolStateChange, campaignId: _campaignId
     return null;
   }, [state.selectedTemplateId, templates]);
 
+  // Convert old template to fieldValues for display (use stored fieldValues if available)
+  const fieldValues = useMemo(() => {
+    if (!selectedTemplate) return {};
+    if (selectedTemplate.fieldValues) return selectedTemplate.fieldValues as Record<string, FieldValue>;
+    return templateToFieldValues(selectedTemplate);
+  }, [selectedTemplate]);
+
   // ── Template CRUD ──
   const handleAddTemplate = useCallback(() => {
     const t = createBlankTemplate(uid(), 'New Creature');
@@ -53,9 +63,19 @@ export function Bestiary({ toolState, onToolStateChange, campaignId: _campaignId
     patchState({ selectedTemplateId: t.id });
   }, [saveTemplate, patchState]);
 
-  const handleTemplateChange = useCallback((updated: CreatureTemplate) => {
+  const handleNameChange = useCallback((name: string) => {
+    if (!selectedTemplate) return;
+    saveTemplate({ ...selectedTemplate, name, updatedAt: new Date().toISOString() });
+  }, [selectedTemplate, saveTemplate]);
+
+  const handleFieldChange = useCallback((fieldId: string, value: FieldValue) => {
+    if (!selectedTemplate) return;
+    const updatedValues = { ...fieldValues, [fieldId]: value };
+    // Save fieldValues directly + keep old columns in sync via conversion
+    const updated = fieldValuesToTemplate(selectedTemplate, updatedValues);
+    updated.fieldValues = updatedValues;
     saveTemplate(updated);
-  }, [saveTemplate]);
+  }, [selectedTemplate, fieldValues, saveTemplate]);
 
   const handleDeleteTemplate = useCallback(() => {
     if (state.selectedTemplateId) {
@@ -81,10 +101,14 @@ export function Bestiary({ toolState, onToolStateChange, campaignId: _campaignId
 
   const rightPanel = selectedTemplate ? (
     <CreatureForm
-      template={selectedTemplate}
-      onChange={handleTemplateChange}
-      onDelete={handleDeleteTemplate}
+      name={selectedTemplate.name}
+      avatarPath={selectedTemplate.avatarPath}
+      fieldValues={fieldValues}
+      structure={structure}
+      onNameChange={handleNameChange}
+      onFieldChange={handleFieldChange}
       onAvatarUpload={handleAvatarUpload}
+      onDelete={handleDeleteTemplate}
     />
   ) : (
     <div className={styles.noSelection}>

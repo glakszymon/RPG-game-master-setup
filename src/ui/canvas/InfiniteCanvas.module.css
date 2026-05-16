@@ -59,3 +59,33 @@
   opacity: 1;
   box-shadow: var(--shadow-glow-accent);
 }
+
+/* ── Settings button ── */
+
+.settingsBtn {
+  position: absolute;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  color: var(--color-text-accent);
+  background: var(--glass-bg-elevated);
+  backdrop-filter: var(--glass-blur-elevated);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  opacity: 0.7;
+  transition:
+    opacity var(--duration-fast) var(--easing-default),
+    box-shadow var(--duration-fast) var(--easing-default);
+}
+
+.settingsBtn:hover {
+  opacity: 1;
+  box-shadow: var(--shadow-glow-accent);
+}

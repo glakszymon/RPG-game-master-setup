@@ -113,6 +113,12 @@ export const SHORTCUTS = {
     category: 'Window',
     description: 'Aktywuj preset 9',
   },
+  settings: {
+    keys: '$mod+Comma',
+    label: 'Ctrl+,',
+    category: 'General',
+    description: 'Otwórz ustawienia kampanii',
+  },
 } as const satisfies Record<string, ShortcutDefinition>;
 
 export type ShortcutId = keyof typeof SHORTCUTS;

@@ -60,6 +60,7 @@ export interface CreatureTemplate {
   customFields: CustomField[];
   tags: string[];
   avatarPath: string | null;     // base64 data URL
+  fieldValues: Record<string, unknown> | null; // dynamic field data (new format)
   createdAt: string;
   updatedAt: string;
 }
@@ -178,6 +179,7 @@ export function createBlankTemplate(id: string, name: string): CreatureTemplate 
     customFields: [],
     tags: [],
     avatarPath: null,
+    fieldValues: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
