@@ -406,3 +406,128 @@
   border-color: var(--color-accent-border);
   color: var(--color-accent);
 }
+
+/* ── Select ── */
+
+.selectInput {
+  width: 100%;
+  background: var(--color-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  padding: 2px 4px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--easing-default);
+}
+
+.selectInput:focus {
+  border-color: var(--color-accent-border);
+}
+
+.selectInput option {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+/* ── Speed List ── */
+
+.speedList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.speedEntry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.speedLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  min-width: 70px;
+}
+
+.speedUnit {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.speedAddSelect {
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  padding: 2px 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.speedAddSelect:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+}
+
+.speedAddSelect option {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+/* ── Skill List ── */
+
+.skillList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.skillEntry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.skillName {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  min-width: 100px;
+}
+
+/* ── Item List ── */
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.itemEntry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.itemEntry .textInput {
+  flex: 1;
+}
+
+/* ── Stat Block (enhanced) ── */
+
+.statRowLabels {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  padding: 2px 4px;
+  font-size: 8px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}

@@ -18,6 +18,9 @@ export type {
   RadioFieldSettings,
   TagListFieldSettings,
   ActionListFieldSettings,
+  SelectFieldSettings,
+  SpeedListFieldSettings,
+  SkillListFieldSettings,
   ActionEntry,
   AbilityScores,
 } from './types';

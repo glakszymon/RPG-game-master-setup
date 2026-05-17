@@ -15,6 +15,10 @@ import type {
   ActionEntry,
   ActionListFieldSettings,
   TagListFieldSettings,
+  SelectFieldSettings,
+  SpeedListFieldSettings,
+  SkillListFieldSettings,
+  AbilityScores,
 } from './types';
 import styles from './DynamicFields.module.css';
 
@@ -48,6 +52,14 @@ export function FieldInput({ field, value, onChange }: FieldInputProps) {
       return <ActionListField field={field} value={value} onChange={onChange} />;
     case 'stat-block':
       return <StatBlockField value={value} onChange={onChange} />;
+    case 'select':
+      return <SelectField field={field} value={value} onChange={onChange} />;
+    case 'speed-list':
+      return <SpeedListField field={field} value={value} onChange={onChange} />;
+    case 'skill-list':
+      return <SkillListField field={field} value={value} onChange={onChange} />;
+    case 'item-list':
+      return <ItemListField value={value} onChange={onChange} />;
     default:
       return null;
   }
@@ -374,44 +386,245 @@ function CombatField({ label, value, onChange }: { label: string; value: string;
 const ABILITY_KEYS = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
 const ABILITY_LABELS = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'] as const;
 
-function abilityMod(score: number): string {
-  const mod = Math.floor((score - 10) / 2);
-  return mod >= 0 ? `+${mod}` : String(mod);
-}
-
 function StatBlockField({ value, onChange }: Pick<FieldInputProps, 'value' | 'onChange'>) {
-  const DEFAULT_SCORES = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
-  const raw = value?.type === 'stat-block' ? value.scores : null;
   const scores = useMemo(() => {
-    if (!raw || raw.str == null) return DEFAULT_SCORES;
-    return raw;
-  }, [raw]);
+    const DEFAULT_SCORES: AbilityScores = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
+    return value?.type === 'stat-block' && value.scores?.str != null ? value.scores : DEFAULT_SCORES;
+  }, [value]);
+  const modifiers = useMemo(() =>
+    value?.type === 'stat-block' ? (value.modifiers ?? {}) : {},
+    [value]
+  );
   const saves = useMemo(() =>
-    value?.type === 'stat-block' ? value.saves : {},
+    value?.type === 'stat-block' ? (value.saves ?? {}) : {},
     [value]
   );
 
-  const updateScore = useCallback((key: typeof ABILITY_KEYS[number], val: number) => {
-    onChange({ type: 'stat-block', scores: { ...scores, [key]: val }, saves });
-  }, [scores, saves, onChange]);
+  const update = useCallback((
+    newScores: AbilityScores,
+    newMods: Partial<AbilityScores>,
+    newSaves: Partial<AbilityScores>
+  ) => {
+    onChange({ type: 'stat-block', scores: newScores, modifiers: newMods, saves: newSaves });
+  }, [onChange]);
 
   return (
     <div className={styles.statBlock}>
       {ABILITY_KEYS.map((key, i) => (
         <div key={key} className={styles.statCell}>
           <span className={styles.statLabel}>{ABILITY_LABELS[i]}</span>
-          <input
-            className={styles.statScore}
+          <NumberInput
             value={scores[key]}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              if (!isNaN(n)) updateScore(key, n);
-            }}
+            onChange={(v) => update({ ...scores, [key]: v }, modifiers, saves)}
           />
-          <span className={styles.statMod}>{abilityMod(scores[key])}</span>
-          {saves[key] != null && <span className={styles.statSave}>Save: {saves[key]! >= 0 ? '+' : ''}{saves[key]}</span>}
+          <NumberInput
+            value={modifiers[key] ?? 0}
+            onChange={(v) => update(scores, { ...modifiers, [key]: v }, saves)}
+          />
+          <NumberInput
+            value={saves[key] ?? 0}
+            onChange={(v) => update(scores, modifiers, { ...saves, [key]: v })}
+          />
         </div>
       ))}
+      {/* Row labels */}
+      <div className={styles.statRowLabels}>
+        <span>Score</span>
+        <span>MOD</span>
+        <span>SAVE</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Select Field ── */
+
+function SelectField({ field, value, onChange }: FieldInputProps) {
+  const selected = value?.type === 'select' ? value.selected : '';
+  const options = (field.settings as SelectFieldSettings)?.options ?? [];
+  return (
+    <select
+      className={styles.selectInput}
+      value={selected}
+      onChange={(e) => onChange({ type: 'select', selected: e.target.value })}
+    >
+      {options.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+  );
+}
+
+/* ── Speed List Field ── */
+
+function SpeedListField({ field, value, onChange }: FieldInputProps) {
+  const entries = useMemo(() =>
+    (field.settings as SpeedListFieldSettings | undefined)?.entries ?? [],
+    [field.settings]
+  );
+  const values = useMemo(() =>
+    value?.type === 'speed-list' ? value.values : {},
+    [value]
+  );
+
+  const visibleKeys = useMemo(() => {
+    const always = entries.filter((e) => e.alwaysVisible).map((e) => e.key);
+    const active = Object.keys(values).filter((k) => values[k] != null);
+    return [...new Set([...always, ...active])];
+  }, [entries, values]);
+
+  const availableToAdd = useMemo(() =>
+    entries.filter((e) => !visibleKeys.includes(e.key)),
+    [entries, visibleKeys]
+  );
+
+  const updateValue = useCallback((key: string, val: number) => {
+    onChange({ type: 'speed-list', values: { ...values, [key]: val } });
+  }, [values, onChange]);
+
+  const addEntry = useCallback((key: string) => {
+    onChange({ type: 'speed-list', values: { ...values, [key]: 30 } });
+  }, [values, onChange]);
+
+  const removeEntry = useCallback((key: string) => {
+    const next = { ...values };
+    delete next[key];
+    onChange({ type: 'speed-list', values: next });
+  }, [values, onChange]);
+
+  const labelFor = useCallback((key: string) =>
+    entries.find((e) => e.key === key)?.label ?? key,
+    [entries]
+  );
+
+  const isAlwaysVisible = useCallback((key: string) =>
+    entries.find((e) => e.key === key)?.alwaysVisible ?? false,
+    [entries]
+  );
+
+  return (
+    <div className={styles.speedList}>
+      {visibleKeys.map((key) => (
+        <div key={key} className={styles.speedEntry}>
+          <span className={styles.speedLabel}>{labelFor(key)}</span>
+          <NumberInput value={values[key] ?? 0} onChange={(v) => updateValue(key, v)} />
+          <span className={styles.speedUnit}>ft</span>
+          {!isAlwaysVisible(key) && (
+            <button className={styles.tagRemove} onClick={() => removeEntry(key)}>&times;</button>
+          )}
+        </div>
+      ))}
+      {availableToAdd.length > 0 && (
+        <select
+          className={styles.speedAddSelect}
+          value=""
+          onChange={(e) => { if (e.target.value) addEntry(e.target.value); }}
+        >
+          <option value="">+ Add...</option>
+          {availableToAdd.map((e) => (
+            <option key={e.key} value={e.key}>{e.label}</option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
+/* ── Skill List Field ── */
+
+function SkillListField({ field, value, onChange }: FieldInputProps) {
+  const options = useMemo(() =>
+    (field.settings as SkillListFieldSettings | undefined)?.options ?? [],
+    [field.settings]
+  );
+  const skills = useMemo(() =>
+    value?.type === 'skill-list' ? value.skills : [],
+    [value]
+  );
+
+  const availableOptions = useMemo(() =>
+    options.filter((opt) => !skills.some((s) => s.name === opt)),
+    [options, skills]
+  );
+
+  const addSkill = useCallback((name: string) => {
+    onChange({ type: 'skill-list', skills: [...skills, { name, bonus: 0 }] });
+  }, [skills, onChange]);
+
+  const updateBonus = useCallback((name: string, bonus: number) => {
+    onChange({
+      type: 'skill-list',
+      skills: skills.map((s) => s.name === name ? { ...s, bonus } : s),
+    });
+  }, [skills, onChange]);
+
+  const removeSkill = useCallback((name: string) => {
+    onChange({ type: 'skill-list', skills: skills.filter((s) => s.name !== name) });
+  }, [skills, onChange]);
+
+  return (
+    <div className={styles.skillList}>
+      {skills.map((skill) => (
+        <div key={skill.name} className={styles.skillEntry}>
+          <span className={styles.skillName}>{skill.name}</span>
+          <NumberInput value={skill.bonus} onChange={(v) => updateBonus(skill.name, v)} />
+          <button className={styles.tagRemove} onClick={() => removeSkill(skill.name)}>&times;</button>
+        </div>
+      ))}
+      {availableOptions.length > 0 && (
+        <select
+          className={styles.speedAddSelect}
+          value=""
+          onChange={(e) => { if (e.target.value) addSkill(e.target.value); }}
+        >
+          <option value="">+ Add...</option>
+          {availableOptions.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
+/* ── Item List Field ── */
+
+function ItemListField({ value, onChange }: Pick<FieldInputProps, 'value' | 'onChange'>) {
+  const items = useMemo(() =>
+    value?.type === 'item-list' ? value.items : [],
+    [value]
+  );
+
+  const addItem = useCallback(() => {
+    onChange({ type: 'item-list', items: [...items, { name: '', quantity: 1 }] });
+  }, [items, onChange]);
+
+  const updateItem = useCallback((idx: number, patch: Partial<{ name: string; quantity: number }>) => {
+    onChange({
+      type: 'item-list',
+      items: items.map((item, i) => i === idx ? { ...item, ...patch } : item),
+    });
+  }, [items, onChange]);
+
+  const removeItem = useCallback((idx: number) => {
+    onChange({ type: 'item-list', items: items.filter((_, i) => i !== idx) });
+  }, [items, onChange]);
+
+  return (
+    <div className={styles.itemList}>
+      {items.map((item, idx) => (
+        <div key={idx} className={styles.itemEntry}>
+          <input
+            className={styles.textInput}
+            value={item.name}
+            onChange={(e) => updateItem(idx, { name: e.target.value })}
+            placeholder="Item name"
+          />
+          <NumberInput value={item.quantity} onChange={(v) => updateItem(idx, { quantity: v })} />
+          <button className={styles.tagRemove} onClick={() => removeItem(idx)}>&times;</button>
+        </div>
+      ))}
+      <button className={styles.actionAdd} onClick={addItem}>+ Add</button>
     </div>
   );
 }

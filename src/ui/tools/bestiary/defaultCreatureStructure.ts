@@ -32,7 +32,7 @@ const FIELDS: FieldDefinition[] = [
   // ── Header ──
   {
     id: 'alignment',
-    type: 'radio',
+    type: 'select',
     title: 'Alignment',
     sectionId: 'header',
     width: '1/2',
@@ -105,14 +105,22 @@ const FIELDS: FieldDefinition[] = [
   },
   {
     id: 'speed',
-    type: 'tag-list',
+    type: 'speed-list',
     title: 'Speed',
     sectionId: 'combat',
-    width: '1/2',
+    width: 'full',
     textAlign: 'left',
-    positionAlign: 'right',
+    positionAlign: 'left',
     sortOrder: 4,
-    settings: { predefinedOptions: ['30 ft.', '40 ft.', 'fly 60 ft.', 'swim 30 ft.', 'burrow 20 ft.', 'climb 30 ft.'] },
+    settings: {
+      entries: [
+        { key: 'walk', label: 'Walk', alwaysVisible: true },
+        { key: 'fly', label: 'Fly' },
+        { key: 'swim', label: 'Swim' },
+        { key: 'burrow', label: 'Burrow' },
+        { key: 'climb', label: 'Climb' },
+      ],
+    },
   },
 
   // ── Abilities (left) ──
@@ -130,7 +138,7 @@ const FIELDS: FieldDefinition[] = [
   // ── Skills (left) ──
   {
     id: 'skills',
-    type: 'tag-list',
+    type: 'skill-list',
     title: 'Skills',
     sectionId: 'skills',
     width: 'full',
@@ -138,7 +146,7 @@ const FIELDS: FieldDefinition[] = [
     positionAlign: 'left',
     sortOrder: 0,
     settings: {
-      predefinedOptions: [
+      options: [
         'Acrobatics', 'Animal Handling', 'Arcana', 'Athletics',
         'Deception', 'History', 'Insight', 'Intimidation',
         'Investigation', 'Medicine', 'Nature', 'Perception',
@@ -158,6 +166,7 @@ const FIELDS: FieldDefinition[] = [
     textAlign: 'left',
     positionAlign: 'left',
     sortOrder: 0,
+    settings: { predefinedOptions: ['Acid', 'Cold', 'Fire', 'Force', 'Lightning', 'Necrotic', 'Poison', 'Psychic', 'Radiant', 'Thunder', 'Bludgeoning', 'Piercing', 'Slashing'] },
   },
   {
     id: 'vulnerabilities',
@@ -168,6 +177,7 @@ const FIELDS: FieldDefinition[] = [
     textAlign: 'left',
     positionAlign: 'right',
     sortOrder: 1,
+    settings: { predefinedOptions: ['Acid', 'Cold', 'Fire', 'Force', 'Lightning', 'Necrotic', 'Poison', 'Psychic', 'Radiant', 'Thunder', 'Bludgeoning', 'Piercing', 'Slashing'] },
   },
   {
     id: 'immunities_damage',
@@ -178,6 +188,7 @@ const FIELDS: FieldDefinition[] = [
     textAlign: 'left',
     positionAlign: 'left',
     sortOrder: 2,
+    settings: { predefinedOptions: ['Acid', 'Cold', 'Fire', 'Force', 'Lightning', 'Necrotic', 'Poison', 'Psychic', 'Radiant', 'Thunder', 'Bludgeoning', 'Piercing', 'Slashing'] },
   },
   {
     id: 'immunities_condition',
@@ -188,19 +199,28 @@ const FIELDS: FieldDefinition[] = [
     textAlign: 'left',
     positionAlign: 'right',
     sortOrder: 3,
+    settings: { predefinedOptions: ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'] },
   },
 
   // ── Senses & Languages (left) ──
   {
     id: 'senses',
-    type: 'tag-list',
+    type: 'speed-list',
     title: 'Senses',
     sectionId: 'senses',
     width: '1/2',
     textAlign: 'left',
     positionAlign: 'left',
     sortOrder: 0,
-    settings: { predefinedOptions: ['Darkvision 60 ft.', 'Darkvision 120 ft.', 'Blindsight 10 ft.', 'Blindsight 30 ft.', 'Tremorsense 60 ft.', 'Truesight 120 ft.'] },
+    settings: {
+      entries: [
+        { key: 'darkvision', label: 'Darkvision' },
+        { key: 'blindsight', label: 'Blindsight' },
+        { key: 'tremorsense', label: 'Tremorsense' },
+        { key: 'truesight', label: 'Truesight' },
+      ],
+      allowCustom: true,
+    },
   },
   {
     id: 'languages',
@@ -217,7 +237,7 @@ const FIELDS: FieldDefinition[] = [
   // ── Info (left) ──
   {
     id: 'size',
-    type: 'radio',
+    type: 'select',
     title: 'Size',
     sectionId: 'info',
     width: '1/2',
@@ -228,7 +248,7 @@ const FIELDS: FieldDefinition[] = [
   },
   {
     id: 'creature_type',
-    type: 'radio',
+    type: 'select',
     title: 'Creature Type',
     sectionId: 'info',
     width: '1/2',
@@ -244,24 +264,14 @@ const FIELDS: FieldDefinition[] = [
     },
   },
   {
-    id: 'descriptive_tags',
-    type: 'tag-list',
-    title: 'Descriptive Tags',
-    sectionId: 'info',
-    width: 'full',
-    textAlign: 'left',
-    positionAlign: 'left',
-    sortOrder: 2,
-  },
-  {
     id: 'gear',
-    type: 'tag-list',
+    type: 'item-list',
     title: 'Gear',
     sectionId: 'info',
     width: 'full',
     textAlign: 'left',
     positionAlign: 'left',
-    sortOrder: 3,
+    sortOrder: 2,
   },
 
   // ── Traits (right) ──

@@ -398,7 +398,7 @@ function migrateExistingRows(): void {
       try {
         const scores = JSON.parse(ability_scores as string);
         const saves = saving_throws ? JSON.parse(saving_throws as string) : {};
-        vals['ability_scores'] = { type: 'stat-block', scores, saves: saves ?? {} };
+        vals['ability_scores'] = { type: 'stat-block', scores, modifiers: {}, saves: saves ?? {} };
       } catch { /* skip */ }
     }
 
