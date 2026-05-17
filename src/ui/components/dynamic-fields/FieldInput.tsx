@@ -449,23 +449,25 @@ function StatBlockField({ value, onChange }: Pick<FieldInputProps, 'value' | 'on
         <span className={styles.statHeaderCol}>MOD</span>
         <span className={styles.statHeaderCol}>SAVE</span>
       </div>
-      {ABILITY_KEYS.map((key, i) => (
-        <div key={key} className={styles.statRow}>
-          <span className={styles.statLabel}>{ABILITY_LABELS[i]}</span>
-          <NumberInput
-            value={scores[key]}
-            onChange={(v) => update({ ...scores, [key]: v }, modifiers, saves)}
-          />
-          <NumberInput
-            value={modifiers[key] ?? 0}
-            onChange={(v) => update(scores, { ...modifiers, [key]: v }, saves)}
-          />
-          <NumberInput
-            value={saves[key] ?? 0}
-            onChange={(v) => update(scores, modifiers, { ...saves, [key]: v })}
-          />
-        </div>
-      ))}
+      <div className={styles.statRows}>
+        {ABILITY_KEYS.map((key, i) => (
+          <div key={key} className={styles.statRow}>
+            <span className={styles.statLabel}>{ABILITY_LABELS[i]}</span>
+            <NumberInput
+              value={scores[key]}
+              onChange={(v) => update({ ...scores, [key]: v }, modifiers, saves)}
+            />
+            <NumberInput
+              value={modifiers[key] ?? 0}
+              onChange={(v) => update(scores, { ...modifiers, [key]: v }, saves)}
+            />
+            <NumberInput
+              value={saves[key] ?? 0}
+              onChange={(v) => update(scores, modifiers, { ...saves, [key]: v })}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

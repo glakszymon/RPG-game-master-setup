@@ -252,6 +252,12 @@
   text-align: center;
 }
 
+.statRows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 2px;
+}
+
 .statRow {
   display: grid;
   grid-template-columns: 40px 1fr 1fr 1fr;
@@ -440,7 +446,7 @@
 }
 
 .selectInput option {
-  background: var(--color-bg-elevated);
+  background: var(--color-bg-base);
   color: var(--color-text-primary);
 }
 
@@ -471,7 +477,7 @@
 }
 
 .speedAddSelect {
-  background: transparent;
+  background: var(--color-bg-elevated);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
@@ -487,7 +493,7 @@
 }
 
 .speedAddSelect option {
-  background: var(--color-bg-elevated);
+  background: var(--color-bg-base);
   color: var(--color-text-primary);
 }
 
