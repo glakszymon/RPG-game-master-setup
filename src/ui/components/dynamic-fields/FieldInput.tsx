@@ -127,6 +127,46 @@ function NumberInput({ value, onChange }: { value: number; onChange: (v: number)
   );
 }
 
+/* ── SignedNumberInput (displays +/- prefix when not editing) ── */
+
+function SignedNumberInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(String(value));
+
+  const formatSigned = (v: number) => v >= 0 ? `+${v}` : `${v}`;
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setEditing(true);
+    setText(String(value));
+    e.target.select();
+  };
+
+  const handleBlur = () => {
+    setEditing(false);
+    // Support "+1", "-1", "1" → parse correctly
+    const parsed = Number(text);
+    onChange(isNaN(parsed) ? 0 : parsed);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+    if (e.key === 'Escape') { setText(String(value)); setEditing(false); }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      className={styles.numberInput}
+      value={editing ? text : formatSigned(value)}
+      onChange={(e) => setText(e.target.value)}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+    />
+  );
+}
+
 /* ── Number Field ── */
 
 function NumberField({ field, value, onChange }: FieldInputProps) {
@@ -457,11 +497,11 @@ function StatBlockField({ value, onChange }: Pick<FieldInputProps, 'value' | 'on
               value={scores[key]}
               onChange={(v) => update({ ...scores, [key]: v }, modifiers, saves)}
             />
-            <NumberInput
-              value={modifiers[key] ?? 0}
+            <SignedNumberInput
+              value={modifiers[key] ?? Math.floor((scores[key] - 10) / 2)}
               onChange={(v) => update(scores, { ...modifiers, [key]: v }, saves)}
             />
-            <NumberInput
+            <SignedNumberInput
               value={saves[key] ?? 0}
               onChange={(v) => update(scores, modifiers, { ...saves, [key]: v })}
             />
@@ -493,10 +533,9 @@ function SelectField({ field, value, onChange }: FieldInputProps) {
 /* ── Speed List Field ── */
 
 function SpeedListField({ field, value, onChange }: FieldInputProps) {
-  const entries = useMemo(() =>
-    (field.settings as SpeedListFieldSettings | undefined)?.entries ?? [],
-    [field.settings]
-  );
+  const settings = field.settings as SpeedListFieldSettings | undefined;
+  const entries = useMemo(() => settings?.entries ?? [], [settings]);
+  const allowCustom = settings?.allowCustom ?? false;
   const values = useMemo(() =>
     value?.type === 'speed-list' ? value.values : {},
     [value]
@@ -537,6 +576,14 @@ function SpeedListField({ field, value, onChange }: FieldInputProps) {
     [entries]
   );
 
+  const [customName, setCustomName] = useState('');
+  const addCustom = useCallback(() => {
+    const key = customName.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!key || values[key] != null) return;
+    onChange({ type: 'speed-list', values: { ...values, [key]: 30 } });
+    setCustomName('');
+  }, [customName, values, onChange]);
+
   return (
     <div className={styles.speedList}>
       {visibleKeys.map((key) => (
@@ -560,6 +607,19 @@ function SpeedListField({ field, value, onChange }: FieldInputProps) {
             <option key={e.key} value={e.key}>{e.label}</option>
           ))}
         </select>
+      )}
+      {allowCustom && (
+        <div className={styles.speedEntry}>
+          <input
+            className={styles.textInput}
+            style={{ minWidth: 70, flex: 1 }}
+            placeholder="Custom..."
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } }}
+          />
+          <button className={styles.tagRemove} onClick={addCustom} style={{ color: 'var(--color-accent)' }}>+</button>
+        </div>
       )}
     </div>
   );

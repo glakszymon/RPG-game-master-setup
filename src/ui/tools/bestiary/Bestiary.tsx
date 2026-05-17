@@ -9,10 +9,11 @@ import { useCallback, useMemo } from 'react';
 import { useBestiaryState } from './hooks/useBestiaryState';
 import { useCreatureStructure } from './hooks/useCreatureStructure';
 import { LibraryPanel } from './components/LibraryPanel';
+import { FilterPanel } from './components/FilterPanel';
 import { CreatureForm } from './components/CreatureForm';
-import { createBlankTemplate } from './types';
+import { createBlankTemplate, DEFAULT_FILTERS } from './types';
 import { templateToFieldValues, fieldValuesToTemplate } from './templateConversion';
-import type { BestiaryToolState } from './types';
+import type { BestiaryToolState, CreatureFilters } from './types';
 import type { FieldValue } from '../../components/dynamic-fields';
 import { DEFAULT_BESTIARY_STATE } from './types';
 import styles from './Bestiary.module.css';
@@ -118,17 +119,47 @@ export function Bestiary({ toolState, onToolStateChange, campaignId }: BestiaryP
 
   return (
     <div className={styles.container}>
+      {/* Toolbar below window header */}
+      <div className={styles.bestiaryToolbar}>
+        <button
+          className={styles.iconBtn}
+          onClick={() => patchState({ listHidden: !state.listHidden })}
+          title={state.listHidden ? 'Show creature list' : 'Hide creature list'}
+        >
+          <span className="material-symbols-outlined">{state.listHidden ? 'menu' : 'menu_open'}</span>
+        </button>
+        <button
+          className={`${styles.iconBtn} ${state.filterPanelOpen ? styles.iconBtnActive : ''}`}
+          onClick={() => patchState({ filterPanelOpen: !state.filterPanelOpen })}
+          title="Advanced filters"
+        >
+          <span className="material-symbols-outlined">filter_alt</span>
+        </button>
+      </div>
       <div className={styles.body}>
-        <div className={styles.leftPanel}>
-          <LibraryPanel
-            templates={templates}
-            selectedId={state.selectedTemplateId}
-            onSelect={(id) => patchState({ selectedTemplateId: id })}
-            onAdd={handleAddTemplate}
-            searchQuery={state.searchQuery}
-            onSearchChange={(q) => patchState({ searchQuery: q })}
-          />
-        </div>
+        {/* Filter drawer — attached to left side */}
+        {state.filterPanelOpen && (
+          <div className={styles.filterPanel}>
+            <FilterPanel
+              filters={state.filters ?? DEFAULT_FILTERS}
+              onChange={(filters: CreatureFilters) => patchState({ filters })}
+              onClose={() => patchState({ filterPanelOpen: false })}
+            />
+          </div>
+        )}
+        {!state.listHidden && (
+          <div className={styles.leftPanel}>
+            <LibraryPanel
+              templates={templates}
+              selectedId={state.selectedTemplateId}
+              onSelect={(id) => patchState({ selectedTemplateId: id })}
+              onAdd={handleAddTemplate}
+              searchQuery={state.searchQuery}
+              onSearchChange={(q) => patchState({ searchQuery: q })}
+              filters={state.filters ?? DEFAULT_FILTERS}
+            />
+          </div>
+        )}
         <div className={styles.rightPanel}>
           {rightPanel}
         </div>

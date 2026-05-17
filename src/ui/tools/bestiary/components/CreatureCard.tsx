@@ -36,7 +36,7 @@ export function CreatureCard({ template, selected, onClick }: CreatureCardProps)
         {template.avatarPath ? (
           <img src={template.avatarPath} alt={template.name} />
         ) : (
-          <span className={styles.icon}>{iconName}</span>
+          <span className="material-symbols-outlined">{iconName}</span>
         )}
       </div>
       <div className={styles.creatureInfo}>

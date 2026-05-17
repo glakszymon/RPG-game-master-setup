@@ -8,10 +8,13 @@
 
 import { useCallback, useMemo } from 'react';
 import { useBestiaryState } from './hooks/useBestiaryState';
+import { useCreatureStructure } from './hooks/useCreatureStructure';
+import { templateToFieldValues } from './templateConversion';
 import { EncounterTreePanel } from './components/EncounterTreePanel';
 import { InstanceForm } from './components/InstanceForm';
 import type { EncounterSetsToolState, CreatureInstance } from './types';
 import { DEFAULT_ENCOUNTER_SETS_STATE } from './types';
+import type { FieldValue } from '../../components/dynamic-fields';
 import styles from './Bestiary.module.css';
 
 interface EncounterSetsProps {
@@ -24,14 +27,15 @@ function uid(): string {
   return crypto.randomUUID();
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function EncounterSets({ toolState, onToolStateChange, campaignId: _campaignId }: EncounterSetsProps) {
+export function EncounterSets({ toolState, onToolStateChange, campaignId }: EncounterSetsProps) {
   const state = toolState ?? DEFAULT_ENCOUNTER_SETS_STATE;
 
   const patchState = useCallback(
     (patch: Partial<EncounterSetsToolState>) => onToolStateChange({ ...state, ...patch }),
     [state, onToolStateChange],
   );
+
+  const { structure } = useCreatureStructure(campaignId);
 
   const {
     templates, folders, instances, loading,
@@ -50,6 +54,18 @@ export function EncounterSets({ toolState, onToolStateChange, campaignId: _campa
     if (!selectedInstance) return null;
     return resolveInstance(selectedInstance);
   }, [selectedInstance, resolveInstance]);
+
+  // Build merged fieldValues for the selected instance
+  const selectedFieldValues = useMemo(() => {
+    if (!selectedResolved) return {};
+    // Start with template's fieldValues (converted from old format if needed)
+    const base = selectedResolved.fieldValues
+      ? selectedResolved.fieldValues as Record<string, FieldValue>
+      : templateToFieldValues(selectedResolved);
+    // Instance-level fieldValues overrides (stored in overrides.fieldValues)
+    const overrideVals = (selectedInstance?.overrides?.fieldValues ?? {}) as Record<string, FieldValue>;
+    return { ...base, ...overrideVals };
+  }, [selectedResolved, selectedInstance]);
 
   // ── Folder CRUD ──
   const handleAddFolder = useCallback((parentId: string | null, name: string) => {
@@ -128,6 +144,24 @@ export function EncounterSets({ toolState, onToolStateChange, campaignId: _campa
     saveInstance(instance);
   }, [saveInstance]);
 
+  /** Update a single fieldValue override on the selected instance */
+  const handleInstanceFieldChange = useCallback((fieldId: string, value: FieldValue) => {
+    if (!selectedInstance) return;
+    const existingOverrides = selectedInstance.overrides as Record<string, unknown>;
+    const existingFieldValues = (existingOverrides.fieldValues ?? {}) as Record<string, FieldValue>;
+    const nextOverrides = {
+      ...existingOverrides,
+      fieldValues: { ...existingFieldValues, [fieldId]: value },
+    };
+    saveInstance({ ...selectedInstance, overrides: nextOverrides });
+  }, [selectedInstance, saveInstance]);
+
+  /** Update instance name */
+  const handleInstanceNameChange = useCallback((name: string) => {
+    if (!selectedInstance) return;
+    saveInstance({ ...selectedInstance, instanceName: name || null });
+  }, [selectedInstance, saveInstance]);
+
   const handleMoveFolder = useCallback((folderId: string, targetParentId: string | null) => {
     const folder = folders.find(f => f.id === folderId);
     if (!folder) return;
@@ -181,8 +215,12 @@ export function EncounterSets({ toolState, onToolStateChange, campaignId: _campa
           {selectedInstance && selectedResolved ? (
             <InstanceForm
               instance={selectedInstance}
-              resolved={selectedResolved}
-              onUpdate={handleUpdateInstance}
+              fieldValues={selectedFieldValues}
+              resolvedName={selectedResolved.name}
+              avatarPath={selectedResolved.avatarPath}
+              structure={structure}
+              onFieldChange={handleInstanceFieldChange}
+              onNameChange={handleInstanceNameChange}
               onDelete={handleDeleteInstance}
             />
           ) : (

@@ -1,447 +1,243 @@
 /*
  * InstanceForm — full creature editor for a specific instance.
- * Pre-filled with resolved data (template + overrides merged).
- * Edits are saved as overrides on the instance, not on the base template.
+ * Uses the same dynamic field system as CreatureForm (FieldStructure + FieldInput).
+ * Pre-filled with resolved data (template fieldValues + overrides merged).
+ * Edits are saved as fieldValues overrides on the instance.
  */
 
-import { useState, useCallback, useMemo } from 'react';
-import type {
-  CreatureTemplate, CreatureInstance, CreatureType,
-  AbilityScores, CreatureAction, CreatureTrait, CustomField,
-} from '../types';
-import { CREATURE_TYPE_ICON } from '../types';
+import { useCallback, useMemo, useState } from 'react';
+import { FieldInput } from '../../../components/dynamic-fields';
+import { getXpFromCr, getProficiencyBonus, formatXp } from '../crUtilities';
+import type { FieldStructure, FieldValue, FieldDefinition, SectionDefinition } from '../../../components/dynamic-fields';
+import type { CreatureInstance } from '../types';
 import styles from '../Bestiary.module.css';
-
-const CREATURE_TYPES: CreatureType[] = [
-  'aberration', 'beast', 'celestial', 'construct', 'dragon',
-  'elemental', 'fey', 'fiend', 'giant', 'humanoid',
-  'monstrosity', 'ooze', 'plant', 'undead', 'swarm',
-];
-
-const ABILITY_KEYS: (keyof AbilityScores)[] = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
 interface InstanceFormProps {
   instance: CreatureInstance;
-  resolved: CreatureTemplate;
-  onUpdate: (instance: CreatureInstance) => void;
+  /** Resolved fieldValues: template values merged with instance overrides */
+  fieldValues: Record<string, FieldValue>;
+  /** Resolved name (instanceName ?? template name) */
+  resolvedName: string;
+  /** Resolved avatar path */
+  avatarPath: string | null;
+  structure: FieldStructure;
+  onFieldChange: (fieldId: string, value: FieldValue) => void;
+  onNameChange: (name: string) => void;
   onDelete: (id: string) => void;
 }
 
-function uid(): string {
-  return crypto.randomUUID();
-}
+/* ── Section accent colors by ID ── */
+const SECTION_ACCENTS: Record<string, string> = {
+  combat: '#f87171',
+  abilities: '#60a5fa',
+  skills: '#a78bfa',
+  defenses: '#4ade80',
+  senses: '#fbbf24',
+  info: '#9ca3af',
+  traits: '#c9b06b',
+  actions: '#f87171',
+  bonus_actions: '#fb923c',
+  reactions: '#38bdf8',
+  legendary: '#e879f9',
+};
 
-export function InstanceForm({ instance, resolved, onUpdate, onDelete }: InstanceFormProps) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-
-  const toggle = (section: string) => {
-    setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
-  };
-
+export function InstanceForm({
+  instance,
+  fieldValues,
+  resolvedName,
+  avatarPath,
+  structure,
+  onFieldChange,
+  onNameChange,
+  onDelete,
+}: InstanceFormProps) {
   const shortId = instance.id.slice(0, 6);
 
-  /** Apply a partial override. Merges into instance.overrides and saves. */
-  const patch = useCallback((fields: Partial<CreatureTemplate>) => {
-    const overrides = { ...instance.overrides, ...fields };
-    onUpdate({ ...instance, overrides });
-  }, [instance, onUpdate]);
+  const { headerSections, leftSections, rightSections } = useMemo(() => {
+    const header: SectionDefinition[] = [];
+    const left: SectionDefinition[] = [];
+    const right: SectionDefinition[] = [];
 
-  /** Update instance name (stored directly, not in overrides). */
-  const setName = useCallback((name: string) => {
-    onUpdate({ ...instance, instanceName: name || null });
-  }, [instance, onUpdate]);
-
-  // Current effective values (resolved = template + existing overrides)
-  const iconName = resolved.creatureType ? CREATURE_TYPE_ICON[resolved.creatureType] : 'category';
-  const abilities = resolved.abilityScores ?? { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 };
-
-  const setAbility = (key: keyof AbilityScores, val: number) => {
-    patch({ abilityScores: { ...abilities, [key]: val } });
-  };
-
-  // ── Actions ──
-  const actions = useMemo(() => resolved.actions ?? [], [resolved.actions]);
-  const addAction = () => {
-    const action: CreatureAction = { id: uid(), name: '', description: '' };
-    patch({ actions: [...actions, action] });
-  };
-  const updateAction = (id: string, fields: Partial<CreatureAction>) => {
-    patch({ actions: actions.map(a => a.id === id ? { ...a, ...fields } : a) });
-  };
-  const removeAction = (id: string) => {
-    patch({ actions: actions.filter(a => a.id !== id) });
-  };
-
-  // ── Traits ──
-  const traits = useMemo(() => resolved.traits ?? [], [resolved.traits]);
-  const addTrait = () => {
-    const trait: CreatureTrait = { id: uid(), name: '', description: '' };
-    patch({ traits: [...traits, trait] });
-  };
-  const updateTrait = (id: string, fields: Partial<CreatureTrait>) => {
-    patch({ traits: traits.map(t => t.id === id ? { ...t, ...fields } : t) });
-  };
-  const removeTrait = (id: string) => {
-    patch({ traits: traits.filter(t => t.id !== id) });
-  };
-
-  // ── Custom fields ──
-  const customFields = useMemo(() => resolved.customFields ?? [], [resolved.customFields]);
-  const addCustomField = () => {
-    patch({ customFields: [...customFields, { key: '', value: '' }] });
-  };
-  const updateCustomField = (idx: number, fields: Partial<CustomField>) => {
-    const next = [...customFields];
-    next[idx] = { ...next[idx], ...fields };
-    patch({ customFields: next });
-  };
-  const removeCustomField = (idx: number) => {
-    patch({ customFields: customFields.filter((_, i) => i !== idx) });
-  };
-
-  // ── Tags ──
-  const tags = useMemo(() => resolved.tags ?? [], [resolved.tags]);
-  const [tagInput, setTagInput] = useState('');
-  const addTag = () => {
-    const tag = tagInput.trim();
-    if (tag && !tags.includes(tag)) {
-      patch({ tags: [...tags, tag] });
+    for (const s of structure.sections ?? []) {
+      if (s.column === 'header') header.push(s);
+      else if (s.column === 'right') right.push(s);
+      else left.push(s);
     }
-    setTagInput('');
-  };
-  const removeTag = (tag: string) => {
-    patch({ tags: tags.filter(t => t !== tag) });
-  };
 
-  const actionsMode = resolved.actionsMode ?? 'structured';
+    left.sort((a, b) => a.sortOrder - b.sortOrder);
+    right.sort((a, b) => a.sortOrder - b.sortOrder);
+
+    return { headerSections: header, leftSections: left, rightSections: right };
+  }, [structure.sections]);
+
+  const fieldsBySection = useMemo(() => {
+    const map: Record<string, FieldDefinition[]> = {};
+    for (const f of structure.fields) {
+      const sid = f.sectionId ?? '_unsectioned';
+      if (!map[sid]) map[sid] = [];
+      map[sid].push(f);
+    }
+    for (const key of Object.keys(map)) {
+      map[key].sort((a, b) => a.sortOrder - b.sortOrder);
+    }
+    return map;
+  }, [structure.fields]);
+
+  // CR-derived values
+  const crValue = fieldValues['cr'];
+  const crText = crValue?.type === 'number' ? String(crValue.value) : crValue?.type === 'text-field' ? crValue.value : null;
+  const xp = getXpFromCr(crText);
+  const pb = getProficiencyBonus(crText);
+
+  // Header fields
+  const headerFields = useMemo(() =>
+    headerSections.flatMap(s => fieldsBySection[s.id] ?? []),
+    [headerSections, fieldsBySection]
+  );
 
   return (
-    <div>
-      {/* ── Header: avatar + name + ID ── */}
-      <div className={styles.avatarSection}>
+    <div className={styles.creatureFormRoot}>
+      {/* ── Sticky Header ── */}
+      <div className={styles.formStickyHeader}>
         <div className={styles.avatarPreview}>
-          {resolved.avatarPath ? (
-            <img src={resolved.avatarPath} alt={resolved.name} />
+          {avatarPath ? (
+            <img src={avatarPath} alt={resolvedName} />
           ) : (
-            <span className={styles.icon}>{iconName}</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '32px', opacity: 0.5 }}>category</span>
           )}
         </div>
-        <div style={{ flex: 1 }}>
-          <input
-            className={styles.formInput}
-            style={{ width: '100%', fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}
-            value={instance.instanceName ?? resolved.name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={resolved.name}
-          />
-          <div className={styles.instanceFormMeta}>
+        <div className={styles.formHeaderContent}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              className={styles.formInput}
+              style={{ flex: 1, fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}
+              value={instance.instanceName ?? resolvedName}
+              onChange={(e) => onNameChange(e.target.value)}
+              placeholder={resolvedName}
+            />
             <span className={styles.instanceFormId}>{shortId}</span>
-            {resolved.creatureType && (
-              <span className={styles.instanceFormType}>
-                <span className={styles.iconSm}>{iconName}</span>
-                {resolved.creatureType}
+          </div>
+          <div className={styles.formHeaderFields}>
+            {headerFields.map(field => (
+              <DynamicField
+                key={field.id}
+                field={field}
+                value={fieldValues[field.id] ?? null}
+                onChange={onFieldChange}
+              />
+            ))}
+            {crText && (
+              <span className={styles.crDerivedItem}>
+                CR {crText} (XP {formatXp(xp ?? 0)}; PB +{pb})
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Basic Section ── */}
-      <Section title="Basic" collapsed={collapsed['basic']} onToggle={() => toggle('basic')}>
-        <div className={styles.formRow}>
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>Type</label>
-            <select
-              className={styles.formSelect}
-              value={resolved.creatureType ?? ''}
-              onChange={(e) => patch({ creatureType: (e.target.value || null) as CreatureType | null })}
-            >
-              <option value="">-- None --</option>
-              {CREATURE_TYPES.map(ct => (
-                <option key={ct} value={ct}>{ct}</option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>CR</label>
-            <input
-              className={styles.formInput}
-              value={resolved.cr ?? ''}
-              onChange={(e) => patch({ cr: e.target.value || null })}
-              placeholder="e.g. 1/4, 5"
+      {/* ── Two-Column Body ── */}
+      <div className={styles.formColumns}>
+        <div className={styles.formColumnLeft}>
+          {leftSections.map(section => (
+            <FormSection
+              key={section.id}
+              section={section}
+              fields={fieldsBySection[section.id] ?? []}
+              fieldValues={fieldValues}
+              onFieldChange={onFieldChange}
             />
-          </div>
-        </div>
-        <div className={styles.formRow}>
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>HP</label>
-            <input
-              className={styles.formInput}
-              type="number"
-              value={resolved.hpDefault ?? ''}
-              onChange={(e) => patch({ hpDefault: e.target.value ? Number(e.target.value) : null })}
-              placeholder="Hit points"
-            />
-          </div>
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>HP Formula</label>
-            <input
-              className={styles.formInput}
-              value={resolved.hpFormula ?? ''}
-              onChange={(e) => patch({ hpFormula: e.target.value || null })}
-              placeholder="e.g. 4d8+4"
-            />
-          </div>
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>AC</label>
-            <input
-              className={styles.formInput}
-              type="number"
-              value={resolved.ac ?? ''}
-              onChange={(e) => patch({ ac: e.target.value ? Number(e.target.value) : null })}
-              placeholder="Armor class"
-            />
-          </div>
-        </div>
-        <div className={styles.formRow}>
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>Speed (walk)</label>
-            <input
-              className={styles.formInput}
-              type="number"
-              value={resolved.speed?.walk ?? ''}
-              onChange={(e) => patch({ speed: { ...resolved.speed, walk: Number(e.target.value) || 0 } })}
-              placeholder="30"
-            />
-          </div>
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>Speed (fly)</label>
-            <input
-              className={styles.formInput}
-              type="number"
-              value={resolved.speed?.fly ?? ''}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                const speed = { ...resolved.speed };
-                if (val > 0) speed.fly = val; else delete speed.fly;
-                patch({ speed });
-              }}
-              placeholder="--"
-            />
-          </div>
-          <div className={styles.formField}>
-            <label className={styles.formLabel}>Speed (swim)</label>
-            <input
-              className={styles.formInput}
-              type="number"
-              value={resolved.speed?.swim ?? ''}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                const speed = { ...resolved.speed };
-                if (val > 0) speed.swim = val; else delete speed.swim;
-                patch({ speed });
-              }}
-              placeholder="--"
-            />
-          </div>
-        </div>
-
-        {/* Tags */}
-        <div className={styles.formField}>
-          <label className={styles.formLabel}>Tags</label>
-          <div className={styles.tagsContainer}>
-            {tags.map(tag => (
-              <span key={tag} className={styles.tag}>
-                {tag}
-                <span className={styles.tagRemove} onClick={() => removeTag(tag)}>x</span>
-              </span>
-            ))}
-          </div>
-          <div className={styles.formRow}>
-            <input
-              className={styles.formInput}
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-              placeholder="Add tag + Enter"
-              style={{ flex: 1 }}
-            />
-          </div>
-        </div>
-      </Section>
-
-      {/* ── Abilities Section ── */}
-      <Section title="Ability Scores" collapsed={collapsed['abilities']} onToggle={() => toggle('abilities')}>
-        <div className={styles.abilityGrid}>
-          {ABILITY_KEYS.map(key => (
-            <div key={key} className={styles.abilityCell}>
-              <span className={styles.abilityLabel}>{key}</span>
-              <input
-                className={styles.abilityInput}
-                type="number"
-                value={abilities[key]}
-                onChange={(e) => setAbility(key, Number(e.target.value) || 0)}
-              />
-            </div>
           ))}
         </div>
-      </Section>
-
-      {/* ── Actions Section ── */}
-      <Section title="Actions" collapsed={collapsed['actions']} onToggle={() => toggle('actions')}>
-        <div className={styles.modeToggle}>
-          <button
-            className={`${styles.modeBtn} ${actionsMode === 'structured' ? styles.modeBtnActive : ''}`}
-            onClick={() => patch({ actionsMode: 'structured' })}
-          >Structured</button>
-          <button
-            className={`${styles.modeBtn} ${actionsMode === 'freetext' ? styles.modeBtnActive : ''}`}
-            onClick={() => patch({ actionsMode: 'freetext' })}
-          >Free Text</button>
+        <div className={styles.formColumnRight}>
+          {rightSections.map(section => (
+            <FormSection
+              key={section.id}
+              section={section}
+              fields={fieldsBySection[section.id] ?? []}
+              fieldValues={fieldValues}
+              onFieldChange={onFieldChange}
+            />
+          ))}
         </div>
-
-        {actionsMode === 'structured' ? (
-          <>
-            {actions.map(action => (
-              <div key={action.id} className={styles.actionItem}>
-                <div className={styles.actionHeader}>
-                  <input
-                    className={styles.formInput}
-                    value={action.name}
-                    onChange={(e) => updateAction(action.id, { name: e.target.value })}
-                    placeholder="Action name"
-                    style={{ flex: 1 }}
-                  />
-                  <button className={styles.actionRemoveBtn} onClick={() => removeAction(action.id)}>x</button>
-                </div>
-                <div className={styles.formRow}>
-                  <div className={styles.formField}>
-                    <label className={styles.formLabel}>To Hit</label>
-                    <input
-                      className={styles.formInput}
-                      type="number"
-                      value={action.toHit ?? ''}
-                      onChange={(e) => updateAction(action.id, { toHit: e.target.value ? Number(e.target.value) : undefined })}
-                      placeholder="+5"
-                    />
-                  </div>
-                  <div className={styles.formField}>
-                    <label className={styles.formLabel}>Damage</label>
-                    <input
-                      className={styles.formInput}
-                      value={action.damage ?? ''}
-                      onChange={(e) => updateAction(action.id, { damage: e.target.value || undefined })}
-                      placeholder="2d6+3"
-                    />
-                  </div>
-                </div>
-                <div className={styles.formField}>
-                  <label className={styles.formLabel}>Description</label>
-                  <textarea
-                    className={styles.formTextarea}
-                    value={action.description}
-                    onChange={(e) => updateAction(action.id, { description: e.target.value })}
-                    placeholder="Action description..."
-                    style={{ minHeight: '48px' }}
-                  />
-                </div>
-              </div>
-            ))}
-            <button className={styles.iconBtn} onClick={addAction}>
-              <span className={styles.iconSm}>add</span> Add Action
-            </button>
-          </>
-        ) : (
-          <textarea
-            className={styles.formTextarea}
-            value={resolved.actionsText ?? ''}
-            onChange={(e) => patch({ actionsText: e.target.value })}
-            placeholder="Describe actions in free text..."
-            style={{ minHeight: '120px' }}
-          />
-        )}
-      </Section>
-
-      {/* ── Traits Section ── */}
-      <Section title="Traits" collapsed={collapsed['traits']} onToggle={() => toggle('traits')}>
-        {traits.map(trait => (
-          <div key={trait.id} className={styles.actionItem}>
-            <div className={styles.actionHeader}>
-              <input
-                className={styles.formInput}
-                value={trait.name}
-                onChange={(e) => updateTrait(trait.id, { name: e.target.value })}
-                placeholder="Trait name"
-                style={{ flex: 1 }}
-              />
-              <button className={styles.actionRemoveBtn} onClick={() => removeTrait(trait.id)}>x</button>
-            </div>
-            <textarea
-              className={styles.formTextarea}
-              value={trait.description}
-              onChange={(e) => updateTrait(trait.id, { description: e.target.value })}
-              placeholder="Trait description..."
-              style={{ minHeight: '48px' }}
-            />
-          </div>
-        ))}
-        <button className={styles.iconBtn} onClick={addTrait}>
-          <span className={styles.iconSm}>add</span> Add Trait
-        </button>
-      </Section>
-
-      {/* ── Custom Fields Section ── */}
-      <Section title="Custom Fields" collapsed={collapsed['custom']} onToggle={() => toggle('custom')}>
-        {customFields.map((cf, idx) => (
-          <div key={idx} className={styles.customFieldRow}>
-            <input
-              className={styles.formInput}
-              value={cf.key}
-              onChange={(e) => updateCustomField(idx, { key: e.target.value })}
-              placeholder="Key"
-              style={{ width: '120px' }}
-            />
-            <input
-              className={styles.formInput}
-              value={cf.value}
-              onChange={(e) => updateCustomField(idx, { value: e.target.value })}
-              placeholder="Value"
-              style={{ flex: 1 }}
-            />
-            <button className={styles.customFieldRemove} onClick={() => removeCustomField(idx)}>x</button>
-          </div>
-        ))}
-        <button className={styles.iconBtn} onClick={addCustomField}>
-          <span className={styles.iconSm}>add</span> Add Field
-        </button>
-      </Section>
+      </div>
 
       {/* ── Delete ── */}
       <div className={styles.deleteSection}>
         <button className={styles.deleteBtn} onClick={() => onDelete(instance.id)}>
-          <span className={styles.iconSm}>delete</span> Remove Instance
+          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span> Remove Instance
         </button>
       </div>
     </div>
   );
 }
 
-/** Collapsible section wrapper */
-function Section({ title, collapsed, onToggle, children }: {
-  title: string;
-  collapsed: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
+/* ── Form Section (collapsible) ── */
+
+function FormSection({ section, fields, fieldValues, onFieldChange }: {
+  section: SectionDefinition;
+  fields: FieldDefinition[];
+  fieldValues: Record<string, FieldValue>;
+  onFieldChange: (fieldId: string, value: FieldValue) => void;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (fields.length === 0) return null;
+
+  const accent = SECTION_ACCENTS[section.id];
+
   return (
-    <div className={styles.formSection}>
-      <div className={styles.formSectionHeader} onClick={onToggle}>
-        <span className={styles.formSectionTitle}>{title}</span>
-        <span className={`${styles.formSectionChevron} ${!collapsed ? styles.formSectionChevronOpen : ''}`}>
-          <span className={styles.iconSm}>chevron_right</span>
-        </span>
+    <div
+      className={styles.formSection}
+      style={accent ? { '--section-accent': accent } as React.CSSProperties : undefined}
+    >
+      <div
+        className={styles.formSectionHeader}
+        onClick={() => setCollapsed(!collapsed)}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        <span className={styles.formSectionTitle}>{section.title}</span>
+        <span className={`${styles.formSectionChevron} ${!collapsed ? styles.formSectionChevronOpen : ''}`}>&#9654;</span>
       </div>
-      {!collapsed && children}
+      {!collapsed && (
+        <div className={styles.dynamicFieldsGrid}>
+          {fields.map(field => (
+            <DynamicField
+              key={field.id}
+              field={field}
+              value={fieldValues[field.id] ?? null}
+              onChange={onFieldChange}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Dynamic Field ── */
+
+function DynamicField({ field, value, onChange }: {
+  field: FieldDefinition;
+  value: FieldValue | null;
+  onChange: (fieldId: string, value: FieldValue) => void;
+}) {
+  const widthStyle = field.width === '1/3' ? '32%'
+    : field.width === '1/2' ? '49%'
+    : field.width === '2/3' ? '66%'
+    : '100%';
+
+  const handleChange = useCallback((newValue: FieldValue) => {
+    onChange(field.id, newValue);
+  }, [field.id, onChange]);
+
+  return (
+    <div className={styles.dynamicField} style={{ width: widthStyle }}>
+      <label className={styles.formLabel}>{field.title}</label>
+      <FieldInput
+        field={field}
+        value={value ?? undefined}
+        onChange={handleChange}
+      />
     </div>
   );
 }

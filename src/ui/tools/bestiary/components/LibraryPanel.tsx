@@ -1,14 +1,14 @@
 /*
  * LibraryPanel — left panel view showing all creature templates.
- * Groups creatures by creature type (aberration, beast, dragon, etc.).
- * Search, filter, and select templates. Drag to encounter tree.
+ * Flat list with search and advanced filter support.
  */
 
-import { useState, useMemo } from 'react';
-import type { CreatureTemplate, CreatureType } from '../types';
-import { CREATURE_TYPE_ICON } from '../types';
+import { useMemo } from 'react';
+import type { CreatureTemplate } from '../types';
+import type { CreatureFilters } from '../types';
 import { CreatureCard } from './CreatureCard';
 import styles from '../Bestiary.module.css';
+import type { FieldValue } from '../../../components/dynamic-fields';
 
 interface LibraryPanelProps {
   templates: CreatureTemplate[];
@@ -17,32 +17,82 @@ interface LibraryPanelProps {
   onAdd: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  filters: CreatureFilters;
 }
 
-/** Capitalize first letter */
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
+/** Check if a template passes the advanced filters */
+function passesFilters(template: CreatureTemplate, filters: CreatureFilters): boolean {
+  const fv = template.fieldValues as Record<string, FieldValue> | null;
 
-/** Stable ordering for creature types */
-const TYPE_ORDER: CreatureType[] = [
-  'aberration', 'beast', 'celestial', 'construct', 'dragon',
-  'elemental', 'fey', 'fiend', 'giant', 'humanoid',
-  'monstrosity', 'ooze', 'plant', 'undead', 'swarm',
-];
-
-export function LibraryPanel({ templates, selectedId, onSelect, onAdd, searchQuery, onSearchChange }: LibraryPanelProps) {
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
-
-  const allTags = useMemo(() => {
-    const tags = new Set<string>();
-    for (const t of templates) {
-      for (const tag of t.tags) tags.add(tag);
+  // CR filter (field id: 'cr')
+  if (filters.crMin !== null || filters.crMax !== null) {
+    const crField = fv?.['cr'];
+    const crVal = crField && crField.type === 'number' ? crField.value : null;
+    if (crVal === null || crVal === undefined) {
+      if (filters.crMin !== null || filters.crMax !== null) return false;
+    } else {
+      if (filters.crMin !== null && crVal < filters.crMin) return false;
+      if (filters.crMax !== null && crVal > filters.crMax) return false;
     }
-    return Array.from(tags).sort();
-  }, [templates]);
+  }
 
+  // Creature type filter (field id: 'creature_type', values are capitalized)
+  if (filters.creatureTypes.length > 0) {
+    const ctField = fv?.['creature_type'];
+    const ct = ctField && ctField.type === 'select' ? ctField.selected?.toLowerCase() : null;
+    if (!ct || !filters.creatureTypes.includes(ct)) return false;
+  }
+
+  // Size filter (field id: 'size', values are capitalized)
+  if (filters.sizes.length > 0) {
+    const sizeField = fv?.['size'];
+    const size = sizeField && sizeField.type === 'select' ? sizeField.selected?.toLowerCase() : null;
+    if (!size || !filters.sizes.includes(size)) return false;
+  }
+
+  // Speed filter (field id: 'speed', creature must have at least one of the selected speeds > 0)
+  if (filters.speeds.length > 0) {
+    const speedField = fv?.['speed'];
+    if (!speedField || speedField.type !== 'speed-list' || !speedField.values) return false;
+    const hasSpeed = filters.speeds.some(s => {
+      const v = speedField.values[s];
+      return v !== null && v !== undefined && v > 0;
+    });
+    if (!hasSpeed) return false;
+  }
+
+  // Senses filter (field id: 'senses')
+  if (filters.senses.length > 0) {
+    const sensesField = fv?.['senses'];
+    if (!sensesField || sensesField.type !== 'speed-list' || !sensesField.values) return false;
+    const hasSense = filters.senses.some(s => {
+      const v = sensesField.values[s];
+      return v !== null && v !== undefined && v > 0;
+    });
+    if (!hasSense) return false;
+  }
+
+  // HP filter (field id: 'hp_default')
+  if (filters.minHp !== null || filters.maxHp !== null) {
+    const hpField = fv?.['hp_default'];
+    const hp = hpField && hpField.type === 'number' ? hpField.value : null;
+    if (hp === null || hp === undefined) return false;
+    if (filters.minHp !== null && hp < filters.minHp) return false;
+    if (filters.maxHp !== null && hp > filters.maxHp) return false;
+  }
+
+  // Legendary actions filter (field id: 'legendary_actions')
+  if (filters.hasLegendaryActions !== null) {
+    const legendaryField = fv?.['legendary_actions'];
+    const hasLegendary = legendaryField && legendaryField.type === 'action-list' && legendaryField.actions && legendaryField.actions.length > 0;
+    if (filters.hasLegendaryActions && !hasLegendary) return false;
+    if (!filters.hasLegendaryActions && hasLegendary) return false;
+  }
+
+  return true;
+}
+
+export function LibraryPanel({ templates, selectedId, onSelect, onAdd, searchQuery, onSearchChange, filters }: LibraryPanelProps) {
   const filtered = useMemo(() => {
     let list = templates;
     if (searchQuery.trim()) {
@@ -53,61 +103,11 @@ export function LibraryPanel({ templates, selectedId, onSelect, onAdd, searchQue
         t.tags.some(tag => tag.toLowerCase().includes(q))
       );
     }
-    if (tagFilter) {
-      list = list.filter(t => t.tags.includes(tagFilter));
-    }
-    return list;
-  }, [templates, searchQuery, tagFilter]);
-
-  // Group by creature type
-  const grouped = useMemo(() => {
-    const groups = new Map<string, CreatureTemplate[]>();
-    const uncategorized: CreatureTemplate[] = [];
-
-    for (const t of filtered) {
-      if (t.creatureType) {
-        const key = t.creatureType;
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key)!.push(t);
-      } else {
-        uncategorized.push(t);
-      }
-    }
-
-    // Sort groups by TYPE_ORDER
-    const ordered: { key: string; label: string; icon: string; items: CreatureTemplate[] }[] = [];
-    for (const type of TYPE_ORDER) {
-      const items = groups.get(type);
-      if (items && items.length > 0) {
-        ordered.push({
-          key: type,
-          label: capitalize(type),
-          icon: CREATURE_TYPE_ICON[type],
-          items: items.sort((a, b) => a.name.localeCompare(b.name)),
-        });
-      }
-    }
-    if (uncategorized.length > 0) {
-      ordered.push({
-        key: '__uncategorized',
-        label: 'Uncategorized',
-        icon: 'category',
-        items: uncategorized.sort((a, b) => a.name.localeCompare(b.name)),
-      });
-    }
-    return ordered;
-  }, [filtered]);
-
-  const toggleGroup = (key: string) => {
-    setCollapsedGroups(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
-  };
-
-  const hasGroups = grouped.length > 0;
-  const isSearching = searchQuery.trim().length > 0;
+    // Apply advanced filters
+    list = list.filter(t => passesFilters(t, filters));
+    // Sort alphabetically
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [templates, searchQuery, filters]);
 
   return (
     <>
@@ -121,24 +121,6 @@ export function LibraryPanel({ templates, selectedId, onSelect, onAdd, searchQue
         />
       </div>
 
-      {allTags.length > 0 && (
-        <div className={styles.searchBar} style={{ paddingTop: 0 }}>
-          <div className={styles.tagsContainer}>
-            {tagFilter && (
-              <span className={styles.tag}>
-                {tagFilter}
-                <span className={styles.tagRemove} onClick={() => setTagFilter(null)}>x</span>
-              </span>
-            )}
-            {!tagFilter && allTags.slice(0, 8).map(tag => (
-              <span key={tag} className={styles.tag} onClick={() => setTagFilter(tag)} style={{ cursor: 'pointer' }}>
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className={styles.listToolbar}>
         <button className={styles.iconBtn} onClick={onAdd} title="New creature">
           <span className={styles.iconSm}>add</span> New
@@ -150,8 +132,7 @@ export function LibraryPanel({ templates, selectedId, onSelect, onAdd, searchQue
           <div className={styles.emptyState}>
             {templates.length === 0 ? 'No creatures yet. Click + New to create one.' : 'No matches found.'}
           </div>
-        ) : isSearching && !hasGroups ? (
-          /* Flat list when searching yields no grouped results */
+        ) : (
           filtered.map(t => (
             <CreatureCard
               key={t.id}
@@ -159,34 +140,6 @@ export function LibraryPanel({ templates, selectedId, onSelect, onAdd, searchQue
               selected={t.id === selectedId}
               onClick={() => onSelect(t.id)}
             />
-          ))
-        ) : (
-          grouped.map(group => (
-            <div key={group.key} className={styles.typeGroup}>
-              <div
-                className={styles.typeGroupHeader}
-                onClick={() => toggleGroup(group.key)}
-              >
-                <span className={`${styles.typeGroupChevron} ${!collapsedGroups.has(group.key) ? styles.typeGroupChevronOpen : ''}`}>
-                  <span className={styles.iconSm}>chevron_right</span>
-                </span>
-                <span className={styles.iconSm}>{group.icon}</span>
-                <span className={styles.typeGroupLabel}>{group.label}</span>
-                <span className={styles.typeGroupCount}>{group.items.length}</span>
-              </div>
-              {!collapsedGroups.has(group.key) && (
-                <div className={styles.typeGroupList}>
-                  {group.items.map(t => (
-                    <CreatureCard
-                      key={t.id}
-                      template={t}
-                      selected={t.id === selectedId}
-                      onClick={() => onSelect(t.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
           ))
         )}
       </div>

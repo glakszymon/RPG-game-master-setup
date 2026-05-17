@@ -42,55 +42,59 @@ function CanvasContextMenu({ onOpenTool, viewportToCanvas, children }: ContextMe
   );
 
   return (
-    <DropdownMenu.Root
-      open={contextPos !== null}
-      onOpenChange={(open) => {
-        if (!open) setContextPos(null);
-      }}
-    >
-      <DropdownMenu.Trigger asChild>
-        <div onContextMenu={handleContextMenu} style={{ display: 'contents' }}>
-          {children}
-        </div>
-      </DropdownMenu.Trigger>
+    <>
+      <div onContextMenu={handleContextMenu} style={{ display: 'contents' }}>
+        {children}
+      </div>
 
-      {contextPos && (
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            className={styles.content}
-            style={{
-              position: 'fixed',
-              left: contextPos.x,
-              top: contextPos.y,
-            }}
-            sideOffset={0}
-            align="start"
-          >
-            {TOOL_CATEGORIES.map((category) => (
-              <DropdownMenu.Group key={category.label}>
-                <DropdownMenu.Label className={styles.groupLabel}>
-                  {category.label}
-                </DropdownMenu.Label>
-                {category.tools.map((toolType) => {
-                  const info = TOOL_INFO[toolType];
-                  return (
-                    <DropdownMenu.Item
-                      key={toolType}
-                      className={styles.item}
-                      onSelect={() => handleSelect(toolType)}
-                    >
-                      <span className={styles.itemIcon}>{info.icon}</span>
-                      <span>{info.name}</span>
-                    </DropdownMenu.Item>
-                  );
-                })}
-                <DropdownMenu.Separator className={styles.separator} />
-              </DropdownMenu.Group>
-            ))}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      )}
-    </DropdownMenu.Root>
+      <DropdownMenu.Root
+        open={contextPos !== null}
+        onOpenChange={(open) => {
+          if (!open) setContextPos(null);
+        }}
+      >
+        <DropdownMenu.Trigger asChild>
+          <span style={{ position: 'fixed', left: contextPos?.x ?? 0, top: contextPos?.y ?? 0, width: 0, height: 0 }} />
+        </DropdownMenu.Trigger>
+
+        {contextPos && (
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              className={styles.content}
+              style={{
+                position: 'fixed',
+                left: contextPos.x,
+                top: contextPos.y,
+              }}
+              sideOffset={0}
+              align="start"
+            >
+              {TOOL_CATEGORIES.map((category) => (
+                <DropdownMenu.Group key={category.label}>
+                  <DropdownMenu.Label className={styles.groupLabel}>
+                    {category.label}
+                  </DropdownMenu.Label>
+                  {category.tools.map((toolType) => {
+                    const info = TOOL_INFO[toolType];
+                    return (
+                      <DropdownMenu.Item
+                        key={toolType}
+                        className={styles.item}
+                        onSelect={() => handleSelect(toolType)}
+                      >
+                        <span className={styles.itemIcon}>{info.icon}</span>
+                        <span>{info.name}</span>
+                      </DropdownMenu.Item>
+                    );
+                  })}
+                  <DropdownMenu.Separator className={styles.separator} />
+                </DropdownMenu.Group>
+              ))}
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        )}
+      </DropdownMenu.Root>
+    </>
   );
 }
 

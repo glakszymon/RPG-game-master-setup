@@ -97,15 +97,48 @@ export type TreeNodeData =
   | { kind: 'instance'; instance: CreatureInstance };
 
 /** Bestiary tool state persisted in WindowState.toolState */
+/** Advanced filter criteria for creature search */
+export interface CreatureFilters {
+  crMin: number | null;
+  crMax: number | null;
+  creatureTypes: string[];
+  sizes: string[];
+  speeds: string[];          // e.g. ['fly', 'swim']
+  senses: string[];          // e.g. ['darkvision', 'tremorsense']
+  minHp: number | null;
+  maxHp: number | null;
+  hasLegendaryActions: boolean | null;
+  environment: string[];
+}
+
+export const DEFAULT_FILTERS: CreatureFilters = {
+  crMin: null,
+  crMax: null,
+  creatureTypes: [],
+  sizes: [],
+  speeds: [],
+  senses: [],
+  minHp: null,
+  maxHp: null,
+  hasLegendaryActions: null,
+  environment: [],
+};
+
 export interface BestiaryToolState {
   selectedTemplateId: string | null;
   searchQuery: string;
+  listHidden?: boolean;
+  filterPanelOpen?: boolean;
+  filters?: CreatureFilters;
 }
 
 /** Default tool state */
 export const DEFAULT_BESTIARY_STATE: BestiaryToolState = {
   selectedTemplateId: null,
   searchQuery: '',
+  listHidden: false,
+  filterPanelOpen: false,
+  filters: DEFAULT_FILTERS,
 };
 
 /** Encounter Sets tool state persisted in WindowState.toolState */

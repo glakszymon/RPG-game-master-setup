@@ -298,7 +298,7 @@ const FIELDS: FieldDefinition[] = [
     textAlign: 'left',
     positionAlign: 'left',
     sortOrder: 0,
-    settings: { showCombatFields: true },
+    settings: { showCombatFields: false },
   },
 
   // ── Bonus Actions (right) ──
@@ -311,7 +311,7 @@ const FIELDS: FieldDefinition[] = [
     textAlign: 'left',
     positionAlign: 'left',
     sortOrder: 0,
-    settings: { showCombatFields: true },
+    settings: { showCombatFields: false },
   },
 
   // ── Reactions (right) ──
@@ -337,7 +337,7 @@ const FIELDS: FieldDefinition[] = [
     textAlign: 'left',
     positionAlign: 'left',
     sortOrder: 0,
-    settings: { showCombatFields: true },
+    settings: { showCombatFields: false },
   },
 ];
 

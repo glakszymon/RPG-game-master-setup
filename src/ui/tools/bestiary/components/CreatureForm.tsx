@@ -4,7 +4,7 @@
  * Renders fields dynamically from FieldStructure with column assignment via SectionDefinition.column.
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FieldInput } from '../../../components/dynamic-fields';
 import { getXpFromCr, getProficiencyBonus, formatXp } from '../crUtilities';
 import type { FieldStructure, FieldValue, FieldDefinition, SectionDefinition } from '../../../components/dynamic-fields';
@@ -65,7 +65,7 @@ export function CreatureForm({
 
   // CR-derived values
   const crValue = fieldValues['cr'];
-  const crText = crValue?.type === 'text-field' ? crValue.value : null;
+  const crText = crValue?.type === 'number' ? String(crValue.value) : crValue?.type === 'text-field' ? crValue.value : null;
   const xp = getXpFromCr(crText);
   const pb = getProficiencyBonus(crText);
 
@@ -105,10 +105,9 @@ export function CreatureForm({
             ))}
             {/* CR-derived info */}
             {crText && (
-              <div className={styles.crDerived}>
-                {xp != null && <span className={styles.crDerivedItem}>XP: {formatXp(xp)}</span>}
-                <span className={styles.crDerivedItem}>PB: +{pb}</span>
-              </div>
+              <span className={styles.crDerivedItem}>
+                CR {crText} (XP {formatXp(xp ?? 0)}; PB +{pb})
+              </span>
             )}
           </div>
         </div>
@@ -150,7 +149,22 @@ export function CreatureForm({
   );
 }
 
-/* ── Form Section (no collapse) ── */
+/* ── Section accent colors by ID ── */
+const SECTION_ACCENTS: Record<string, string> = {
+  combat: '#f87171',      // red
+  abilities: '#60a5fa',   // blue
+  skills: '#a78bfa',      // purple
+  defenses: '#4ade80',    // green
+  senses: '#fbbf24',      // amber
+  info: '#9ca3af',        // gray
+  traits: '#c9b06b',      // gold
+  actions: '#f87171',     // red
+  bonus_actions: '#fb923c', // orange
+  reactions: '#38bdf8',   // sky
+  legendary: '#e879f9',   // fuchsia
+};
+
+/* ── Form Section (collapsible) ── */
 
 function FormSection({ section, fields, fieldValues, onFieldChange }: {
   section: SectionDefinition;
@@ -158,23 +172,37 @@ function FormSection({ section, fields, fieldValues, onFieldChange }: {
   fieldValues: Record<string, FieldValue>;
   onFieldChange: (fieldId: string, value: FieldValue) => void;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+
   if (fields.length === 0) return null;
 
+  const accent = SECTION_ACCENTS[section.id];
+
   return (
-    <div className={styles.formSection}>
-      <div className={styles.formSectionHeader}>
+    <div
+      className={styles.formSection}
+      style={accent ? { '--section-accent': accent } as React.CSSProperties : undefined}
+    >
+      <div
+        className={styles.formSectionHeader}
+        onClick={() => setCollapsed(!collapsed)}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
         <span className={styles.formSectionTitle}>{section.title}</span>
+        <span className={`${styles.formSectionChevron} ${!collapsed ? styles.formSectionChevronOpen : ''}`}>&#9654;</span>
       </div>
-      <div className={styles.dynamicFieldsGrid}>
-        {fields.map(field => (
-          <DynamicField
-            key={field.id}
-            field={field}
-            value={fieldValues[field.id] ?? null}
-            onChange={onFieldChange}
-          />
-        ))}
-      </div>
+      {!collapsed && (
+        <div className={styles.dynamicFieldsGrid}>
+          {fields.map(field => (
+            <DynamicField
+              key={field.id}
+              field={field}
+              value={fieldValues[field.id] ?? null}
+              onChange={onFieldChange}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
