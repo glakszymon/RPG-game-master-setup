@@ -1,0 +1,602 @@
+/* ── Soundboard ── */
+
+.container {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  padding: 8px;
+  gap: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 8px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── Track List ── */
+
+.masterControls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.masterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.masterLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.masterValue {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── Track List ── */
+
+.trackList {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  font-style: italic;
+  grid-column: 1 / -1;
+}
+
+/* ── Track Row ── */
+
+.trackRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s;
+}
+
+.trackRow:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Track Card (Simple Mode Grid) ── */
+
+.trackCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.trackCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.trackCardActive {
+  border-color: rgba(129, 140, 248, 0.4);
+  background: rgba(129, 140, 248, 0.08);
+}
+
+.trackCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.trackPlayBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: background 0.15s, color 0.15s;
+}
+
+.trackPlayBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+}
+
+.trackCard .volumeSlider {
+  width: 100%;
+}
+
+.trackPlayBtnActive {
+  background: rgba(129, 140, 248, 0.2);
+  border-color: rgba(129, 140, 248, 0.4);
+  color: #818cf8;
+}
+
+.trackCardFooter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  justify-content: center;
+}
+
+.trackBtnSmall {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  transition: background 0.15s, color 0.15s;
+}
+
+.trackBtnSmall:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-text-primary);
+}
+
+.trackBtnSmall .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.trackName {
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+.trackBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  transition: background 0.15s, color 0.15s;
+}
+
+.trackBtn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.trackBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-text-primary);
+}
+
+.trackBtnActive {
+  background: rgba(99, 102, 241, 0.3);
+  color: var(--color-accent, #818cf8);
+}
+
+/* ── Volume Slider ── */
+
+.volumeSlider {
+  width: 80px;
+  height: 4px;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.volumeSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--color-accent, #818cf8);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* ── Actions ── */
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.addBtn {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.addBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.bundledGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.bundledBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.bundledBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.1);
+}
+
+/* ── Library Browser ── */
+
+.libraryOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 20, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 8px;
+  z-index: 10;
+}
+
+.libraryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.libraryTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.libraryFilters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.libraryList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.librarySampleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.librarySampleRow:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+}
+
+.librarySampleRow .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.addIcon {
+  margin-left: auto;
+  font-size: 18px !important;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.librarySampleRow:hover .addIcon {
+  opacity: 1;
+}
+
+.librarySampleName {
+  font-size: 12px;
+}
+
+/* ── Waveform ── */
+
+.waveformCanvas {
+  width: 100%;
+  height: 32px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* ── Mixer Mode Extensions ── */
+
+.fireBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: rgba(239, 68, 68, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: #f87171;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.fireBtn:hover {
+  background: rgba(239, 68, 68, 0.4);
+  transform: scale(1.1);
+}
+
+.jitterSlider {
+  width: 50px;
+  height: 3px;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.jitterSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  background: #f59e0b;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.stackCount {
+  font-size: 9px;
+  color: var(--color-text-tertiary);
+  min-width: 16px;
+  text-align: center;
+}
+
+/* ── Presets (Right Column) ── */
+
+.presetPanel {
+  display: flex;
+  flex-direction: column;
+  width: 160px;
+  min-width: 140px;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-y: auto;
+}
+
+.presetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.presetTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.presetList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.presetEmpty {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.presetItem {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 6px;
+  padding: 2px;
+  transition: background 0.15s;
+}
+
+.presetItem:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.presetItemActive {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.presetLoadBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: color 0.15s;
+}
+
+.presetLoadBtn:hover {
+  color: var(--color-text-primary);
+}
+
+.presetLoadBtn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.presetName {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presetActions {
+  display: flex;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.presetItem:hover .presetActions {
+  opacity: 1;
+}
+
+.presetSmallBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  transition: color 0.15s, background 0.15s;
+}
+
+.presetSmallBtn .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.presetSmallBtn:hover {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.presetSmallBtnWarn {
+  color: #f59e0b;
+}
+
+.presetSmallBtnWarn:hover {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.presetSaveRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.presetInput {
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  color: var(--color-text-primary);
+  font-size: 11px;
+  width: 80px;
+  outline: none;
+}
+
+.presetInput:focus {
+  border-color: var(--color-accent, #818cf8);
+}
+
+.presetBtn {
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.presetBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.presetBtnActive {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: var(--color-accent, #818cf8);
+}
