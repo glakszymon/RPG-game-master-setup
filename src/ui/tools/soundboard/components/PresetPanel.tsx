@@ -16,7 +16,7 @@ interface PresetPanelProps {
 }
 
 export function PresetPanel({
-  presets,
+  presets = [],
   activePresetId,
   onLoadPreset,
   onSavePreset,

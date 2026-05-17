@@ -24,7 +24,7 @@ interface SoundboardProps {
 }
 
 export function Soundboard({ toolState, onToolStateChange, campaignId }: SoundboardProps) {
-  const state = toolState ?? DEFAULT_SOUNDBOARD_STATE;
+  const state: SoundboardState = { ...DEFAULT_SOUNDBOARD_STATE, ...toolState };
   const stateRef = useRef(state);
   useLayoutEffect(() => { stateRef.current = state; });
 
