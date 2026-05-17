@@ -1,7 +1,7 @@
 /*
- * TrackRow — single track control for the soundboard (simple mode).
+ * TrackRow — single track card for the soundboard grid.
  *
- * Rendered as a grid card with play/pause, volume slider, loop toggle, and track name.
+ * Renders play/pause, volume, loop, stacking toggle, fire button, and jitter.
  */
 
 import { useCallback } from 'react';
@@ -15,6 +15,9 @@ interface TrackRowProps {
   onVolumeChange: (trackId: string, volume: number) => void;
   onLoopToggle: (trackId: string) => void;
   onRemove: (trackId: string) => void;
+  onFire: (trackId: string) => void;
+  onStackingToggle: (trackId: string) => void;
+  onJitterChange: (trackId: string, intensity: number) => void;
 }
 
 export function TrackRow({
@@ -24,6 +27,9 @@ export function TrackRow({
   onVolumeChange,
   onLoopToggle,
   onRemove,
+  onFire,
+  onStackingToggle,
+  onJitterChange,
 }: TrackRowProps) {
   const handlePlayPause = useCallback(() => {
     if (track.isPlaying) {
@@ -45,6 +51,18 @@ export function TrackRow({
     onRemove(track.id);
   }, [track.id, onRemove]);
 
+  const handleFire = useCallback(() => {
+    onFire(track.id);
+  }, [track.id, onFire]);
+
+  const handleStacking = useCallback(() => {
+    onStackingToggle(track.id);
+  }, [track.id, onStackingToggle]);
+
+  const handleJitter = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onJitterChange(track.id, parseFloat(e.target.value));
+  }, [track.id, onJitterChange]);
+
   return (
     <div className={`${styles.trackCard} ${track.isPlaying ? styles.trackCardActive : ''}`}>
       <div className={styles.trackCardHeader}>
@@ -52,9 +70,9 @@ export function TrackRow({
           {track.name}
         </span>
         <button
-          className={styles.trackBtn}
+          className={styles.trackBtnSmall}
           onClick={handleRemove}
-          title="Remove track"
+          title="Remove"
         >
           <span className="material-symbols-outlined">close</span>
         </button>
@@ -63,7 +81,7 @@ export function TrackRow({
       <button
         className={`${styles.trackPlayBtn} ${track.isPlaying ? styles.trackPlayBtnActive : ''}`}
         onClick={handlePlayPause}
-        title={track.isPlaying ? 'Pause' : 'Play'}
+        title={track.isPlaying ? 'Stop' : 'Play'}
       >
         <span className="material-symbols-outlined">
           {track.isPlaying ? 'pause' : 'play_arrow'}
@@ -81,13 +99,46 @@ export function TrackRow({
         title={`Volume: ${Math.round(track.volume * 100)}%`}
       />
 
-      <button
-        className={`${styles.trackBtn} ${track.loop ? styles.trackBtnActive : ''}`}
-        onClick={handleLoop}
-        title={track.loop ? 'Loop: ON' : 'Loop: OFF'}
-      >
-        <span className="material-symbols-outlined">loop</span>
-      </button>
+      <div className={styles.trackCardFooter}>
+        <button
+          className={`${styles.trackBtnSmall} ${track.loop ? styles.trackBtnActive : ''}`}
+          onClick={handleLoop}
+          title={track.loop ? 'Loop ON' : 'Loop OFF'}
+        >
+          <span className="material-symbols-outlined">repeat</span>
+        </button>
+
+        <button
+          className={`${styles.trackBtnSmall} ${track.stackingEnabled ? styles.trackBtnActive : ''}`}
+          onClick={handleStacking}
+          title={track.stackingEnabled ? 'Stacking ON' : 'Stacking OFF'}
+        >
+          <span className="material-symbols-outlined">stacks</span>
+        </button>
+
+        {track.stackingEnabled && (
+          <button
+            className={styles.fireBtn}
+            onClick={handleFire}
+            title="Fire instance"
+          >
+            <span className="material-symbols-outlined">bolt</span>
+          </button>
+        )}
+      </div>
+
+      {track.stackingEnabled && (
+        <input
+          type="range"
+          className={styles.jitterSlider}
+          min={0}
+          max={1}
+          step={0.05}
+          value={track.jitterIntensity}
+          onChange={handleJitter}
+          title={`Jitter: ${Math.round(track.jitterIntensity * 100)}%`}
+        />
+      )}
     </div>
   );
 }

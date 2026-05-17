@@ -9,7 +9,6 @@ import { useCallback, useRef, useState, useEffect, useLayoutEffect } from 'react
 import { useAudioEngine } from './hooks/useAudioEngine';
 import { useCrossfade } from './hooks/useCrossfade';
 import { TrackRow } from './components/TrackRow';
-import { TrackRowMixer } from './components/TrackRowMixer';
 import { MasterControls } from './components/MasterControls';
 import { LibraryBrowser } from './components/LibraryBrowser';
 import { PresetPanel } from './components/PresetPanel';
@@ -226,28 +225,10 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
     patchState({ presets });
   }, [patchState]);
 
-  // ── Mode toggle ──
-
-  const handleModeToggle = useCallback(() => {
-    patchState({ mode: stateRef.current.mode === 'simple' ? 'mixer' : 'simple' });
-  }, [patchState]);
-
   // ── Render ──
-
-  const isMixer = state.mode === 'mixer';
 
   return (
     <div className={styles.container}>
-      {/* Mode toggle */}
-      <div className={styles.toolbar}>
-        <button
-          className={`${styles.modeBtn} ${!isMixer ? styles.modeBtnActive : ''}`}
-          onClick={handleModeToggle}
-        >
-          {isMixer ? <><span className="material-symbols-outlined">tune</span> Mixer</> : <><span className="material-symbols-outlined">volume_up</span> Simple</>}
-        </button>
-      </div>
-
       <MasterControls
         masterVolume={state.masterVolume}
         onMasterVolumeChange={handleMasterVolume}
@@ -265,38 +246,26 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
         onOverwritePreset={handleOverwritePreset}
       />
 
-      {/* Track list */}
-      <div className={`${styles.trackList} ${isMixer ? styles.trackListMixer : ''}`}>
+      {/* Track grid */}
+      <div className={styles.trackList}>
         {state.tracks.length === 0 && (
           <div className={styles.emptyState}>
             No tracks yet. Add from library or import a file.
           </div>
         )}
         {state.tracks.map(track => (
-          isMixer ? (
-            <TrackRowMixer
-              key={track.id}
-              track={track}
-              onPlay={handlePlay}
-              onStop={handleStop}
-              onVolumeChange={handleVolumeChange}
-              onLoopToggle={handleLoopToggle}
-              onRemove={handleRemove}
-              onFire={handleFire}
-              onStackingToggle={handleStackingToggle}
-              onJitterChange={handleJitterChange}
-            />
-          ) : (
-            <TrackRow
-              key={track.id}
-              track={track}
-              onPlay={handlePlay}
-              onStop={handleStop}
-              onVolumeChange={handleVolumeChange}
-              onLoopToggle={handleLoopToggle}
-              onRemove={handleRemove}
-            />
-          )
+          <TrackRow
+            key={track.id}
+            track={track}
+            onPlay={handlePlay}
+            onStop={handleStop}
+            onVolumeChange={handleVolumeChange}
+            onLoopToggle={handleLoopToggle}
+            onRemove={handleRemove}
+            onFire={handleFire}
+            onStackingToggle={handleStackingToggle}
+            onJitterChange={handleJitterChange}
+          />
         ))}
       </div>
 
