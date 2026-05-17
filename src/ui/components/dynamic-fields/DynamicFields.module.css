@@ -216,13 +216,73 @@
   flex: 1;
 }
 
+.tagAddRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
 /* ── Stat Block ── */
 
 .statBlock {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   width: 100%;
+}
+
+.statHeaderRow {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 1fr;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.statHeaderLabel {
+  /* empty spacer for alignment with label column */
+}
+
+.statHeaderCol {
+  font-size: 8px;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.statRows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 2px;
+}
+
+.statRow {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 1fr;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 4px;
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.statLabel {
+  font-size: 9px;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statMod {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-secondary);
+  text-align: center;
 }
 
 .statCell {
@@ -234,40 +294,6 @@
   background: var(--color-bg-elevated);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
-}
-
-.statLabel {
-  font-size: 8px;
-  font-weight: var(--font-semibold);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.statScore {
-  width: 32px;
-  text-align: center;
-  background: transparent;
-  border: none;
-  color: var(--color-text-primary);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  outline: none;
-}
-
-.statScore:focus {
-  background: var(--color-bg-surface);
-  border-radius: var(--radius-sm);
-}
-
-.statMod {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-}
-
-.statSave {
-  font-size: 8px;
-  color: var(--color-text-muted);
 }
 
 /* ── Action List ── */
@@ -406,3 +432,117 @@
   border-color: var(--color-accent-border);
   color: var(--color-accent);
 }
+
+/* ── Select ── */
+
+.selectInput {
+  width: 100%;
+  background: var(--color-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  padding: 2px 4px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--easing-default);
+}
+
+.selectInput:focus {
+  border-color: var(--color-accent-border);
+}
+
+.selectInput option {
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+}
+
+/* ── Speed List ── */
+
+.speedList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.speedEntry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.speedLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  min-width: 70px;
+}
+
+.speedUnit {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.speedAddSelect {
+  background: var(--color-bg-elevated);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  padding: 2px 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.speedAddSelect:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+}
+
+.speedAddSelect option {
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+}
+
+/* ── Skill List ── */
+
+.skillList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.skillEntry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.skillName {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  min-width: 100px;
+}
+
+/* ── Item List ── */
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.itemEntry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.itemEntry .textInput {
+  flex: 1;
+}
+
+/* ── Stat Block (enhanced) ── */

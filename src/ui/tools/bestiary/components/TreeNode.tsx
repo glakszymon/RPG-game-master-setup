@@ -60,7 +60,7 @@ function InstanceRow({
 
   return (
     <div
-      className={`${styles.instanceRow} ${selected ? styles.instanceRowSelected : ''}`}
+      className={`${styles.creatureCard} ${selected ? styles.creatureCardSelected : ''}`}
       onClick={() => onSelect(instance.id, 'instance')}
       draggable
       onDragStart={(e) => {
@@ -76,13 +76,6 @@ function InstanceRow({
         e.dataTransfer.effectAllowed = 'copyMove';
       }}
     >
-      {/* Icon */}
-      <span className={styles.instanceIcon}>
-        {resolved?.avatarPath ? (
-          <img src={resolved.avatarPath} alt={name} className={styles.instanceAvatar} />
-        ) : <span className={styles.iconSm}>{iconName}</span>}
-      </span>
-
       {editing ? (
         <div className={styles.instanceEditRow} onClick={(e) => e.stopPropagation()}>
           <input
@@ -102,27 +95,49 @@ function InstanceRow({
             onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') cancelEdit(); }}
           />
           <button className={styles.instanceEditBtn} onClick={commitEdit} title="Save">
-            <span className={styles.iconSm}>check</span>
+            <span className="material-symbols-outlined">check</span>
           </button>
           <button className={styles.instanceEditBtn} onClick={cancelEdit} title="Cancel">
-            <span className={styles.iconSm}>close</span>
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
       ) : (
         <>
-          <span className={styles.instanceName}>{name}</span>
-          <span className={styles.instanceId}>{shortId}</span>
-          {hp != null && <span className={styles.instanceHp}>{hp} HP</span>}
-          {cr && <span className={styles.instanceCr} style={{ color: getCrColor(cr) }}>CR {cr}</span>}
+          {/* Avatar */}
+          <div className={styles.creatureAvatar}>
+            {resolved?.avatarPath ? (
+              <img src={resolved.avatarPath} alt={name} />
+            ) : (
+              <span className="material-symbols-outlined">{iconName}</span>
+            )}
+          </div>
+          {/* Info */}
+          <div className={styles.creatureInfo}>
+            <div className={styles.creatureName}>{name}</div>
+            <div className={styles.creatureMeta}>
+              {[
+                resolved?.creatureType,
+                hp != null ? `${hp} HP` : null,
+                shortId,
+              ].filter(Boolean).join(' · ')}
+            </div>
+          </div>
+          {/* CR badge */}
+          {cr && (
+            <span className={styles.crBadge} style={{ color: getCrColor(cr) }}>
+              {cr}
+            </span>
+          )}
+          {/* Actions on hover */}
           <span className={styles.instanceActions}>
             <button className={styles.instanceActionBtn} onClick={(e) => { e.stopPropagation(); startEdit(); }} title="Edit">
-              <span className={styles.iconSm}>edit</span>
+              <span className="material-symbols-outlined">edit</span>
             </button>
             <button className={styles.instanceActionBtn} onClick={(e) => { e.stopPropagation(); onDuplicate(instance.id); }} title="Duplicate">
-              <span className={styles.iconSm}>content_copy</span>
+              <span className="material-symbols-outlined">content_copy</span>
             </button>
             <button className={`${styles.instanceActionBtn} ${styles.instanceActionDanger}`} onClick={(e) => { e.stopPropagation(); onDelete(instance.id); }} title="Delete">
-              <span className={styles.iconSm}>delete</span>
+              <span className="material-symbols-outlined">delete</span>
             </button>
           </span>
         </>
@@ -181,7 +196,7 @@ export function EncounterGroup({
         }}
       >
         <span className={`${styles.groupChevron} ${expanded ? styles.groupChevronOpen : ''}`}>
-          <span className={styles.iconSm}>chevron_right</span>
+          <span className="material-symbols-outlined">chevron_right</span>
         </span>
         {renaming ? (
           <input
@@ -265,7 +280,7 @@ export function TreeContextMenu({ x, y, items, onClose }: {
             className={`${styles.contextMenuItem} ${item.danger ? styles.contextMenuDanger : ''}`}
             onClick={() => { item.onClick(); onClose(); }}
           >
-            {item.icon && <span className={styles.iconSm}>{item.icon}</span>}
+            {item.icon && <span className="material-symbols-outlined">{item.icon}</span>}
             {item.label}
           </button>
         ))}

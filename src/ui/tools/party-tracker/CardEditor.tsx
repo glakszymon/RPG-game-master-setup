@@ -56,6 +56,10 @@ const FIELD_TYPE_ICONS: Record<FieldType, string> = {
   'action-list': '\u2694', // ⚔
   'tag-list': '\u{1F3F7}', // 🏷
   'stat-block': '\u2B22', // ⬢
+  'select': '\u25BE',    // ▾
+  'speed-list': '\u{1F3C3}', // 🏃
+  'skill-list': '\u2726', // ✦
+  'item-list': '\u2022', // •
 };
 
 function uid(): string {

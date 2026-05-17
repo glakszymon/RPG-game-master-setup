@@ -16,7 +16,11 @@ export type FieldType =
   | 'checkbox'
   | 'action-list'
   | 'tag-list'
-  | 'stat-block';
+  | 'stat-block'
+  | 'select'
+  | 'speed-list'
+  | 'skill-list'
+  | 'item-list';
 
 /** Field width in the layout (auto-flow: fields ≤ 1 total width share a row) */
 export type FieldWidth = '1/3' | '1/2' | '2/3' | 'full';
@@ -49,12 +53,31 @@ export interface ActionListFieldSettings {
   showCombatFields?: boolean;
 }
 
+export interface SelectFieldSettings {
+  options: string[];
+}
+
+export interface SpeedListFieldSettings {
+  /** Available entry types with their display labels */
+  entries: Array<{ key: string; label: string; alwaysVisible?: boolean }>;
+  /** Whether custom entries can be added */
+  allowCustom?: boolean;
+}
+
+export interface SkillListFieldSettings {
+  /** Predefined skill options to pick from */
+  options: string[];
+}
+
 export type FieldSettings =
   | NumberFieldSettings
   | BubblesFieldSettings
   | RadioFieldSettings
   | TagListFieldSettings
-  | ActionListFieldSettings;
+  | ActionListFieldSettings
+  | SelectFieldSettings
+  | SpeedListFieldSettings
+  | SkillListFieldSettings;
 
 /* ── Section Definition ── */
 
@@ -103,7 +126,11 @@ export type FieldValue =
   | { type: 'checkbox'; checked: boolean }
   | { type: 'action-list'; actions: ActionEntry[] }
   | { type: 'tag-list'; tags: string[] }
-  | { type: 'stat-block'; scores: AbilityScores; saves: Partial<AbilityScores> };
+  | { type: 'stat-block'; scores: AbilityScores; modifiers: Partial<AbilityScores>; saves: Partial<AbilityScores> }
+  | { type: 'select'; selected: string }
+  | { type: 'speed-list'; values: Record<string, number | null> }
+  | { type: 'skill-list'; skills: Array<{ name: string; bonus: number }> }
+  | { type: 'item-list'; items: Array<{ name: string; quantity: number }> };
 
 export interface AbilityScores {
   str: number;

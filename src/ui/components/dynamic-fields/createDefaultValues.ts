@@ -2,7 +2,7 @@
  * Dynamic Fields — create default field values for a given structure.
  */
 
-import type { FieldDefinition, FieldValue, RadioFieldSettings } from './types';
+import type { FieldDefinition, FieldValue, RadioFieldSettings, SelectFieldSettings } from './types';
 
 /** Generate empty/default field values for all fields in a structure */
 export function createDefaultFieldValues(fields: FieldDefinition[]): Record<string, FieldValue> {
@@ -39,8 +39,23 @@ export function createDefaultFieldValues(fields: FieldDefinition[]): Record<stri
         values[field.id] = {
           type: 'stat-block',
           scores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+          modifiers: {},
           saves: {},
         };
+        break;
+      case 'select': {
+        const selectOpts = (field.settings as SelectFieldSettings)?.options ?? [];
+        values[field.id] = { type: 'select', selected: selectOpts[0] ?? '' };
+        break;
+      }
+      case 'speed-list':
+        values[field.id] = { type: 'speed-list', values: {} };
+        break;
+      case 'skill-list':
+        values[field.id] = { type: 'skill-list', skills: [] };
+        break;
+      case 'item-list':
+        values[field.id] = { type: 'item-list', items: [] };
         break;
     }
   }

@@ -42,6 +42,7 @@ export function templateToFieldValues(t: CreatureTemplate): Record<string, Field
     vals['ability_scores'] = {
       type: 'stat-block',
       scores: { ...t.abilityScores },
+      modifiers: {},
       saves: t.savingThrows ? { ...t.savingThrows } : {},
     };
   }
