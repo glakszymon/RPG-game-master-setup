@@ -29,7 +29,15 @@ export function useCreatureStructure(campaignId: string | null): UseCreatureStru
       if (cancelled) return;
       if (raw) {
         try {
-          setStructureState(JSON.parse(raw) as FieldStructure);
+          const parsed = JSON.parse(raw) as FieldStructure;
+          // Migration: if saved structure lacks column assignments, reset to default
+          const hasColumns = parsed.sections?.some(s => s.column != null);
+          if (!hasColumns) {
+            setStructureState(DEFAULT_CREATURE_STRUCTURE);
+            window.electronAPI?.settings.save(campaignId!, SETTINGS_KEY_CREATURE_STRUCTURE, JSON.stringify(DEFAULT_CREATURE_STRUCTURE));
+          } else {
+            setStructureState(parsed);
+          }
         } catch {
           setStructureState(DEFAULT_CREATURE_STRUCTURE);
         }
