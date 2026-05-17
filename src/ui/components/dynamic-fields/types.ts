@@ -63,6 +63,7 @@ export interface SectionDefinition {
   title: string;
   sortOrder: number;
   collapsed?: boolean;
+  column?: 'left' | 'right' | 'header';
 }
 
 /* ── Field Definition ── */

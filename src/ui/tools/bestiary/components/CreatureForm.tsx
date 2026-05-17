@@ -1,10 +1,10 @@
 /*
- * CreatureForm — dynamic sectioned form for editing a creature template.
- * Renders fields based on CreatureStructure (FieldDefinition + SectionDefinition).
- * Uses shared FieldInput components from dynamic-fields.
+ * CreatureForm — two-column form for editing a creature template.
+ * Layout: sticky header (name, avatar, alignment, CR) + two columns (left: numbers, right: text/actions).
+ * Renders fields dynamically from FieldStructure with column assignment via SectionDefinition.column.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { FieldInput } from '../../../components/dynamic-fields';
 import { getXpFromCr, getProficiencyBonus, formatXp } from '../crUtilities';
 import type { FieldStructure, FieldValue, FieldDefinition, SectionDefinition } from '../../../components/dynamic-fields';
@@ -31,16 +31,37 @@ export function CreatureForm({
   onAvatarUpload,
   onDelete,
 }: CreatureFormProps) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const { headerSections, leftSections, rightSections } = useMemo(() => {
+    const sections = [...(structure.sections ?? [])];
+    const header: SectionDefinition[] = [];
+    const left: SectionDefinition[] = [];
+    const right: SectionDefinition[] = [];
 
-  const toggle = (sectionId: string) => {
-    setCollapsed(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
-  };
+    for (const s of sections) {
+      if (s.column === 'header') header.push(s);
+      else if (s.column === 'right') right.push(s);
+      else left.push(s); // default to left
+    }
 
-  const sortedSections = useMemo(() =>
-    [...(structure.sections ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
-    [structure.sections]
-  );
+    left.sort((a, b) => a.sortOrder - b.sortOrder);
+    right.sort((a, b) => a.sortOrder - b.sortOrder);
+
+    return { headerSections: header, leftSections: left, rightSections: right };
+  }, [structure.sections]);
+
+  const fieldsBySection = useMemo(() => {
+    const map: Record<string, FieldDefinition[]> = {};
+    for (const f of structure.fields) {
+      const sid = f.sectionId ?? '_unsectioned';
+      if (!map[sid]) map[sid] = [];
+      map[sid].push(f);
+    }
+    // Sort fields within each section
+    for (const key of Object.keys(map)) {
+      map[key].sort((a, b) => a.sortOrder - b.sortOrder);
+    }
+    return map;
+  }, [structure.fields]);
 
   // CR-derived values
   const crValue = fieldValues['cr'];
@@ -48,10 +69,16 @@ export function CreatureForm({
   const xp = getXpFromCr(crText);
   const pb = getProficiencyBonus(crText);
 
+  // Header fields (from header sections)
+  const headerFields = useMemo(() =>
+    headerSections.flatMap(s => fieldsBySection[s.id] ?? []),
+    [headerSections, fieldsBySection]
+  );
+
   return (
-    <div>
-      {/* ── Avatar + Name ── */}
-      <div className={styles.avatarSection}>
+    <div className={styles.creatureFormRoot}>
+      {/* ── Sticky Header ── */}
+      <div className={styles.formStickyHeader}>
         <div className={styles.avatarPreview} onClick={onAvatarUpload} style={{ cursor: 'pointer' }}>
           {avatarPath ? (
             <img src={avatarPath} alt={name} />
@@ -59,7 +86,7 @@ export function CreatureForm({
             <span className={styles.icon}>category</span>
           )}
         </div>
-        <div style={{ flex: 1 }}>
+        <div className={styles.formHeaderContent}>
           <input
             className={styles.formInput}
             style={{ width: '100%', fontSize: 'var(--text-md)', fontWeight: 'var(--font-semibold)' }}
@@ -67,29 +94,51 @@ export function CreatureForm({
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="Creature name"
           />
+          <div className={styles.formHeaderFields}>
+            {headerFields.map(field => (
+              <DynamicField
+                key={field.id}
+                field={field}
+                value={fieldValues[field.id] ?? null}
+                onChange={onFieldChange}
+              />
+            ))}
+            {/* CR-derived info */}
+            {crText && (
+              <div className={styles.crDerived}>
+                {xp != null && <span className={styles.crDerivedItem}>XP: {formatXp(xp)}</span>}
+                <span className={styles.crDerivedItem}>PB: +{pb}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ── CR-derived info ── */}
-      {crText && (
-        <div className={styles.crDerived}>
-          {xp != null && <span className={styles.crDerivedItem}>XP: {formatXp(xp)}</span>}
-          <span className={styles.crDerivedItem}>PB: +{pb}</span>
+      {/* ── Two-Column Body ── */}
+      <div className={styles.formColumns}>
+        <div className={styles.formColumnLeft}>
+          {leftSections.map(section => (
+            <FormSection
+              key={section.id}
+              section={section}
+              fields={fieldsBySection[section.id] ?? []}
+              fieldValues={fieldValues}
+              onFieldChange={onFieldChange}
+            />
+          ))}
         </div>
-      )}
-
-      {/* ── Dynamic sections ── */}
-      {sortedSections.map(section => (
-        <DynamicSection
-          key={section.id}
-          section={section}
-          fields={structure.fields.filter(f => f.sectionId === section.id).sort((a, b) => a.sortOrder - b.sortOrder)}
-          fieldValues={fieldValues}
-          collapsed={!!collapsed[section.id]}
-          onToggle={() => toggle(section.id)}
-          onFieldChange={onFieldChange}
-        />
-      ))}
+        <div className={styles.formColumnRight}>
+          {rightSections.map(section => (
+            <FormSection
+              key={section.id}
+              section={section}
+              fields={fieldsBySection[section.id] ?? []}
+              fieldValues={fieldValues}
+              onFieldChange={onFieldChange}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* ── Delete ── */}
       <div className={styles.deleteSection}>
@@ -101,38 +150,31 @@ export function CreatureForm({
   );
 }
 
-/* ── Dynamic Section ── */
+/* ── Form Section (no collapse) ── */
 
-function DynamicSection({ section, fields, fieldValues, collapsed, onToggle, onFieldChange }: {
+function FormSection({ section, fields, fieldValues, onFieldChange }: {
   section: SectionDefinition;
   fields: FieldDefinition[];
   fieldValues: Record<string, FieldValue>;
-  collapsed: boolean;
-  onToggle: () => void;
   onFieldChange: (fieldId: string, value: FieldValue) => void;
 }) {
   if (fields.length === 0) return null;
 
   return (
     <div className={styles.formSection}>
-      <div className={styles.formSectionHeader} onClick={onToggle}>
+      <div className={styles.formSectionHeader}>
         <span className={styles.formSectionTitle}>{section.title}</span>
-        <span className={`${styles.formSectionChevron} ${!collapsed ? styles.formSectionChevronOpen : ''}`}>
-          <span className={styles.iconSm}>chevron_right</span>
-        </span>
       </div>
-      {!collapsed && (
-        <div className={styles.dynamicFieldsGrid}>
-          {fields.map(field => (
-            <DynamicField
-              key={field.id}
-              field={field}
-              value={fieldValues[field.id] ?? null}
-              onChange={onFieldChange}
-            />
-          ))}
-        </div>
-      )}
+      <div className={styles.dynamicFieldsGrid}>
+        {fields.map(field => (
+          <DynamicField
+            key={field.id}
+            field={field}
+            value={fieldValues[field.id] ?? null}
+            onChange={onFieldChange}
+          />
+        ))}
+      </div>
     </div>
   );
 }
