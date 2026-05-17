@@ -2,9 +2,11 @@
  * TrackRow — single track card for the soundboard grid.
  *
  * Renders play/pause, volume, loop, stacking toggle, fire button, and jitter.
+ * Sliders use local state during drag and commit on pointerUp to avoid
+ * flooding the canvas reducer with UPDATE_TOOL_STATE on every mousemove.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import type { SoundboardTrack } from '../types';
 import styles from '../Soundboard.module.css';
 
@@ -13,6 +15,7 @@ interface TrackRowProps {
   onPlay: (trackId: string) => void;
   onStop: (trackId: string) => void;
   onVolumeChange: (trackId: string, volume: number) => void;
+  onVolumePreview: (trackId: string, volume: number) => void;
   onLoopToggle: (trackId: string) => void;
   onRemove: (trackId: string) => void;
   onFire: (trackId: string) => void;
@@ -25,12 +28,27 @@ export function TrackRow({
   onPlay,
   onStop,
   onVolumeChange,
+  onVolumePreview,
   onLoopToggle,
   onRemove,
   onFire,
   onStackingToggle,
   onJitterChange,
 }: TrackRowProps) {
+  // Local slider state — tracks the "live" value during drag
+  const [localVolume, setLocalVolume] = useState(track.volume);
+  const [localJitter, setLocalJitter] = useState(track.jitterIntensity);
+  const draggingRef = useRef<'volume' | 'jitter' | null>(null);
+
+  // Sync from parent when not dragging
+  useEffect(() => {
+    if (draggingRef.current !== 'volume') setLocalVolume(track.volume);
+  }, [track.volume]);
+
+  useEffect(() => {
+    if (draggingRef.current !== 'jitter') setLocalJitter(track.jitterIntensity);
+  }, [track.jitterIntensity]);
+
   const handlePlayPause = useCallback(() => {
     if (track.isPlaying) {
       onStop(track.id);
@@ -38,10 +56,6 @@ export function TrackRow({
       onPlay(track.id);
     }
   }, [track.id, track.isPlaying, onPlay, onStop]);
-
-  const handleVolume = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onVolumeChange(track.id, parseFloat(e.target.value));
-  }, [track.id, onVolumeChange]);
 
   const handleLoop = useCallback(() => {
     onLoopToggle(track.id);
@@ -58,10 +72,6 @@ export function TrackRow({
   const handleStacking = useCallback(() => {
     onStackingToggle(track.id);
   }, [track.id, onStackingToggle]);
-
-  const handleJitter = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onJitterChange(track.id, parseFloat(e.target.value));
-  }, [track.id, onJitterChange]);
 
   return (
     <div className={`${styles.trackCard} ${track.isPlaying ? styles.trackCardActive : ''}`}>
@@ -94,9 +104,18 @@ export function TrackRow({
         min={0}
         max={1}
         step={0.01}
-        value={track.volume}
-        onChange={handleVolume}
-        title={`Volume: ${Math.round(track.volume * 100)}%`}
+        value={localVolume}
+        onChange={e => {
+          draggingRef.current = 'volume';
+          const v = parseFloat(e.target.value);
+          setLocalVolume(v);
+          onVolumePreview(track.id, v);
+        }}
+        onPointerUp={() => {
+          draggingRef.current = null;
+          onVolumeChange(track.id, localVolume);
+        }}
+        title={`Volume: ${Math.round(localVolume * 100)}%`}
       />
 
       <div className={styles.trackCardFooter}>
@@ -134,9 +153,16 @@ export function TrackRow({
           min={0}
           max={1}
           step={0.05}
-          value={track.jitterIntensity}
-          onChange={handleJitter}
-          title={`Jitter: ${Math.round(track.jitterIntensity * 100)}%`}
+          value={localJitter}
+          onChange={e => {
+            draggingRef.current = 'jitter';
+            setLocalJitter(parseFloat(e.target.value));
+          }}
+          onPointerUp={() => {
+            draggingRef.current = null;
+            onJitterChange(track.id, localJitter);
+          }}
+          title={`Jitter: ${Math.round(localJitter * 100)}%`}
         />
       )}
     </div>

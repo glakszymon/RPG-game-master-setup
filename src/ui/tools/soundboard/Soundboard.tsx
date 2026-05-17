@@ -36,12 +36,10 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
 
   const patchState = useCallback((patch: Partial<SoundboardState>) => {
     const next = { ...stateRef.current, ...patch };
-    // Shallow-equal guard: skip if nothing changed
     const prev = stateRef.current;
     const keys = Object.keys(patch) as (keyof SoundboardState)[];
     const changed = keys.some(k => prev[k] !== next[k]);
     if (!changed) return;
-    console.trace('[Soundboard] patchState — changed keys:', keys.filter(k => prev[k] !== next[k]));
     onToolStateChange(next);
   }, [onToolStateChange]);
 
@@ -75,6 +73,10 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
     engine.setTrackVolume(trackId, volume);
     updateTrack(trackId, { volume });
   }, [engine, updateTrack]);
+
+  const handleVolumePreview = useCallback((trackId: string, volume: number) => {
+    engine.setTrackVolume(trackId, volume);
+  }, [engine]);
 
   const handleLoopToggle = useCallback((trackId: string) => {
     const track = stateRef.current.tracks.find(t => t.id === trackId);
@@ -262,6 +264,7 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
               onPlay={handlePlay}
               onStop={handleStop}
               onVolumeChange={handleVolumeChange}
+              onVolumePreview={handleVolumePreview}
               onLoopToggle={handleLoopToggle}
               onRemove={handleRemove}
               onFire={handleFire}
