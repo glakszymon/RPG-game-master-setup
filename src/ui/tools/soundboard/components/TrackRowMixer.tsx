@@ -71,7 +71,9 @@ export function TrackRowMixer({
         onClick={handlePlayPause}
         title={track.isPlaying ? 'Pause' : 'Play'}
       >
-        {track.isPlaying ? '⏸' : '▶'}
+        <span className="material-symbols-outlined">
+          {track.isPlaying ? 'pause' : 'play_arrow'}
+        </span>
       </button>
 
       <span className={styles.trackName} title={track.name}>
@@ -94,7 +96,7 @@ export function TrackRowMixer({
         onClick={handleLoop}
         title={track.loop ? 'Loop: ON' : 'Loop: OFF'}
       >
-        🔁
+        <span className="material-symbols-outlined">loop</span>
       </button>
 
       {/* Stacking controls */}
@@ -103,7 +105,7 @@ export function TrackRowMixer({
         onClick={handleStacking}
         title={track.stackingEnabled ? 'Stacking: ON' : 'Stacking: OFF'}
       >
-        📚
+        <span className="material-symbols-outlined">layers</span>
       </button>
 
       {track.stackingEnabled && (
@@ -113,7 +115,7 @@ export function TrackRowMixer({
             onClick={handleFire}
             title="Fire instance"
           >
-            🔥
+            <span className="material-symbols-outlined">local_fire_department</span>
           </button>
           <input
             type="range"
@@ -133,7 +135,7 @@ export function TrackRowMixer({
         onClick={handleRemove}
         title="Remove track"
       >
-        ✕
+        <span className="material-symbols-outlined">close</span>
       </button>
     </div>
   );

@@ -75,6 +75,13 @@
 .trackList {
   flex: 1;
   overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  align-content: start;
+}
+
+.trackListMixer {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -88,6 +95,7 @@
   color: var(--color-text-tertiary);
   font-size: 12px;
   font-style: italic;
+  grid-column: 1 / -1;
 }
 
 /* ── Track Row ── */
@@ -105,6 +113,65 @@
 
 .trackRow:hover {
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Track Card (Simple Mode Grid) ── */
+
+.trackCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.trackCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.trackCardActive {
+  border-color: rgba(129, 140, 248, 0.4);
+  background: rgba(129, 140, 248, 0.08);
+}
+
+.trackCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.trackPlayBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: background 0.15s, color 0.15s;
+}
+
+.trackPlayBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary);
+}
+
+.trackCard .volumeSlider {
+  width: 100%;
+}
+
+.trackPlayBtnActive {
+  background: rgba(129, 140, 248, 0.2);
+  border-color: rgba(129, 140, 248, 0.4);
+  color: #818cf8;
 }
 
 .trackName {
@@ -130,6 +197,10 @@
   font-size: 11px;
   color: var(--color-text-secondary);
   transition: background 0.15s, color 0.15s;
+}
+
+.trackBtn .material-symbols-outlined {
+  font-size: 16px;
 }
 
 .trackBtn:hover {
@@ -246,39 +317,50 @@
   flex-wrap: wrap;
 }
 
-.libraryGrid {
+.libraryList {
   flex: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   overflow-y: auto;
 }
 
-.librarySampleBtn {
+.librarySampleRow {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition: background 0.15s;
+  color: var(--color-text-secondary);
+  text-align: left;
 }
 
-.librarySampleBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: scale(1.05);
+.librarySampleRow:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
 }
 
-.librarySampleIcon {
-  font-size: 24px;
+.librarySampleRow .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.addIcon {
+  margin-left: auto;
+  font-size: 18px !important;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.librarySampleRow:hover .addIcon {
+  opacity: 1;
 }
 
 .librarySampleName {
-  font-size: 10px;
-  color: var(--color-text-secondary);
+  font-size: 12px;
 }
 
 /* ── Waveform ── */

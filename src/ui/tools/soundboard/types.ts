@@ -72,12 +72,12 @@ export const DEFAULT_SOUNDBOARD_STATE: SoundboardState = {
 
 /** Bundled CC0 sample catalog */
 export const BUNDLED_SAMPLES: BundledSample[] = [
-  { key: 'rain', name: 'Rain', category: 'nature', icon: '🌧️' },
-  { key: 'forest', name: 'Forest', category: 'nature', icon: '🌲' },
-  { key: 'dungeon', name: 'Dungeon', category: 'interior', icon: '🏚️' },
-  { key: 'battle', name: 'Battle', category: 'combat', icon: '⚔️' },
-  { key: 'fire', name: 'Fire', category: 'interior', icon: '🔥' },
-  { key: 'wind', name: 'Wind', category: 'nature', icon: '💨' },
-  { key: 'river', name: 'River', category: 'nature', icon: '🏞️' },
-  { key: 'tavern', name: 'Tavern', category: 'interior', icon: '🍺' },
+  { key: 'rain', name: 'Rain', category: 'nature', icon: 'water_drop' },
+  { key: 'forest', name: 'Forest', category: 'nature', icon: 'forest' },
+  { key: 'dungeon', name: 'Dungeon', category: 'interior', icon: 'castle' },
+  { key: 'battle', name: 'Battle', category: 'combat', icon: 'swords' },
+  { key: 'fire', name: 'Fire', category: 'interior', icon: 'local_fire_department' },
+  { key: 'wind', name: 'Wind', category: 'nature', icon: 'air' },
+  { key: 'river', name: 'River', category: 'nature', icon: 'waves' },
+  { key: 'tavern', name: 'Tavern', category: 'interior', icon: 'sports_bar' },
 ];

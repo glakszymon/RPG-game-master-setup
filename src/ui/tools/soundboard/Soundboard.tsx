@@ -244,7 +244,7 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
           className={`${styles.modeBtn} ${!isMixer ? styles.modeBtnActive : ''}`}
           onClick={handleModeToggle}
         >
-          {isMixer ? '🎛️ Mixer' : '🔊 Simple'}
+          {isMixer ? <><span className="material-symbols-outlined">tune</span> Mixer</> : <><span className="material-symbols-outlined">volume_up</span> Simple</>}
         </button>
       </div>
 
@@ -266,7 +266,7 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
       />
 
       {/* Track list */}
-      <div className={styles.trackList}>
+      <div className={`${styles.trackList} ${isMixer ? styles.trackListMixer : ''}`}>
         {state.tracks.length === 0 && (
           <div className={styles.emptyState}>
             No tracks yet. Add from library or import a file.
@@ -303,10 +303,10 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
       {/* Actions */}
       <div className={styles.actions}>
         <button className={styles.addBtn} onClick={handleImportTrack}>
-          📁 Import
+          <span className="material-symbols-outlined">folder_open</span> Import
         </button>
         <button className={styles.addBtn} onClick={() => setLibraryOpen(true)}>
-          🎵 Library
+          <span className="material-symbols-outlined">library_music</span> Library
         </button>
       </div>
 

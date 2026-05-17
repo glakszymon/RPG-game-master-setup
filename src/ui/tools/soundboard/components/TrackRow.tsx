@@ -1,7 +1,7 @@
 /*
- * TrackRow — single track control row for the soundboard.
+ * TrackRow — single track control for the soundboard (simple mode).
  *
- * Renders play/pause, volume slider, loop toggle, and track name.
+ * Rendered as a grid card with play/pause, volume slider, loop toggle, and track name.
  */
 
 import { useCallback } from 'react';
@@ -46,18 +46,29 @@ export function TrackRow({
   }, [track.id, onRemove]);
 
   return (
-    <div className={styles.trackRow}>
+    <div className={`${styles.trackCard} ${track.isPlaying ? styles.trackCardActive : ''}`}>
+      <div className={styles.trackCardHeader}>
+        <span className={styles.trackName} title={track.name}>
+          {track.name}
+        </span>
+        <button
+          className={styles.trackBtn}
+          onClick={handleRemove}
+          title="Remove track"
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
       <button
-        className={`${styles.trackBtn} ${track.isPlaying ? styles.trackBtnActive : ''}`}
+        className={`${styles.trackPlayBtn} ${track.isPlaying ? styles.trackPlayBtnActive : ''}`}
         onClick={handlePlayPause}
         title={track.isPlaying ? 'Pause' : 'Play'}
       >
-        {track.isPlaying ? '⏸' : '▶'}
+        <span className="material-symbols-outlined">
+          {track.isPlaying ? 'pause' : 'play_arrow'}
+        </span>
       </button>
-
-      <span className={styles.trackName} title={track.name}>
-        {track.name}
-      </span>
 
       <input
         type="range"
@@ -75,15 +86,7 @@ export function TrackRow({
         onClick={handleLoop}
         title={track.loop ? 'Loop: ON' : 'Loop: OFF'}
       >
-        🔁
-      </button>
-
-      <button
-        className={styles.trackBtn}
-        onClick={handleRemove}
-        title="Remove track"
-      >
-        ✕
+        <span className="material-symbols-outlined">loop</span>
       </button>
     </div>
   );

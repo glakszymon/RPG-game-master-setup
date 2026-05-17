@@ -31,7 +31,7 @@ export function MasterControls({ masterVolume, onMasterVolumeChange, getAnalyser
   return (
     <div className={styles.masterControls}>
       <div className={styles.masterRow}>
-        <span className={styles.masterLabel}>🔊 Master</span>
+        <span className={styles.masterLabel}><span className="material-symbols-outlined">volume_up</span> Master</span>
         <input
           type="range"
           className={styles.volumeSlider}

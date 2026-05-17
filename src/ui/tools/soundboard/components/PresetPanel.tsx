@@ -55,14 +55,14 @@ export function PresetPanel({
               onClick={() => onOverwritePreset(preset.id)}
               title="Overwrite with current state"
             >
-              💾
+              <span className="material-symbols-outlined">save</span>
             </button>
             <button
               className={styles.presetSmallBtn}
               onClick={() => onDeletePreset(preset.id)}
               title="Delete preset"
             >
-              🗑️
+              <span className="material-symbols-outlined">delete</span>
             </button>
           </div>
         ))}
