@@ -732,18 +732,44 @@ Pliki modułu:
 
 ### Krok 9.1 - Implementacja
 
+**Plan:** `docs/plans/2026-05-17-001-feat-soundboard-audio-panel-plan.md`
+**Wymagania:** `docs/brainstorms/2026-05-17-soundboard-requirements.md`
+
 **Napisz do AI:**
-> "Poprowadź mnie w implementacji Soundboarda na podstawie naszych ustaleń."
+> "Poprowadź mnie w implementacji Soundboarda na podstawie planu w docs/plans/2026-05-17-001-feat-soundboard-audio-panel-plan.md"
+
+**Kluczowe decyzje z brainstormu:**
+- Web Audio API (nie HTML5 Audio) — wymagane dla stacking, jitter, crossfade, waveform
+- Stacking + Jitter od v1 z przyciskiem Fire i sliderem intensity
+- Dwa oddzielne layouty: tryb prosty (play/vol/loop) i mikser (pełna kontrola)
+- Presety per-kampania z crossfade przy przełączaniu
+- Pliki audio kopiowane do folderu kampanii (nie SQLite blob)
+- Bundlowane 8 sampli CC0 (deszcz, las, loch, bitwa, ogień, wiatr, rzeka, tawerna)
+- Waveform visualization na canvas dla master output
+- Grid z filtrem kategorii dla biblioteki CC0
+- Tagi na zaimportowanych trackach
+- Max 8-12 tracków jednocześnie, max 6-8 instancji stackingu per track
+
+**Fazy implementacji:**
+1. Audio Engine Foundation (import, play/pause, volume, loop, master)
+2. Waveform + Library (AnalyserNode canvas, bundled CC0, grid browser)
+3. Stacking + Jitter (multi-instance, fire button, detune/timing)
+4. Presety + Crossfade (save/load/overwrite, gain ramping)
+5. Two Modes + Polish (simple/mixer layouts, DnD reorder, tags)
 
 **Jak sprawdzić że działa:**
 - Importuj plik MP3 - powinien pojawić się na liście
-- Odtwórz 3 tracki jednocześnie - powinny się mieszać
+- Odtwórz 3+ tracki jednocześnie - powinny się mieszać bez artefaktów
 - Zmień volume jednego tracka - reszta bez zmian
-- Master volume powinien wpływać na wszystkie
+- Master volume powinien wpływać na wszystkie proporcjonalnie
 - Loop toggle - track powinien się zapętlać
-- Wbudowane sample powinny działać od razu
+- Wbudowane sample powinny działać od razu z grid browsera
+- Fire button odpala nową instancję z jitterem
+- Zapisz preset, przełącz na inny — crossfade powinien być płynny
+- Waveform reaguje w czasie rzeczywistym
+- Tryb prosty ukrywa zaawansowane kontrolki
 
-**Rezultat:** Działający soundboard z ambientami.
+**Rezultat:** Działający soundboard z ambientami, SFX, presetami scen i wizualizacją.
 
 ---
 

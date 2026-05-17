@@ -93,6 +93,13 @@ export interface ElectronSettingsAPI {
   save: (campaignId: string, key: string, valueJson: string) => Promise<{ ok: boolean } | null>;
 }
 
+export interface ElectronSoundboardAPI {
+  importAudio: (campaignId: string) => Promise<string | null>;
+  readAudio: (filePath: string) => Promise<ArrayBuffer | null>;
+  listBundled: () => Promise<string[]>;
+  readBundled: (key: string) => Promise<ArrayBuffer | null>;
+}
+
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
   presets: ElectronPresetsAPI;
@@ -100,6 +107,7 @@ export interface ElectronAPI {
   dialog: ElectronDialogAPI;
   bestiary: ElectronBestiaryAPI;
   settings: ElectronSettingsAPI;
+  soundboard: ElectronSoundboardAPI;
 }
 
 declare global {
