@@ -5,7 +5,7 @@
  * and AnalyserNode for waveform visualization.
  */
 
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useMemo } from 'react';
 
 interface AudioNode {
   source: AudioBufferSourceNode;
@@ -246,7 +246,7 @@ export function useAudioEngine(): AudioEngineAPI {
     return () => { cleanup(); };
   }, [cleanup]);
 
-  return {
+  return useMemo(() => ({
     playTrack,
     stopTrack,
     setTrackVolume,
@@ -257,5 +257,5 @@ export function useAudioEngine(): AudioEngineAPI {
     getTrackNodes,
     resume,
     cleanup,
-  };
+  }), [playTrack, stopTrack, setTrackVolume, setMasterVolume, fireStack, getAnalyser, getContext, getTrackNodes, resume, cleanup]);
 }

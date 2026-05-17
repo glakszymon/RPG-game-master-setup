@@ -373,7 +373,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
             <CanvasBackground type={state.background} />
 
             {state.windows
-              .filter((win) => visibleIds.has(win.id))
+              .filter((win) => visibleIds.has(win.id) || win.toolType === 'soundboard')
               .map((win) => (
               <CanvasWindow
                 key={win.id}

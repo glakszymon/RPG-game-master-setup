@@ -191,7 +191,7 @@ app.on('ready', async () => {
   ipcMain.handle('soundboard:read-audio', (_event, filePath: string) => {
     try {
       const buffer = fs.readFileSync(filePath);
-      return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+      return new Uint8Array(buffer).buffer;
     } catch {
       return null;
     }
@@ -215,7 +215,8 @@ app.on('ready', async () => {
         const filePath = path.join(bundledDir, `${key}.${ext}`);
         if (fs.existsSync(filePath)) {
           const buffer = fs.readFileSync(filePath);
-          return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+          // Return as Uint8Array for proper IPC serialization
+          return new Uint8Array(buffer).buffer;
         }
       }
       return null;

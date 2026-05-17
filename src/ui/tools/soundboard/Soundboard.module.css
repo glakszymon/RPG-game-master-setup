@@ -2,7 +2,7 @@
 
 .container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100%;
   padding: 8px;
   gap: 8px;
@@ -10,35 +10,16 @@
   position: relative;
 }
 
-/* ── Toolbar ── */
-
-.toolbar {
+.mainColumn {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  flex: 1;
+  gap: 8px;
+  overflow: hidden;
+  min-width: 0;
 }
 
-.modeBtn {
-  padding: 3px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 6px;
-  color: var(--color-text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.modeBtn:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.modeBtnActive {
-  background: rgba(99, 102, 241, 0.15);
-  border-color: rgba(99, 102, 241, 0.3);
-}
-
-/* ── Master Controls ── */
+/* ── Track List ── */
 
 .masterControls {
   display: flex;
@@ -79,12 +60,6 @@
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 8px;
   align-content: start;
-}
-
-.trackListMixer {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .emptyState {
@@ -450,15 +425,159 @@
   text-align: center;
 }
 
-/* ── Presets ── */
+/* ── Presets (Right Column) ── */
 
 .presetPanel {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
+  flex-direction: column;
+  width: 160px;
+  min-width: 140px;
+  gap: 8px;
+  padding: 8px;
   background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-y: auto;
+}
+
+.presetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.presetTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.presetList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.presetEmpty {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.presetItem {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   border-radius: 6px;
+  padding: 2px;
+  transition: background 0.15s;
+}
+
+.presetItem:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.presetItemActive {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.presetLoadBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: color 0.15s;
+}
+
+.presetLoadBtn:hover {
+  color: var(--color-text-primary);
+}
+
+.presetLoadBtn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.presetName {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presetActions {
+  display: flex;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.presetItem:hover .presetActions {
+  opacity: 1;
+}
+
+.presetSmallBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  transition: color 0.15s, background 0.15s;
+}
+
+.presetSmallBtn .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.presetSmallBtn:hover {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.presetSmallBtnWarn {
+  color: #f59e0b;
+}
+
+.presetSmallBtnWarn:hover {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.presetSaveRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.presetInput {
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  color: var(--color-text-primary);
+  font-size: 11px;
+  width: 80px;
+  outline: none;
+}
+
+.presetInput:focus {
+  border-color: var(--color-accent, #818cf8);
 }
 
 .presetBtn {
@@ -480,57 +599,4 @@
   background: rgba(99, 102, 241, 0.2);
   border-color: rgba(99, 102, 241, 0.4);
   color: var(--color-accent, #818cf8);
-}
-
-.presetList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-
-.presetItem {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.presetSmallBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border: none;
-  background: transparent;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 9px;
-  opacity: 0.5;
-  transition: opacity 0.15s;
-}
-
-.presetSmallBtn:hover {
-  opacity: 1;
-}
-
-.presetSaveRow {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.presetInput {
-  padding: 3px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-  color: var(--color-text-primary);
-  font-size: 11px;
-  width: 120px;
-  outline: none;
-}
-
-.presetInput:focus {
-  border-color: var(--color-accent, #818cf8);
 }

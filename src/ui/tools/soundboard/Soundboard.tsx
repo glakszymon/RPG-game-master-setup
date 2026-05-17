@@ -5,7 +5,7 @@
  * Supports two modes: simple (ambient) and mixer (full control with stacking/jitter).
  */
 
-import { useCallback, useRef, useState, useEffect, useLayoutEffect } from 'react';
+import { useCallback, useRef, useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useAudioEngine } from './hooks/useAudioEngine';
 import { useCrossfade } from './hooks/useCrossfade';
 import { TrackRow } from './components/TrackRow';
@@ -23,7 +23,10 @@ interface SoundboardProps {
 }
 
 export function Soundboard({ toolState, onToolStateChange, campaignId }: SoundboardProps) {
-  const state: SoundboardState = { ...DEFAULT_SOUNDBOARD_STATE, ...toolState };
+  const state: SoundboardState = useMemo(
+    () => ({ ...DEFAULT_SOUNDBOARD_STATE, ...toolState }),
+    [toolState]
+  );
   const stateRef = useRef(state);
   useLayoutEffect(() => { stateRef.current = state; });
 
@@ -32,7 +35,14 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
   const { crossfade } = useCrossfade();
 
   const patchState = useCallback((patch: Partial<SoundboardState>) => {
-    onToolStateChange({ ...stateRef.current, ...patch });
+    const next = { ...stateRef.current, ...patch };
+    // Shallow-equal guard: skip if nothing changed
+    const prev = stateRef.current;
+    const keys = Object.keys(patch) as (keyof SoundboardState)[];
+    const changed = keys.some(k => prev[k] !== next[k]);
+    if (!changed) return;
+    console.trace('[Soundboard] patchState — changed keys:', keys.filter(k => prev[k] !== next[k]));
+    onToolStateChange(next);
   }, [onToolStateChange]);
 
   const updateTrack = useCallback((trackId: string, updates: Partial<SoundboardTrack>) => {
@@ -229,14 +239,50 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
 
   return (
     <div className={styles.container}>
-      <MasterControls
-        masterVolume={state.masterVolume}
-        onMasterVolumeChange={handleMasterVolume}
-        getAnalyser={engine.getAnalyser}
-        hasPlayingTracks={state.tracks.some(t => t.isPlaying)}
-      />
+      {/* Left: main content */}
+      <div className={styles.mainColumn}>
+        <MasterControls
+          masterVolume={state.masterVolume}
+          onMasterVolumeChange={handleMasterVolume}
+          getAnalyser={engine.getAnalyser}
+          hasPlayingTracks={state.tracks.some(t => t.isPlaying)}
+        />
 
-      {/* Presets */}
+        {/* Track grid */}
+        <div className={styles.trackList}>
+          {state.tracks.length === 0 && (
+            <div className={styles.emptyState}>
+              No tracks yet. Add from library or import a file.
+            </div>
+          )}
+          {state.tracks.map(track => (
+            <TrackRow
+              key={track.id}
+              track={track}
+              onPlay={handlePlay}
+              onStop={handleStop}
+              onVolumeChange={handleVolumeChange}
+              onLoopToggle={handleLoopToggle}
+              onRemove={handleRemove}
+              onFire={handleFire}
+              onStackingToggle={handleStackingToggle}
+              onJitterChange={handleJitterChange}
+            />
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div className={styles.actions}>
+          <button className={styles.addBtn} onClick={handleImportTrack}>
+            <span className="material-symbols-outlined">folder_open</span> Import
+          </button>
+          <button className={styles.addBtn} onClick={() => setLibraryOpen(true)}>
+            <span className="material-symbols-outlined">library_music</span> Library
+          </button>
+        </div>
+      </div>
+
+      {/* Right: presets column */}
       <PresetPanel
         presets={state.presets}
         activePresetId={state.activePresetId}
@@ -245,39 +291,6 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
         onDeletePreset={handleDeletePreset}
         onOverwritePreset={handleOverwritePreset}
       />
-
-      {/* Track grid */}
-      <div className={styles.trackList}>
-        {state.tracks.length === 0 && (
-          <div className={styles.emptyState}>
-            No tracks yet. Add from library or import a file.
-          </div>
-        )}
-        {state.tracks.map(track => (
-          <TrackRow
-            key={track.id}
-            track={track}
-            onPlay={handlePlay}
-            onStop={handleStop}
-            onVolumeChange={handleVolumeChange}
-            onLoopToggle={handleLoopToggle}
-            onRemove={handleRemove}
-            onFire={handleFire}
-            onStackingToggle={handleStackingToggle}
-            onJitterChange={handleJitterChange}
-          />
-        ))}
-      </div>
-
-      {/* Actions */}
-      <div className={styles.actions}>
-        <button className={styles.addBtn} onClick={handleImportTrack}>
-          <span className="material-symbols-outlined">folder_open</span> Import
-        </button>
-        <button className={styles.addBtn} onClick={() => setLibraryOpen(true)}>
-          <span className="material-symbols-outlined">library_music</span> Library
-        </button>
-      </div>
 
       {/* Library overlay */}
       {libraryOpen && (
