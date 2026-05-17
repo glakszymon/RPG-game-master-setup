@@ -51,4 +51,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     save: (campaignId: string, key: string, valueJson: string) =>
       ipcRenderer.invoke('settings:save', campaignId, key, valueJson),
   },
+  soundboard: {
+    importAudio: (campaignId: string) =>
+      ipcRenderer.invoke('soundboard:import-audio', campaignId),
+    readAudio: (filePath: string) =>
+      ipcRenderer.invoke('soundboard:read-audio', filePath),
+    listBundled: () =>
+      ipcRenderer.invoke('soundboard:list-bundled'),
+    readBundled: (key: string) =>
+      ipcRenderer.invoke('soundboard:read-bundled', key),
+  },
 });

@@ -34,6 +34,8 @@ import type { BestiaryToolState, EncounterSetsToolState } from '../tools/bestiar
 import { TimeClock } from '../tools/time-clock';
 import { TimeCalendar } from '../tools/time-calendar';
 import { TimeSessionTimer, PinnedTimers } from '../tools/time-session-timer';
+import { Soundboard } from '../tools/soundboard';
+import type { SoundboardState } from '../tools/soundboard';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
 function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
@@ -123,6 +125,15 @@ const ToolContent = memo(function ToolContent({
           timeState={timeState!}
           onAdvanceTime={onAdvanceTime!}
           onSetTimeState={onSetTimeState!}
+        />
+      );
+
+    case 'soundboard':
+      return (
+        <Soundboard
+          toolState={toolState as SoundboardState | undefined}
+          onToolStateChange={onToolStateChange}
+          campaignId={campaignId}
         />
       );
 

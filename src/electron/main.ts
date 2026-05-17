@@ -166,4 +166,61 @@ app.on('ready', async () => {
   ipcMain.handle('settings:save', (_event, campaignId: string, key: string, valueJson: string) => {
     try { saveCampaignSetting(campaignId, key, valueJson); return { ok: true }; } catch { return null; }
   });
+
+  // ── Soundboard IPC handlers ──
+
+  ipcMain.handle('soundboard:import-audio', async (_event, campaignId: string) => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [
+        { name: 'Audio', extensions: ['mp3', 'wav', 'ogg'] },
+      ],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+
+    const srcPath = result.filePaths[0];
+    const fileName = path.basename(srcPath);
+    const audioDir = path.join(app.getPath('userData'), 'campaigns', campaignId, 'audio');
+    fs.mkdirSync(audioDir, { recursive: true });
+
+    const destPath = path.join(audioDir, fileName);
+    fs.copyFileSync(srcPath, destPath);
+    return destPath;
+  });
+
+  ipcMain.handle('soundboard:read-audio', (_event, filePath: string) => {
+    try {
+      const buffer = fs.readFileSync(filePath);
+      return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+    } catch {
+      return null;
+    }
+  });
+
+  ipcMain.handle('soundboard:list-bundled', () => {
+    try {
+      const bundledDir = path.join(__dirname, '..', 'assets', 'audio');
+      if (!fs.existsSync(bundledDir)) return [];
+      return fs.readdirSync(bundledDir).filter(f => /\.(mp3|wav|ogg)$/i.test(f));
+    } catch {
+      return [];
+    }
+  });
+
+  ipcMain.handle('soundboard:read-bundled', (_event, key: string) => {
+    try {
+      const bundledDir = path.join(__dirname, '..', 'assets', 'audio');
+      // Try common extensions
+      for (const ext of ['mp3', 'wav', 'ogg']) {
+        const filePath = path.join(bundledDir, `${key}.${ext}`);
+        if (fs.existsSync(filePath)) {
+          const buffer = fs.readFileSync(filePath);
+          return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  });
 });
