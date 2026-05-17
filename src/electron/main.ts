@@ -199,7 +199,7 @@ app.on('ready', async () => {
 
   ipcMain.handle('soundboard:list-bundled', () => {
     try {
-      const bundledDir = path.join(__dirname, '..', 'assets', 'audio');
+      const bundledDir = path.join(app.getAppPath(), 'assets', 'audio');
       if (!fs.existsSync(bundledDir)) return [];
       return fs.readdirSync(bundledDir).filter(f => /\.(mp3|wav|ogg)$/i.test(f));
     } catch {
@@ -209,7 +209,7 @@ app.on('ready', async () => {
 
   ipcMain.handle('soundboard:read-bundled', (_event, key: string) => {
     try {
-      const bundledDir = path.join(__dirname, '..', 'assets', 'audio');
+      const bundledDir = path.join(app.getAppPath(), 'assets', 'audio');
       // Try common extensions
       for (const ext of ['mp3', 'wav', 'ogg']) {
         const filePath = path.join(bundledDir, `${key}.${ext}`);
