@@ -177,9 +177,9 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 
 ---
 
-## Faza 1: Nieskończone płótno (Canvas)
+## Faza 1: Nieskończone płótno (Canvas)✅ ZAKOŃCZONE
 
-### Krok 1.0 - Brainstorm
+### Krok 1.0 - Brainstorm✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Porozmawiaj ze mną o implementacji infinite canvas dla mojej aplikacji. To KLUCZOWY komponent - od niego zależy cała reszta. Omówmy:
@@ -197,7 +197,7 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 >
 > Dopytaj mnie o priorytety i edge case'y."
 
-### Krok 1.1 - Implementacja silnika płótna
+### Krok 1.1 - Implementacja silnika płótna✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Na podstawie naszych ustaleń, poprowadź mnie krok po kroku w implementacji infinite canvas z [wybrana biblioteka]. Zaczynamy od podstaw i budujemy stopniowo. Tłumacz każdy krok."
@@ -215,7 +215,7 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 
 **Rezultat:** Działające płótno z systemem okienek.
 
-### Krok 1.2 - Skróty klawiszowe
+### Krok 1.2 - Skróty klawiszowe✅ ZAKOŃCZONE
 
 **Dlaczego to robimy:** Power userzy potrzebują skrótów do szybkiej nawigacji.
 
@@ -237,9 +237,10 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 
 **Rezultat:** Pełna nawigacja klawiaturą.
 
-### Krok 1.3 - Globalny Undo/Redo
+### Krok 1.3 - Globalny Undo/Redo✅ ZAKOŃCZONE
 
 **Napisz do AI:**
+
 > "Poprowadź mnie w implementacji globalnego systemu undo/redo:
 > - Stos akcji z opisem (np. 'Przesunięto okienko', 'Zmieniono HP')
 > - Ctrl+Z cofa ostatnią akcję, Ctrl+Y powtarza
@@ -255,11 +256,12 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 
 **Rezultat:** Działający undo/redo.
 
-### Krok 1.4 - Focus Presets
+### Krok 1.4 - Focus Presets ✅ ZAKOŃCZONE
 
 **Dlaczego to robimy:** Gracz Mistrz używa różnych layoutów w różnych sytuacjach (walka vs eksploracja vs roleplay).
 
 **Brainstorm z AI:**
+
 > "Porozmawiaj ze mną o Focus Presets - zapisywaniu i przywracaniu layoutów okienek. Omówmy:
 > - Jak zapisywać układ (pozycje, rozmiary, zoom, które okienka otwarte)
 > - Jak przełączać między layoutami (animacja? natychmiastowo?)
@@ -270,9 +272,11 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 > Dopytaj mnie o szczegóły."
 
 **Napisz do AI:**
+
 > "Poprowadź mnie w implementacji Focus Presets na podstawie naszych ustaleń."
 
 **Jak sprawdzić że działa:**
+
 - Ułóż okienka, zapisz preset "Walka"
 - Zmień układ, zapisz "Eksploracja"
 - Przełączaj między nimi - układ powinien się odtwarzać
@@ -287,6 +291,7 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 ### Krok 2.0 - Brainstorm
 
 **Napisz do AI:**
+
 > "Porozmawiaj ze mną o ekranie startowym (Hub) aplikacji. Omówmy:
 > - Layout: jak wyglądać ma główny ekran
 > - Lista kampanii: jakie informacje wyświetlać (nazwa, system, ikona, data ostatniej sesji)
@@ -301,14 +306,17 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 ### Krok 2.1 - Implementacja Huba
 
 **Napisz do AI:**
+
 > "Poprowadź mnie krok po kroku w implementacji ekranu startowego na podstawie naszych ustaleń. Zaczynamy od layoutu, potem lista kampanii, potem wizard."
 
 **Na co zwrócić uwagę:**
+
 - Czy glassmorphism dobrze wygląda na ekranie startowym
 - Czy Campaign Wizard jest intuicyjny (kolejne kroki logicznie się łączą)
 - Czy animacja przejścia Hub → Canvas jest płynna
 
 **Jak sprawdzić że działa:**
+
 - Otwórz aplikację - Hub powinien się wyświetlić
 - Stwórz nową kampanię przez wizard (wszystkie kroki)
 - Kliknij kampanię - przejście do canvasa
@@ -319,13 +327,14 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 
 ---
 
-## Faza 3: Party Tracker
+## Faza 3: Party Tracker ✅ ZAKOŃCZONE
 
-### Krok 3.0 - Brainstorm (ustalenia)
+### Krok 3.0 - Brainstorm (ustalenia) ✅ ZAKOŃCZONE
 
 **Ustalenia z brainstormu:**
 
 **Okienko Party Tracker:**
+
 - Window na infinite canvas (przesuwalne, resizable jak inne okna)
 - Karty postaci ułożone w rzędzie z flex-wrap (zawijanie do kolejnych wierszy)
 - Rozmiar kart: presety S / M / L (w ustawieniach gear menu)
@@ -358,7 +367,7 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 - SQLite per kampania (dane postaci + struktura kart + zdjęcia)
 - Combat Tracker współdzieli dane postaci (HP, Initiative itp.)
 
-### Krok 3.1 - Karty postaci
+### Krok 3.1 - Karty postaci ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Poprowadź mnie w implementacji Party Trackera jako okienka na canvasie. Zaczynamy od wyświetlania kart z flex-wrap, potem edycja inline. Użyj ustaleń z brainstormu w tutorialu (Krok 3.0)."
@@ -380,7 +389,7 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 - Zmień rozmiar okienka - karty powinny się zawijać (flex-wrap)
 - Zamknij i otwórz ponownie - dane powinny przetrwać (SQLite)
 
-### Krok 3.2 - Edytor karty postaci
+### Krok 3.2 - Edytor karty postaci ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Poprowadź mnie w implementacji edytora karty postaci (Card Editor) jako modal overlay. Dwie kolumny: live preview + lista pól. Użyj ustaleń z brainstormu w tutorialu (Krok 3.0)."
@@ -404,7 +413,7 @@ Zanim zaczniesz, upewnij się że masz zainstalowane:
 
 ---
 
-## Faza 4: Mapa rozgrywki
+## Faza 4: Mapa rozgrywki ✅ ZAKOŃCZONE
 
 ### Krok 4.0 - Brainstorm (ustalenia) ✅ BRAINSTORM ZAKOŃCZONY
 
@@ -619,7 +628,7 @@ Pliki modułu:
 
 ## Faza 7: Bestiariusz ✅ BRAINSTORM ZAKOŃCZONY
 
-### Krok 7.0 - Brainstorm
+### Krok 7.0 - Brainstorm ✅ ZAKOŃCZONE
 
 **Dokument wymagań:** `docs/brainstorms/2026-05-15-bestiary-requirements.md`
 **Plan implementacji:** `docs/plans/2026-05-15-008-feat-bestiary-creature-library-encounter-sets-plan.md`
@@ -654,7 +663,7 @@ Pliki modułu:
 3. Encounter Tree — drzewko, context menu, drag reorder, CR kolory
 4. Cross-Tool DnD — drag instancji na mapę / combat tracker
 
-### Krok 7.1 - Implementacja
+### Krok 7.1 - Implementacja  ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Zaimplementuj Bestiariusz wg planu `docs/plans/2026-05-15-008-feat-bestiary-creature-library-encounter-sets-plan.md`. Zacznij od Phase 1."
@@ -676,6 +685,50 @@ Pliki modułu:
 **Integracje z innymi modułami:**
 - → Mapa: instancje jako tokeny (drag & drop, `MapDropPayload`)
 - → Combat Tracker: instancje jako uczestnicy walki (drag & drop, gdy CT będzie gotowy)
+
+### Krok 7.2 - Redesign formularza bestii ✅ LAYOUT ZAKOŃCZONY
+
+**Dokumenty:**
+
+- Wymagania layoutu: `docs/brainstorms/2026-05-17-bestiary-form-redesign-requirements.md`
+- Plan layoutu: `docs/plans/2026-05-17-002-feat-bestiary-form-two-column-redesign-plan.md`
+- Wymagania field types: `docs/brainstorms/2026-05-17-bestiary-field-types-config-requirements.md`
+
+**Podjęte decyzje (layout):**
+
+| Aspekt | Decyzja |
+|--------|---------|
+| Layout | Dwie kolumny 40/60 zamiast jednokolumnowego z collapse |
+| Sticky header | Nazwa + Type + Size + CR + Alignment zawsze widoczne na górze |
+| Lewa kolumna | Combat, Ability Scores, Skills, Defenses, Senses & Languages, Info |
+| Prawa kolumna | Traits, Actions, Bonus Actions, Reactions, Legendary Actions |
+| Collapse | Usunięty — sekcje zawsze widoczne |
+| Sekcje puste | Wyświetlane normalnie (nie ukrywane) |
+| Migracja | Stare struktury bez `column` property resetowane do domyślnych |
+
+**Podjęte decyzje (field types — do implementacji):**
+
+| Aspekt | Decyzja |
+|--------|---------|
+| Alignment, Size, Creature Type | Nowy typ `select`/dropdown (nie istnieje jeszcze) |
+| CR | Number (float) |
+| Speed | Nowy typ `speed-list`: Walk stały + opcjonalne Fly/Swim/Burrow/Climb |
+| Ability Scores | Rozszerzony `stat-block`: Score + MOD + SAVE (3 pola per cecha) |
+| Skills | Dropdown z 18 umiejętności + bonus numeryczny per skill |
+| Defenses (Resistances/Immunities) | Tag-list z predefiniowaną listą + custom |
+| Senses | Typ zmysłu (z listy) + zasięg numeryczny |
+| Languages | Tag-list z predefiniowaną listą + custom |
+| Gear | Nowy typ `item-list`: nazwa (text) + ilość (number) |
+| Descriptive Tags | USUNIĘTE |
+
+**Zaimplementowane zmiany (commit `f44ecc4`):**
+- `src/ui/components/dynamic-fields/types.ts` — dodane `column?: 'left' | 'right' | 'header'` do `SectionDefinition`
+- `src/ui/tools/bestiary/defaultCreatureStructure.ts` — przepisana struktura z 12 sekcjami w kolumnach
+- `src/ui/tools/bestiary/components/CreatureForm.tsx` — nowy dwukolumnowy layout ze sticky headerem
+- `src/ui/tools/bestiary/Bestiary.module.css` — nowe klasy CSS dla kolumn i sticky headera
+- `src/ui/tools/bestiary/hooks/useCreatureStructure.ts` — migracja starych struktur
+
+**Następny krok:** `/ce:plan` dla implementacji nowych typów pól (dropdown, speed-list, enhanced stat-block, skills z bonusem, item-list).
 
 ---
 
@@ -712,9 +765,9 @@ Pliki modułu:
 
 ---
 
-## Faza 9: Soundboard
+## Faza 9: Soundboard  ✅ ZAKOŃCZONE
 
-### Krok 9.0 - Brainstorm
+### Krok 9.0 - Brainstorm  ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Porozmawiaj ze mną o Soundboard - panelu dźwięku. Omówmy:
@@ -730,7 +783,7 @@ Pliki modułu:
 >
 > Dopytaj mnie o szczegóły."
 
-### Krok 9.1 - Implementacja
+### Krok 9.1 - Implementacja  ✅ ZAKOŃCZONE
 
 **Plan:** `docs/plans/2026-05-17-001-feat-soundboard-audio-panel-plan.md`
 **Wymagania:** `docs/brainstorms/2026-05-17-soundboard-requirements.md`

@@ -234,10 +234,18 @@ function CheckboxField({ value, onChange }: Pick<FieldInputProps, 'value' | 'onC
 function TagListField({ field, value, onChange }: FieldInputProps) {
   const tags = useMemo(() => value?.type === 'tag-list' ? value.tags : [], [value]);
   const [input, setInput] = useState('');
-  void (field.settings as TagListFieldSettings | undefined)?.predefinedOptions;
+  const predefinedOptions = useMemo(() =>
+    (field.settings as TagListFieldSettings | undefined)?.predefinedOptions ?? [],
+    [field.settings]
+  );
 
-  const addTag = useCallback(() => {
-    const trimmed = input.trim();
+  const availableOptions = useMemo(() =>
+    predefinedOptions.filter((opt) => !tags.includes(opt)),
+    [predefinedOptions, tags]
+  );
+
+  const addTag = useCallback((tag?: string) => {
+    const trimmed = (tag ?? input).trim();
     if (trimmed && !tags.includes(trimmed)) {
       onChange({ type: 'tag-list', tags: [...tags, trimmed] });
     }
@@ -266,14 +274,39 @@ function TagListField({ field, value, onChange }: FieldInputProps) {
           <button className={styles.tagRemove} onClick={() => removeTag(tag)}>&times;</button>
         </span>
       ))}
-      <input
-        className={styles.tagInput}
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onBlur={addTag}
-        placeholder="+"
-      />
+      {predefinedOptions.length > 0 ? (
+        <div className={styles.tagAddRow}>
+          {availableOptions.length > 0 && (
+            <select
+              className={styles.speedAddSelect}
+              value=""
+              onChange={(e) => { if (e.target.value) addTag(e.target.value); }}
+            >
+              <option value="">+ Pick...</option>
+              {availableOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
+          <input
+            className={styles.tagInput}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={() => addTag()}
+            placeholder="Custom..."
+          />
+        </div>
+      ) : (
+        <input
+          className={styles.tagInput}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => addTag()}
+          placeholder="+"
+        />
+      )}
     </div>
   );
 }
@@ -410,8 +443,14 @@ function StatBlockField({ value, onChange }: Pick<FieldInputProps, 'value' | 'on
 
   return (
     <div className={styles.statBlock}>
+      <div className={styles.statHeaderRow}>
+        <span className={styles.statHeaderLabel}></span>
+        <span className={styles.statHeaderCol}>Score</span>
+        <span className={styles.statHeaderCol}>MOD</span>
+        <span className={styles.statHeaderCol}>SAVE</span>
+      </div>
       {ABILITY_KEYS.map((key, i) => (
-        <div key={key} className={styles.statCell}>
+        <div key={key} className={styles.statRow}>
           <span className={styles.statLabel}>{ABILITY_LABELS[i]}</span>
           <NumberInput
             value={scores[key]}
@@ -427,12 +466,6 @@ function StatBlockField({ value, onChange }: Pick<FieldInputProps, 'value' | 'on
           />
         </div>
       ))}
-      {/* Row labels */}
-      <div className={styles.statRowLabels}>
-        <span>Score</span>
-        <span>MOD</span>
-        <span>SAVE</span>
-      </div>
     </div>
   );
 }

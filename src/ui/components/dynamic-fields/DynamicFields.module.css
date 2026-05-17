@@ -216,13 +216,59 @@
   flex: 1;
 }
 
+.tagAddRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
 /* ── Stat Block ── */
 
 .statBlock {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   width: 100%;
+}
+
+.statHeaderRow {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 1fr;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.statHeaderLabel {
+  /* empty spacer for alignment with label column */
+}
+
+.statHeaderCol {
+  font-size: 8px;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.statRow {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 1fr;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 4px;
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.statLabel {
+  font-size: 9px;
+  font-weight: var(--font-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .statCell {
@@ -234,40 +280,6 @@
   background: var(--color-bg-elevated);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
-}
-
-.statLabel {
-  font-size: 8px;
-  font-weight: var(--font-semibold);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.statScore {
-  width: 32px;
-  text-align: center;
-  background: transparent;
-  border: none;
-  color: var(--color-text-primary);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  outline: none;
-}
-
-.statScore:focus {
-  background: var(--color-bg-surface);
-  border-radius: var(--radius-sm);
-}
-
-.statMod {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-}
-
-.statSave {
-  font-size: 8px;
-  color: var(--color-text-muted);
 }
 
 /* ── Action List ── */
@@ -520,14 +532,3 @@
 }
 
 /* ── Stat Block (enhanced) ── */
-
-.statRowLabels {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1px;
-  padding: 2px 4px;
-  font-size: 8px;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-}

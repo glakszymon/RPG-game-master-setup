@@ -50,13 +50,14 @@ const FIELDS: FieldDefinition[] = [
   },
   {
     id: 'cr',
-    type: 'text-field',
+    type: 'number',
     title: 'Challenge Rating',
     sectionId: 'header',
     width: '1/3',
     textAlign: 'center',
     positionAlign: 'right',
     sortOrder: 1,
+    settings: { sliderEnabled: false },
   },
 
   // ── Combat (left) ──
