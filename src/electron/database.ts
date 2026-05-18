@@ -9,6 +9,7 @@ import initSqlJs, { type Database } from 'sql.js';
 import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 let db: Database | null = null;
 let dbPath: string = '';
@@ -107,6 +108,41 @@ export async function initDatabase(): Promise<void> {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (folder_id) REFERENCES note_folders(id) ON DELETE SET NULL
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS note_links (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      source_note_id TEXT NOT NULL,
+      target_note_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (source_note_id) REFERENCES notes(id) ON DELETE CASCADE,
+      FOREIGN KEY (target_note_id) REFERENCES notes(id) ON DELETE CASCADE
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS note_graph_positions (
+      note_id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      x REAL NOT NULL DEFAULT 0,
+      y REAL NOT NULL DEFAULT 0,
+      FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS note_map_presets (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      note_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      map_state_json TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
     );
   `);
 
@@ -816,4 +852,142 @@ export function deleteNote(id: string): void {
 
   db.run('DELETE FROM notes WHERE id = ?', [id]);
   persist();
+}
+
+// ── Note Links ──
+
+export interface NoteLinkRow {
+  id: string;
+  campaign_id: string;
+  source_note_id: string;
+  target_note_id: string;
+  created_at: string;
+}
+
+export function listNoteLinks(campaignId: string): NoteLinkRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const stmt = db.prepare(
+    'SELECT id, campaign_id, source_note_id, target_note_id, created_at FROM note_links WHERE campaign_id = ?'
+  );
+  stmt.bind([campaignId]);
+  const rows: NoteLinkRow[] = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject() as unknown as NoteLinkRow);
+  }
+  stmt.free();
+  return rows;
+}
+
+export function syncNoteLinks(sourceNoteId: string, campaignId: string, targetNoteIds: string[]): void {
+  if (!db) throw new Error('Database not initialized');
+
+  // Remove existing links from this source
+  db.run('DELETE FROM note_links WHERE source_note_id = ?', [sourceNoteId]);
+
+  // Insert new links
+  for (const targetId of targetNoteIds) {
+    const id = crypto.randomUUID();
+    db.run(
+      `INSERT INTO note_links (id, campaign_id, source_note_id, target_note_id) VALUES (?, ?, ?, ?)`,
+      [id, campaignId, sourceNoteId, targetId]
+    );
+  }
+
+  persist();
+}
+
+// ── Note Graph Positions ──
+
+export interface NoteGraphPositionRow {
+  note_id: string;
+  campaign_id: string;
+  x: number;
+  y: number;
+}
+
+export function listNoteGraphPositions(campaignId: string): NoteGraphPositionRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const stmt = db.prepare(
+    'SELECT note_id, campaign_id, x, y FROM note_graph_positions WHERE campaign_id = ?'
+  );
+  stmt.bind([campaignId]);
+  const rows: NoteGraphPositionRow[] = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject() as unknown as NoteGraphPositionRow);
+  }
+  stmt.free();
+  return rows;
+}
+
+export function saveNoteGraphPosition(noteId: string, campaignId: string, x: number, y: number): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT OR REPLACE INTO note_graph_positions (note_id, campaign_id, x, y) VALUES (?, ?, ?, ?)`,
+    [noteId, campaignId, x, y]
+  );
+  persist();
+}
+
+// ── Note Map Presets ──
+
+export interface NoteMapPresetRow {
+  id: string;
+  campaign_id: string;
+  note_id: string;
+  name: string;
+  map_state_json: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export function listNoteMapPresets(noteId: string): NoteMapPresetRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const stmt = db.prepare(
+    'SELECT id, campaign_id, note_id, name, map_state_json, sort_order, created_at FROM note_map_presets WHERE note_id = ? ORDER BY sort_order'
+  );
+  stmt.bind([noteId]);
+  const rows: NoteMapPresetRow[] = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject() as unknown as NoteMapPresetRow);
+  }
+  stmt.free();
+  return rows;
+}
+
+export function saveNoteMapPreset(id: string, campaignId: string, noteId: string, name: string, mapStateJson: string, sortOrder: number): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT OR REPLACE INTO note_map_presets (id, campaign_id, note_id, name, map_state_json, sort_order, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+    [id, campaignId, noteId, name, mapStateJson, sortOrder]
+  );
+  persist();
+}
+
+export function deleteNoteMapPreset(id: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM note_map_presets WHERE id = ?', [id]);
+  persist();
+}
+
+export function getNoteMapPreset(id: string): NoteMapPresetRow | null {
+  if (!db) throw new Error('Database not initialized');
+
+  const stmt = db.prepare(
+    'SELECT id, campaign_id, note_id, name, map_state_json, sort_order, created_at FROM note_map_presets WHERE id = ?'
+  );
+  stmt.bind([id]);
+  if (stmt.step()) {
+    const row = stmt.getAsObject() as unknown as NoteMapPresetRow;
+    stmt.free();
+    return row;
+  }
+  stmt.free();
+  return null;
 }

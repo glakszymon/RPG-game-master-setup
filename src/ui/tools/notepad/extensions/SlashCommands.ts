@@ -97,6 +97,39 @@ export const SLASH_COMMANDS: SlashCommandItem[] = [
       editor.chain().focus().deleteRange(range).setCallout().run();
     },
   },
+  {
+    title: 'Macro',
+    description: 'Macro step sequence (scene automation)',
+    icon: '⚡',
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).insertContent({
+        type: 'macroBlock',
+        attrs: { steps: '[]' },
+      }).run();
+    },
+  },
+  {
+    title: 'Music',
+    description: 'Insert music track reference',
+    icon: '🎵',
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).insertContent({
+        type: 'musicMention',
+        attrs: { trackId: '', trackName: 'Track Name' },
+      }).run();
+    },
+  },
+  {
+    title: 'Date',
+    description: 'Insert in-world date tag',
+    icon: '📅',
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).insertContent({
+        type: 'dateTag',
+        attrs: { dateText: 'Day, Month, Year' },
+      }).run();
+    },
+  },
 ];
 
 export const SlashCommands = Extension.create({

@@ -79,4 +79,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     delete: (id: string) =>
       ipcRenderer.invoke('note-folders:delete', id),
   },
+  noteLinks: {
+    list: (campaignId: string) =>
+      ipcRenderer.invoke('note-links:list', campaignId),
+    sync: (sourceNoteId: string, campaignId: string, targetNoteIds: string[]) =>
+      ipcRenderer.invoke('note-links:sync', sourceNoteId, campaignId, targetNoteIds),
+  },
+  noteGraph: {
+    listPositions: (campaignId: string) =>
+      ipcRenderer.invoke('note-graph:list-positions', campaignId),
+    savePosition: (noteId: string, campaignId: string, x: number, y: number) =>
+      ipcRenderer.invoke('note-graph:save-position', noteId, campaignId, x, y),
+  },
+  notePresets: {
+    list: (noteId: string) =>
+      ipcRenderer.invoke('note-presets:list', noteId),
+    save: (id: string, campaignId: string, noteId: string, name: string, mapStateJson: string, sortOrder: number) =>
+      ipcRenderer.invoke('note-presets:save', id, campaignId, noteId, name, mapStateJson, sortOrder),
+    delete: (id: string) =>
+      ipcRenderer.invoke('note-presets:delete', id),
+    load: (id: string) =>
+      ipcRenderer.invoke('note-presets:load', id),
+  },
 });

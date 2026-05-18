@@ -59,6 +59,7 @@ const ToolContent = memo(function ToolContent({
   timeState,
   onAdvanceTime,
   onSetTimeState,
+  onLoadMapPreset,
 }: {
   toolType: ToolType;
   toolState: unknown;
@@ -67,6 +68,7 @@ const ToolContent = memo(function ToolContent({
   timeState?: CampaignTimeState;
   onAdvanceTime?: (minutes: number) => void;
   onSetTimeState?: (timeState: CampaignTimeState) => void;
+  onLoadMapPreset?: (mapStateJson: string) => void;
 }) {
   switch (toolType) {
     case 'combat-tracker':
@@ -156,6 +158,7 @@ const ToolContent = memo(function ToolContent({
           toolState={toolState as NotepadToolState | undefined}
           onToolStateChange={onToolStateChange}
           campaignId={campaignId}
+          onLoadMapPreset={onLoadMapPreset}
         />
       );
 
@@ -235,6 +238,20 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
   const setTimeStateHandler = useCallback(
     (timeState: CampaignTimeState) => dispatch({ type: 'SET_TIME_STATE', timeState }),
     [dispatch],
+  );
+
+  // Load map preset: find first open map-display window and apply preset state
+  const loadMapPresetHandler = useCallback(
+    (mapStateJson: string) => {
+      const mapWin = state.windows.find(w => w.toolType === 'map-display');
+      if (mapWin) {
+        try {
+          const presetState = JSON.parse(mapStateJson);
+          dispatch({ type: 'UPDATE_TOOL_STATE', id: mapWin.id, toolState: presetState });
+        } catch { /* invalid JSON, skip */ }
+      }
+    },
+    [state.windows, dispatch],
   );
 
   // Focus presets
@@ -411,6 +428,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
                   timeState={win.toolType.startsWith('time-') ? state.timeState : undefined}
                   onAdvanceTime={win.toolType.startsWith('time-') ? advanceTimeHandler : undefined}
                   onSetTimeState={win.toolType.startsWith('time-') ? setTimeStateHandler : undefined}
+                  onLoadMapPreset={win.toolType === 'notepad' ? loadMapPresetHandler : undefined}
                 />
               </CanvasWindow>
             ))}

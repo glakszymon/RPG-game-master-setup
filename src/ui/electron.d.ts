@@ -133,6 +133,48 @@ export interface ElectronNoteFoldersAPI {
   delete: (id: string) => Promise<void>;
 }
 
+export interface NoteLinkRow {
+  id: string;
+  campaign_id: string;
+  source_note_id: string;
+  target_note_id: string;
+  created_at: string;
+}
+
+export interface ElectronNoteLinksAPI {
+  list: (campaignId: string) => Promise<NoteLinkRow[]>;
+  sync: (sourceNoteId: string, campaignId: string, targetNoteIds: string[]) => Promise<void>;
+}
+
+export interface NoteGraphPositionRow {
+  note_id: string;
+  campaign_id: string;
+  x: number;
+  y: number;
+}
+
+export interface ElectronNoteGraphAPI {
+  listPositions: (campaignId: string) => Promise<NoteGraphPositionRow[]>;
+  savePosition: (noteId: string, campaignId: string, x: number, y: number) => Promise<void>;
+}
+
+export interface NoteMapPresetRow {
+  id: string;
+  campaign_id: string;
+  note_id: string;
+  name: string;
+  map_state_json: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ElectronNotePresetsAPI {
+  list: (noteId: string) => Promise<NoteMapPresetRow[]>;
+  save: (id: string, campaignId: string, noteId: string, name: string, mapStateJson: string, sortOrder: number) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+  load: (id: string) => Promise<NoteMapPresetRow | null>;
+}
+
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
   presets: ElectronPresetsAPI;
@@ -143,6 +185,9 @@ export interface ElectronAPI {
   soundboard: ElectronSoundboardAPI;
   notes: ElectronNotesAPI;
   noteFolders: ElectronNoteFoldersAPI;
+  noteLinks: ElectronNoteLinksAPI;
+  noteGraph: ElectronNoteGraphAPI;
+  notePresets: ElectronNotePresetsAPI;
 }
 
 declare global {

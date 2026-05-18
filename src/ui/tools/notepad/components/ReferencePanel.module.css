@@ -1,0 +1,211 @@
+/* ── ReferencePanel ── */
+
+.panel {
+  width: 240px;
+  min-width: 200px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.collapseBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.collapseBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+}
+
+.content {
+  padding: 8px;
+  flex: 1;
+}
+
+.section {
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+  margin: 0 0 8px;
+  padding: 0 4px;
+}
+
+.entityCard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  margin-bottom: 4px;
+}
+
+.entityIcon {
+  font-size: 14px;
+}
+
+.entityName {
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.linkItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--color-accent, #C9B06B);
+  font-size: 13px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linkItem:hover {
+  background: rgba(201, 176, 107, 0.1);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 12px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── Map Presets ── */
+
+.presetItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.presetLoad {
+  flex: 1;
+  display: block;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--color-text-primary, rgba(255, 255, 255, 0.9));
+  font-size: 13px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.presetLoad:hover {
+  background: rgba(201, 176, 107, 0.1);
+}
+
+.presetDelete {
+  background: none;
+  border: none;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.3));
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.presetDelete:hover {
+  background: rgba(255, 80, 80, 0.15);
+  color: #ff5050;
+}
+
+.presetSaveForm {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+}
+
+.presetInput {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: var(--color-text-primary);
+  font-size: 12px;
+  padding: 4px 8px;
+  outline: none;
+}
+
+.presetInput:focus {
+  border-color: rgba(201, 176, 107, 0.5);
+}
+
+.presetSaveBtn {
+  background: rgba(201, 176, 107, 0.2);
+  border: 1px solid rgba(201, 176, 107, 0.3);
+  color: #C9B06B;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.presetSaveBtn:hover {
+  background: rgba(201, 176, 107, 0.3);
+}
+
+.addPresetBtn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.addPresetBtn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(201, 176, 107, 0.3);
+  color: var(--color-text-secondary);
+}

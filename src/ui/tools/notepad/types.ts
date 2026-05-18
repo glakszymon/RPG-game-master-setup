@@ -1,15 +1,21 @@
 /* Notepad tool types */
 
+export type SidebarTab = 'files' | 'graph';
+
 export interface NotepadToolState {
   activeNoteId: string | null;
   sidebarWidth: number;
   sidebarCollapsed: boolean;
+  sidebarTab: SidebarTab;
+  referencePanelVisible: boolean;
 }
 
 export const DEFAULT_NOTEPAD_STATE: NotepadToolState = {
   activeNoteId: null,
   sidebarWidth: 260,
   sidebarCollapsed: false,
+  sidebarTab: 'files',
+  referencePanelVisible: true,
 };
 
 export interface NoteItem {

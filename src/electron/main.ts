@@ -13,6 +13,9 @@ import {
   loadCampaignSetting, saveCampaignSetting,
   listNoteFolders, saveNoteFolder, deleteNoteFolder,
   listNotes, getNote, saveNote, deleteNote,
+  listNoteLinks, syncNoteLinks,
+  listNoteGraphPositions, saveNoteGraphPosition,
+  listNoteMapPresets, saveNoteMapPreset, deleteNoteMapPreset, getNoteMapPreset,
 } from './database.js';
 
 app.on('ready', async () => {
@@ -257,5 +260,43 @@ app.on('ready', async () => {
 
   ipcMain.handle('notes:delete', (_event, id: string) => {
     try { deleteNote(id); } catch { /* silent */ }
+  });
+
+  // ── Note Links ──
+
+  ipcMain.handle('note-links:list', (_event, campaignId: string) => {
+    try { return listNoteLinks(campaignId); } catch { return []; }
+  });
+
+  ipcMain.handle('note-links:sync', (_event, sourceNoteId: string, campaignId: string, targetNoteIds: string[]) => {
+    try { syncNoteLinks(sourceNoteId, campaignId, targetNoteIds); } catch { /* silent */ }
+  });
+
+  // ── Note Graph Positions ──
+
+  ipcMain.handle('note-graph:list-positions', (_event, campaignId: string) => {
+    try { return listNoteGraphPositions(campaignId); } catch { return []; }
+  });
+
+  ipcMain.handle('note-graph:save-position', (_event, noteId: string, campaignId: string, x: number, y: number) => {
+    try { saveNoteGraphPosition(noteId, campaignId, x, y); } catch { /* silent */ }
+  });
+
+  // ── Note Map Presets ──
+
+  ipcMain.handle('note-presets:list', (_event, noteId: string) => {
+    try { return listNoteMapPresets(noteId); } catch { return []; }
+  });
+
+  ipcMain.handle('note-presets:save', (_event, id: string, campaignId: string, noteId: string, name: string, mapStateJson: string, sortOrder: number) => {
+    try { saveNoteMapPreset(id, campaignId, noteId, name, mapStateJson, sortOrder); } catch { /* silent */ }
+  });
+
+  ipcMain.handle('note-presets:delete', (_event, id: string) => {
+    try { deleteNoteMapPreset(id); } catch { /* silent */ }
+  });
+
+  ipcMain.handle('note-presets:load', (_event, id: string) => {
+    try { return getNoteMapPreset(id); } catch { return null; }
   });
 });
