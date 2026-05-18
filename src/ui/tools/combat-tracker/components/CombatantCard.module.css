@@ -1,0 +1,197 @@
+/* ── CombatantCard — single-line row ── */
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  cursor: grab;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  min-height: 36px;
+  flex: 1;
+}
+
+.card:hover {
+  border-color: var(--color-border-hover);
+}
+
+.card.active {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-muted, rgba(99, 102, 241, 0.25));
+  background: var(--color-bg-active, rgba(99, 102, 241, 0.08));
+}
+
+.card.dead {
+  border-color: var(--color-danger, #ef4444);
+  background: rgba(239, 68, 68, 0.08);
+  opacity: 0.7;
+}
+
+/* ── Portrait ── */
+
+.portrait {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-bg-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portraitPlaceholder {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+/* ── Name ── */
+
+.name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 60px;
+  flex: 1;
+}
+
+/* ── HP (red) ── */
+
+.hpButton {
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #ef4444;
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.hpButton:hover {
+  border-color: #ef4444;
+}
+
+.hpIcon {
+  color: #ef4444;
+  font-size: 12px;
+}
+
+.hpValue {
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.hpSeparator {
+  color: rgba(239, 68, 68, 0.5);
+  margin: 0 1px;
+}
+
+.hpMax {
+  color: rgba(239, 68, 68, 0.6);
+  font-weight: 500;
+}
+
+.hpBar {
+  position: absolute;
+  bottom: 2px;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  background: rgba(239, 68, 68, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hpBarFill {
+  height: 100%;
+  background: #ef4444;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* ── Armor (shield) ── */
+
+.armor {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Condition Badges ── */
+
+.conditionBadges {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.badge {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+/* ── Buttons ── */
+
+.conditionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  padding: 2px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.conditionButton:hover {
+  color: var(--color-accent);
+}
+
+.removeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.card:hover .removeButton {
+  opacity: 1;
+}
+
+.removeButton:hover {
+  color: var(--color-danger, #ef4444);
+}

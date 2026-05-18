@@ -1,0 +1,294 @@
+/* ── ConditionPicker (Form-based) ── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.popup {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 280px;
+  max-width: 340px;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  backdrop-filter: blur(var(--glass-blur, 12px));
+  overflow-y: auto;
+}
+
+.header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.closeButton:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-sunken);
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+/* ── Active Conditions List ── */
+
+.activeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activeList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.activeItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--color-bg-sunken);
+  border: 1px solid var(--color-border);
+}
+
+.activeName {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.activeTimer {
+  font-size: 11px;
+  color: var(--color-accent, #6366f1);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.removeActiveButton {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+.removeActiveButton:hover {
+  color: var(--color-danger, #ef4444);
+}
+
+/* ── Form Section ── */
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.select option {
+  background: #1a1d27;
+  color: var(--color-text-primary);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* ── Mode Toggle ── */
+
+.modeToggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.modeButton {
+  flex: 1;
+  padding: 5px 12px;
+  border: none;
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.modeButton:not(:last-child) {
+  border-right: 1px solid var(--color-border);
+}
+
+.modeActive {
+  background: var(--color-accent, #6366f1);
+  color: #fff;
+}
+
+/* ── Duration Row ── */
+
+.durationRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.durationInput {
+  width: 50px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.durationInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.durationLabel {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+/* ── Apply Button ── */
+
+.applyButton {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-accent, #6366f1);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.applyButton:hover {
+  opacity: 0.9;
+}
+
+.applyButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Add Custom Row ── */
+
+.addRow {
+  display: flex;
+  gap: 4px;
+}
+
+.addInput {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
+  font-size: 12px;
+}
+
+.addInput:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.addButton {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.addButton:hover {
+  border-color: var(--color-accent);
+}
+
+/* ── Custom Conditions List ── */
+
+.customList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.customItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.deleteButton:hover {
+  color: var(--color-danger, #ef4444);
+}

@@ -47,12 +47,6 @@ export const SHORTCUTS = {
     category: 'Navigation',
     description: 'Resetuj zoom do 100%',
   },
-  escape: {
-    keys: 'Escape',
-    label: 'Escape',
-    category: 'Window',
-    description: 'Zamknij aktywne okno lub dialog',
-  },
   helpPanel: {
     keys: '$mod+Shift+Slash',
     label: 'Ctrl+?',

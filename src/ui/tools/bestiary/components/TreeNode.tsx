@@ -69,7 +69,7 @@ function InstanceRow({
           id: instance.id,
           name,
           portraitPath: resolved?.avatarPath ?? null,
-          meta: { cr, creatureType: resolved?.creatureType, hp: resolved?.hpDefault, ac: resolved?.ac },
+          meta: { cr, creatureType: resolved?.creatureType, hp: hp ?? resolved?.hpDefault, ac: resolved?.ac },
         };
         e.dataTransfer.setData('application/json', JSON.stringify(payload));
         e.dataTransfer.setData('application/bestiary-tree-instance', JSON.stringify({ instanceId: instance.id }));
