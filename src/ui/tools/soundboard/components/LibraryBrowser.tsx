@@ -18,8 +18,9 @@ const CATEGORIES: { value: CategoryFilter; label: string; icon: string }[] = [
   { value: 'all', label: 'All', icon: 'library_music' },
   { value: 'nature', label: 'Nature', icon: 'eco' },
   { value: 'interior', label: 'Interior', icon: 'home' },
-  { value: 'combat', label: 'Combat', icon: 'swords' },
-  { value: 'ambient', label: 'Ambient', icon: 'music_note' },
+  { value: 'music', label: 'Music', icon: 'music_note' },
+  { value: 'combat', label: 'Combat', icon: 'bolt' },
+  { value: 'fx', label: 'FX', icon: 'volume_up' },
 ];
 
 export function LibraryBrowser({ onAddSample, onClose }: LibraryBrowserProps) {

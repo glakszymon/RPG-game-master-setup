@@ -54,6 +54,12 @@ function CanvasWindow({
   const toolInfo = TOOL_INFO[win.toolType];
   const minSize = TOOL_MIN_SIZES[win.toolType];
 
+  // Guard against unknown tool types (e.g. from stale persisted state)
+  if (!toolInfo) {
+    console.warn(`[CanvasWindow] Unknown toolType: "${win.toolType}", skipping render`);
+    return null;
+  }
+
   // ── Drag (custom pointer events) ──
 
   const dragState = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);

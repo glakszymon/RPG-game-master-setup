@@ -40,8 +40,17 @@ export function useCanvasPersistence(
       } else {
         try {
           const loaded = JSON.parse(json) as CanvasState;
-          const mapWindows = loaded.windows?.filter((w) => w.toolType === 'map-display');
-          console.log('[Persistence] Loaded state — windows:', loaded.windows?.length, 'map windows:', mapWindows?.length, 'map imagePaths:', mapWindows?.map((w) => (w.toolState as any)?.imagePath));
+          // Filter out windows with unknown tool types
+          const validToolTypes = new Set(['combat-tracker','party-tracker','bestiary','encounter-sets','notepad','map-display','soundboard','weather-generator','time-clock','time-calendar','time-session-timer','shop-generator','dice-roller']);
+          loaded.windows = (loaded.windows || []).filter((w) => {
+            if (!validToolTypes.has(w.toolType)) {
+              console.warn('[Persistence] Removing window with unknown toolType:', w.toolType);
+              return false;
+            }
+            return true;
+          });
+          const mapWindows = loaded.windows.filter((w) => w.toolType === 'map-display');
+          console.log('[Persistence] Loaded state — windows:', loaded.windows.length, 'map windows:', mapWindows.length, 'map imagePaths:', mapWindows.map((w) => (w.toolState as any)?.imagePath));
           dispatch({ type: 'LOAD_STATE', state: loaded });
         } catch {
           // ignore corrupt data
