@@ -100,6 +100,39 @@ export interface ElectronSoundboardAPI {
   readBundled: (key: string) => Promise<ArrayBuffer | null>;
 }
 
+export interface NoteRow {
+  id: string;
+  campaign_id: string;
+  folder_id: string | null;
+  title: string;
+  content_json: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NoteFolderRow {
+  id: string;
+  campaign_id: string;
+  parent_id: string | null;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ElectronNotesAPI {
+  list: (campaignId: string) => Promise<NoteRow[]>;
+  get: (id: string) => Promise<NoteRow | null>;
+  save: (id: string, campaignId: string, folderId: string | null, title: string, contentJson: string, sortOrder: number) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+}
+
+export interface ElectronNoteFoldersAPI {
+  list: (campaignId: string) => Promise<NoteFolderRow[]>;
+  save: (id: string, campaignId: string, parentId: string | null, name: string, sortOrder: number) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+}
+
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
   presets: ElectronPresetsAPI;
@@ -108,6 +141,8 @@ export interface ElectronAPI {
   bestiary: ElectronBestiaryAPI;
   settings: ElectronSettingsAPI;
   soundboard: ElectronSoundboardAPI;
+  notes: ElectronNotesAPI;
+  noteFolders: ElectronNoteFoldersAPI;
 }
 
 declare global {

@@ -1,0 +1,241 @@
+/* ── Notepad Container ── */
+
+.container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg-base);
+}
+
+/* ── Editor Panel ── */
+
+.editorPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  height: 100%;
+}
+
+.editorContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  padding-left: 16px;
+  position: relative;
+}
+
+.editorContent :global(.tiptap) {
+  outline: none;
+  border: none;
+  box-shadow: none;
+  min-height: 100%;
+  height: 100%;
+  padding: 24px 32px 24px 20px;
+  font-family: var(--font-body, "Exo 2", sans-serif);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+  counter-reset: line-numbers;
+  position: relative;
+}
+
+.editorContent :global(.tiptap) > * {
+  counter-increment: line-numbers;
+  position: relative;
+}
+
+.editorContent :global(.tiptap) > *::before {
+  content: counter(line-numbers);
+  position: absolute;
+  left: -56px;
+  width: 40px;
+  text-align: right;
+  font-size: 12px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.25));
+  user-select: none;
+  pointer-events: none;
+  line-height: inherit;
+}
+
+.editorContent :global(.tiptap):focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.editorContent :global(.tiptap):focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.editorContent :global(.ProseMirror-focused) {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.editorContent :global(.tiptap) h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 24px 0 12px;
+  color: var(--color-text-primary);
+}
+
+.editorContent :global(.tiptap) h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 20px 0 8px;
+  color: var(--color-text-primary);
+}
+
+.editorContent :global(.tiptap) h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  color: var(--color-text-secondary);
+}
+
+.editorContent :global(.tiptap) p {
+  margin: 0 0 8px;
+}
+
+.editorContent :global(.tiptap) ul,
+.editorContent :global(.tiptap) ol {
+  padding-left: 28px;
+  margin: 6px 0 10px;
+}
+
+.editorContent :global(.tiptap) ul li,
+.editorContent :global(.tiptap) ol li {
+  margin: 4px 0;
+  padding-left: 4px;
+}
+
+.editorContent :global(.tiptap) ul {
+  list-style-type: disc;
+}
+
+.editorContent :global(.tiptap) ul ul {
+  list-style-type: circle;
+}
+
+.editorContent :global(.tiptap) ul ul ul {
+  list-style-type: square;
+}
+
+.editorContent :global(.tiptap) ol {
+  list-style-type: decimal;
+}
+
+.editorContent :global(.tiptap) ol ol {
+  list-style-type: lower-alpha;
+}
+
+.editorContent :global(.tiptap) ol ol ol {
+  list-style-type: lower-roman;
+}
+
+.editorContent :global(.tiptap) blockquote {
+  border-left: 3px solid var(--color-accent, #c9b06b);
+  padding-left: 16px;
+  margin: 12px 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.editorContent :global(.tiptap) code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.editorContent :global(.tiptap) pre {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.editorContent :global(.tiptap) pre code {
+  background: none;
+  padding: 0;
+}
+
+.editorContent :global(.tiptap) ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 4px;
+}
+
+.editorContent :global(.tiptap) ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-left: 0;
+}
+
+.editorContent
+  :global(.tiptap)
+  ul[data-type="taskList"]
+  li
+  label
+  input[type="checkbox"] {
+  margin-top: 4px;
+  accent-color: var(--color-accent, #c9b06b);
+}
+
+.editorContent :global(.tiptap) p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.3));
+  pointer-events: none;
+  height: 0;
+}
+
+.editorContent :global(.tiptap) mark {
+  background: rgba(201, 176, 107, 0.45);
+  color: #fff;
+  border-radius: 2px;
+  padding: 1px 4px;
+  box-decoration-break: clone;
+}
+
+/* ── Empty State ── */
+
+.emptyState {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+  font-size: 15px;
+}
+
+/* ── Expand Button ── */
+
+.expandBtn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s;
+}
+
+.expandBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

@@ -1,0 +1,198 @@
+/* ── Notepad Sidebar ── */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.headerTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 4px;
+}
+
+.headerActions button {
+  background: none;
+  border: none;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.headerActions button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+}
+
+/* ── Tree ── */
+
+.tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+/* ── Folders ── */
+
+.folderGroup {
+  margin: 0;
+}
+
+.folderRow {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px 4px 12px;
+  gap: 4px;
+  border-radius: 4px;
+  transition: background 0.15s, outline 0.15s;
+}
+
+.folderToggle {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 11px;
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.folderName {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  cursor: default;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folderActions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.folderRow:hover .folderActions {
+  opacity: 1;
+}
+
+.folderActions button {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.folderActions button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+}
+
+.folderChildren {
+  padding-left: 16px;
+}
+
+.renameInput {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  padding: 2px 6px;
+  outline: none;
+}
+
+/* ── Notes ── */
+
+.noteRow {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px 6px 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 1px 4px;
+  transition: background 0.15s;
+}
+
+.noteRow:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.noteRow.active {
+  background: rgba(201, 176, 107, 0.12);
+}
+
+.noteTitle {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deleteBtn {
+  opacity: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 14px;
+  transition: opacity 0.15s;
+}
+
+.noteRow:hover .deleteBtn {
+  opacity: 1;
+}
+
+.deleteBtn:hover {
+  color: #e55;
+}
+
+/* ── Drag & Drop ── */
+
+.dropTarget {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.noteRow[draggable="true"],
+.folderRow[draggable="true"] {
+  cursor: grab;
+}
+
+.noteRow[draggable="true"]:active,
+.folderRow[draggable="true"]:active {
+  cursor: grabbing;
+  opacity: 0.6;
+}

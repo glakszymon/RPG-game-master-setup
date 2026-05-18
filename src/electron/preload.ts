@@ -61,4 +61,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     readBundled: (key: string) =>
       ipcRenderer.invoke('soundboard:read-bundled', key),
   },
+  notes: {
+    list: (campaignId: string) =>
+      ipcRenderer.invoke('notes:list', campaignId),
+    get: (id: string) =>
+      ipcRenderer.invoke('notes:get', id),
+    save: (id: string, campaignId: string, folderId: string | null, title: string, contentJson: string, sortOrder: number) =>
+      ipcRenderer.invoke('notes:save', id, campaignId, folderId, title, contentJson, sortOrder),
+    delete: (id: string) =>
+      ipcRenderer.invoke('notes:delete', id),
+  },
+  noteFolders: {
+    list: (campaignId: string) =>
+      ipcRenderer.invoke('note-folders:list', campaignId),
+    save: (id: string, campaignId: string, parentId: string | null, name: string, sortOrder: number) =>
+      ipcRenderer.invoke('note-folders:save', id, campaignId, parentId, name, sortOrder),
+    delete: (id: string) =>
+      ipcRenderer.invoke('note-folders:delete', id),
+  },
 });

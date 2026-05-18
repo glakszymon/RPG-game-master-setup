@@ -11,6 +11,8 @@ import {
   listBestiaryFolders, saveBestiaryFolder, deleteBestiaryFolder,
   listBestiaryInstances, saveBestiaryInstance, deleteBestiaryInstance,
   loadCampaignSetting, saveCampaignSetting,
+  listNoteFolders, saveNoteFolder, deleteNoteFolder,
+  listNotes, getNote, saveNote, deleteNote,
 } from './database.js';
 
 app.on('ready', async () => {
@@ -223,5 +225,37 @@ app.on('ready', async () => {
     } catch {
       return null;
     }
+  });
+
+  // ── Notepad Folders ──
+
+  ipcMain.handle('note-folders:list', (_event, campaignId: string) => {
+    try { return listNoteFolders(campaignId); } catch { return []; }
+  });
+
+  ipcMain.handle('note-folders:save', (_event, id: string, campaignId: string, parentId: string | null, name: string, sortOrder: number) => {
+    try { saveNoteFolder(id, campaignId, parentId, name, sortOrder); } catch { /* silent */ }
+  });
+
+  ipcMain.handle('note-folders:delete', (_event, id: string) => {
+    try { deleteNoteFolder(id); } catch { /* silent */ }
+  });
+
+  // ── Notepad Notes ──
+
+  ipcMain.handle('notes:list', (_event, campaignId: string) => {
+    try { return listNotes(campaignId); } catch { return []; }
+  });
+
+  ipcMain.handle('notes:get', (_event, id: string) => {
+    try { return getNote(id); } catch { return null; }
+  });
+
+  ipcMain.handle('notes:save', (_event, id: string, campaignId: string, folderId: string | null, title: string, contentJson: string, sortOrder: number) => {
+    try { saveNote(id, campaignId, folderId, title, contentJson, sortOrder); } catch { /* silent */ }
+  });
+
+  ipcMain.handle('notes:delete', (_event, id: string) => {
+    try { deleteNote(id); } catch { /* silent */ }
   });
 });

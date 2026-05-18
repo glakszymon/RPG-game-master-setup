@@ -82,6 +82,34 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  // ── Notepad tables ──
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS note_folders (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      parent_id TEXT,
+      name TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (parent_id) REFERENCES note_folders(id) ON DELETE CASCADE
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS notes (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      folder_id TEXT,
+      title TEXT NOT NULL DEFAULT 'Untitled',
+      content_json TEXT NOT NULL DEFAULT '{}',
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (folder_id) REFERENCES note_folders(id) ON DELETE SET NULL
+    );
+  `);
+
   // ── Bestiary tables ──
 
   db.run(`
@@ -658,5 +686,134 @@ export function saveCampaignSetting(campaignId: string, key: string, valueJson: 
     [campaignId, key, valueJson],
   );
 
+  persist();
+}
+
+// ── Notepad Folders ──
+
+export interface NoteFolderRow {
+  id: string;
+  campaign_id: string;
+  parent_id: string | null;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export function listNoteFolders(campaignId: string): NoteFolderRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = db.exec(
+    'SELECT id, campaign_id, parent_id, name, sort_order, created_at FROM note_folders WHERE campaign_id = ? ORDER BY sort_order ASC',
+    [campaignId],
+  );
+
+  if (result.length === 0) return [];
+
+  return result[0].values.map(([id, campaign_id, parent_id, name, sort_order, created_at]) => ({
+    id: id as string,
+    campaign_id: campaign_id as string,
+    parent_id: parent_id as string | null,
+    name: name as string,
+    sort_order: sort_order as number,
+    created_at: created_at as string,
+  }));
+}
+
+export function saveNoteFolder(id: string, campaignId: string, parentId: string | null, name: string, sortOrder: number): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT INTO note_folders (id, campaign_id, parent_id, name, sort_order)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET parent_id = excluded.parent_id, name = excluded.name, sort_order = excluded.sort_order`,
+    [id, campaignId, parentId, name, sortOrder],
+  );
+
+  persist();
+}
+
+export function deleteNoteFolder(id: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM note_folders WHERE id = ?', [id]);
+  persist();
+}
+
+// ── Notepad Notes ──
+
+export interface NoteRow {
+  id: string;
+  campaign_id: string;
+  folder_id: string | null;
+  title: string;
+  content_json: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export function listNotes(campaignId: string): NoteRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = db.exec(
+    'SELECT id, campaign_id, folder_id, title, content_json, sort_order, created_at, updated_at FROM notes WHERE campaign_id = ? ORDER BY sort_order ASC',
+    [campaignId],
+  );
+
+  if (result.length === 0) return [];
+
+  return result[0].values.map(([id, campaign_id, folder_id, title, content_json, sort_order, created_at, updated_at]) => ({
+    id: id as string,
+    campaign_id: campaign_id as string,
+    folder_id: folder_id as string | null,
+    title: title as string,
+    content_json: content_json as string,
+    sort_order: sort_order as number,
+    created_at: created_at as string,
+    updated_at: updated_at as string,
+  }));
+}
+
+export function getNote(id: string): NoteRow | null {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = db.exec(
+    'SELECT id, campaign_id, folder_id, title, content_json, sort_order, created_at, updated_at FROM notes WHERE id = ?',
+    [id],
+  );
+
+  if (result.length === 0 || result[0].values.length === 0) return null;
+
+  const [noteId, campaign_id, folder_id, title, content_json, sort_order, created_at, updated_at] = result[0].values[0];
+  return {
+    id: noteId as string,
+    campaign_id: campaign_id as string,
+    folder_id: folder_id as string | null,
+    title: title as string,
+    content_json: content_json as string,
+    sort_order: sort_order as number,
+    created_at: created_at as string,
+    updated_at: updated_at as string,
+  };
+}
+
+export function saveNote(id: string, campaignId: string, folderId: string | null, title: string, contentJson: string, sortOrder: number): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT INTO notes (id, campaign_id, folder_id, title, content_json, sort_order, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET folder_id = excluded.folder_id, title = excluded.title, content_json = excluded.content_json, sort_order = excluded.sort_order, updated_at = excluded.updated_at`,
+    [id, campaignId, folderId, title, contentJson, sortOrder],
+  );
+
+  persist();
+}
+
+export function deleteNote(id: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM notes WHERE id = ?', [id]);
   persist();
 }

@@ -38,6 +38,8 @@ import { Soundboard } from '../tools/soundboard';
 import type { SoundboardState } from '../tools/soundboard';
 import { CombatTracker } from '../tools/combat-tracker';
 import type { CombatTrackerState } from '../tools/combat-tracker';
+import { Notepad } from '../tools/notepad';
+import type { NotepadToolState } from '../tools/notepad/types';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
 function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
@@ -143,6 +145,15 @@ const ToolContent = memo(function ToolContent({
       return (
         <Soundboard
           toolState={toolState as SoundboardState | undefined}
+          onToolStateChange={onToolStateChange}
+          campaignId={campaignId}
+        />
+      );
+
+    case 'notepad':
+      return (
+        <Notepad
+          toolState={toolState as NotepadToolState | undefined}
           onToolStateChange={onToolStateChange}
           campaignId={campaignId}
         />
