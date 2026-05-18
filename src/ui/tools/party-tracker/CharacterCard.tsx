@@ -86,11 +86,21 @@ export function CharacterCard({
       data-size={size}
       draggable
       onDragStart={(e) => {
+        const hpField = character.fieldValues['hp'];
+        const armorField = character.fieldValues['armor'];
+        const initField = character.fieldValues['initiative'];
+        const hp = hpField?.type === 'number' ? hpField.value : undefined;
+        const armor = armorField?.type === 'number' ? armorField.value : 0;
+        const initiative = initField?.type === 'number' ? initField.value : 0;
         e.dataTransfer.setData('application/json', JSON.stringify({
           type: 'party-character',
           id: character.id,
           name: character.name,
           portraitPath: character.portraitPath,
+          hp,
+          maxHp: hp,
+          armor,
+          initiativeModifier: initiative,
         }));
         onDragStart(character.id);
       }}

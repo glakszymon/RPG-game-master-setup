@@ -1,0 +1,88 @@
+/* ── DamageHealPopup ── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.popup {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  backdrop-filter: blur(var(--glass-blur, 12px));
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.currentHp {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.damageButton,
+.healButton {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.damageButton {
+  background: var(--color-danger, #ef4444);
+  color: white;
+}
+
+.healButton {
+  background: var(--color-success, #22c55e);
+  color: white;
+}
+
+.damageButton:hover,
+.healButton:hover {
+  opacity: 0.85;
+}

@@ -36,6 +36,8 @@ import { TimeCalendar } from '../tools/time-calendar';
 import { TimeSessionTimer, PinnedTimers } from '../tools/time-session-timer';
 import { Soundboard } from '../tools/soundboard';
 import type { SoundboardState } from '../tools/soundboard';
+import { CombatTracker } from '../tools/combat-tracker';
+import type { CombatTrackerState } from '../tools/combat-tracker';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
 function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
@@ -65,6 +67,15 @@ const ToolContent = memo(function ToolContent({
   onSetTimeState?: (timeState: CampaignTimeState) => void;
 }) {
   switch (toolType) {
+    case 'combat-tracker':
+      return (
+        <CombatTracker
+          toolState={toolState as CombatTrackerState | undefined}
+          onToolStateChange={onToolStateChange}
+          campaignId={campaignId}
+        />
+      );
+
     case 'party-tracker':
       return (
         <PartyTracker
@@ -231,14 +242,6 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
   // Campaign settings modal state
   const [showSettings, setShowSettings] = useState(false);
 
-  // Close topmost non-pinned window
-  const closeTopmostWindow = useCallback(() => {
-    const topmost = [...state.windows]
-      .reverse()
-      .find((w) => !w.minimized && !w.pinned);
-    if (topmost) closeWindow(topmost.id);
-  }, [state.windows, closeWindow]);
-
   // Keyboard shortcuts
   const shortcutHandlers = useMemo(
     () => ({
@@ -247,7 +250,6 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
       zoomIn,
       zoomOut,
       zoomReset: resetView,
-      escape: closeTopmostWindow,
       helpPanel: () => setShowShortcuts((s) => !s),
       settings: () => setShowSettings((s) => !s),
       preset1: () => { const p = presets.filter((pr) => !pr.isAutoSave)[0]; if (p) activatePreset(p.id); },
@@ -260,7 +262,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
       preset8: () => { const p = presets.filter((pr) => !pr.isAutoSave)[7]; if (p) activatePreset(p.id); },
       preset9: () => { const p = presets.filter((pr) => !pr.isAutoSave)[8]; if (p) activatePreset(p.id); },
     }),
-    [undo, redo, zoomIn, zoomOut, resetView, closeTopmostWindow, presets, activatePreset, setShowShortcuts, setShowSettings],
+    [undo, redo, zoomIn, zoomOut, resetView, presets, activatePreset, setShowShortcuts, setShowSettings],
   );
   useKeyboardShortcuts(shortcutHandlers);
 

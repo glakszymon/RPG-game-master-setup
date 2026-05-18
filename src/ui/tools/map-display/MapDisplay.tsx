@@ -6,7 +6,7 @@ import { useFowRenderer } from './hooks/useFowRenderer';
 import { useTokenRenderer, TOKEN_RADIUS } from './hooks/useTokenRenderer';
 import { useVfxRenderer, VFX_PRESETS } from './hooks/useVfxRenderer';
 import { DEFAULT_MAP_STATE } from './types';
-import type { MapDisplayState, GridConfig, MapTool, MapToken, MapDropPayload, VfxSettings, VfxPreset } from './types';
+import type { MapDisplayState, GridConfig, MapTool, MapToken, VfxSettings, VfxPreset } from './types';
 import styles from './MapDisplay.module.css';
 
 interface MapDisplayProps {
@@ -231,12 +231,13 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     const raw = e.dataTransfer.getData('application/json');
     if (!raw) return;
     try {
-      const data = JSON.parse(raw) as MapDropPayload;
+      const data = JSON.parse(raw) as Record<string, unknown>;
 
       let sourceType: MapToken['sourceType'];
       switch (data.type) {
         case 'party-character': sourceType = 'party'; break;
         case 'bestiary-creature': sourceType = 'bestiary'; break;
+        case 'combat-combatant': sourceType = (data.sourceType as MapToken['sourceType']) ?? 'manual'; break;
         default: return;
       }
 
@@ -244,16 +245,18 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      const sx = e.clientX - rect.left;
-      const sy = e.clientY - rect.top;
+      const scaleX = container.clientWidth / rect.width;
+      const scaleY = container.clientHeight / rect.height;
+      const sx = (e.clientX - rect.left) * scaleX;
+      const sy = (e.clientY - rect.top) * scaleY;
       const [mapX, mapY] = screenToWorld(sx, sy, renderer.viewportRef.current);
 
       const token: MapToken = {
         id: `token-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         sourceType,
-        sourceId: data.id,
-        name: data.name,
-        avatarPath: data.portraitPath ?? null,
+        sourceId: (data.id as string) ?? '',
+        name: (data.name as string) ?? 'Unknown',
+        avatarPath: (data.portraitPath as string | null) ?? null,
         x: mapX,
         y: mapY,
         scale: 1,
@@ -384,8 +387,10 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
       return;
     }
     const rect = container.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
+    const scaleX = container.clientWidth / rect.width;
+    const scaleY = container.clientHeight / rect.height;
+    const sx = (e.clientX - rect.left) * scaleX;
+    const sy = (e.clientY - rect.top) * scaleY;
     const [wx, wy] = screenToWorld(sx, sy, renderer.viewportRef.current);
     cursorWorldRef.current = { x: wx, y: wy };
     renderer.markDirty();
