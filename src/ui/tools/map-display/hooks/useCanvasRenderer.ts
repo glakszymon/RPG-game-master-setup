@@ -17,6 +17,25 @@ export function worldToScreen(wx: number, wy: number, vp: ViewportState): [numbe
   ];
 }
 
+/**
+ * Convert mouse event coordinates to canvas-local coordinates,
+ * compensating for ancestor CSS transforms (e.g. panzoom scale on parent).
+ * getBoundingClientRect() returns visual (post-transform) size, so we must
+ * scale the offset by the ratio of local size to visual size.
+ */
+export function canvasLocalCoords(
+  e: { clientX: number; clientY: number },
+  el: HTMLElement,
+): [number, number] {
+  const rect = el.getBoundingClientRect();
+  const scaleX = el.clientWidth / rect.width;
+  const scaleY = el.clientHeight / rect.height;
+  return [
+    (e.clientX - rect.left) * scaleX,
+    (e.clientY - rect.top) * scaleY,
+  ];
+}
+
 // ── Types ──
 
 export interface RenderContext {
@@ -158,14 +177,16 @@ export function useCanvasRenderer(
     ctxRef.current = ctx;
 
     const resize = () => {
-      const rect = container.getBoundingClientRect();
+      // Use clientWidth/clientHeight — unaffected by ancestor CSS transforms (panzoom scale)
+      const w = container.clientWidth;
+      const h = container.clientHeight;
       const dpr = window.devicePixelRatio || 1;
       dprRef.current = dpr;
-      canvas.width = Math.floor(rect.width * dpr);
-      canvas.height = Math.floor(rect.height * dpr);
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-      sizeRef.current = { w: rect.width, h: rect.height };
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      sizeRef.current = { w, h };
       markDirty();
     };
 
@@ -206,9 +227,8 @@ export function useCanvasRenderer(
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      const sx = e.clientX - rect.left;
-      const sy = e.clientY - rect.top;
+      e.stopPropagation();
+      const [sx, sy] = canvasLocalCoords(e, canvas);
       const vp = viewportRef.current;
 
       // World point under cursor before zoom

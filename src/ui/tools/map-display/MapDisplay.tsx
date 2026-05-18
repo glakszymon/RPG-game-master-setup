@@ -245,8 +245,10 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      const sx = e.clientX - rect.left;
-      const sy = e.clientY - rect.top;
+      const scaleX = container.clientWidth / rect.width;
+      const scaleY = container.clientHeight / rect.height;
+      const sx = (e.clientX - rect.left) * scaleX;
+      const sy = (e.clientY - rect.top) * scaleY;
       const [mapX, mapY] = screenToWorld(sx, sy, renderer.viewportRef.current);
 
       const token: MapToken = {
@@ -385,8 +387,10 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
       return;
     }
     const rect = container.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
+    const scaleX = container.clientWidth / rect.width;
+    const scaleY = container.clientHeight / rect.height;
+    const sx = (e.clientX - rect.left) * scaleX;
+    const sy = (e.clientY - rect.top) * scaleY;
     const [wx, wy] = screenToWorld(sx, sy, renderer.viewportRef.current);
     cursorWorldRef.current = { x: wx, y: wy };
     renderer.markDirty();

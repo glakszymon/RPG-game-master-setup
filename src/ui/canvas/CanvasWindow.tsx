@@ -142,6 +142,7 @@ function CanvasWindow({
     <div
       ref={nodeRef}
       className={`canvas-window ${styles.canvasWindow} ${closing ? styles.closing : ''}`}
+      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
       style={{
         width: win.width,
         height: win.height,

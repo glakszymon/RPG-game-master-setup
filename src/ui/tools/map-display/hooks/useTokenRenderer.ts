@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { useSubscribe } from '../../../event-bus';
 import type { MapToken, MapTool } from '../types';
 import type { CanvasRendererHandle, RenderContext } from './useCanvasRenderer';
-import { screenToWorld } from './useCanvasRenderer';
+import { screenToWorld, canvasLocalCoords } from './useCanvasRenderer';
 
 export const TOKEN_RADIUS = 24;
 
@@ -440,8 +440,8 @@ export function useTokenRenderer(
 
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
-      const rect = canvas.getBoundingClientRect();
-      const [mx, my] = screenToWorld(e.clientX - rect.left, e.clientY - rect.top, renderer.viewportRef.current);
+      const [sx, sy] = canvasLocalCoords(e, canvas);
+      const [mx, my] = screenToWorld(sx, sy, renderer.viewportRef.current);
       const tokenId = hitTest(mx, my);
       if (!tokenId) return;
 
@@ -457,8 +457,8 @@ export function useTokenRenderer(
 
     const onMove = (e: PointerEvent) => {
       if (!dragging) return;
-      const rect = canvas.getBoundingClientRect();
-      const [mx, my] = screenToWorld(e.clientX - rect.left, e.clientY - rect.top, renderer.viewportRef.current);
+      const [sx, sy] = canvasLocalCoords(e, canvas);
+      const [mx, my] = screenToWorld(sx, sy, renderer.viewportRef.current);
       dragPos = { x: mx - dragging.offsetX, y: my - dragging.offsetY };
       // We need a way to draw at drag position — store it and markDirty
       dragPosMapRef.current = { id: dragging.tokenId, ...dragPos };

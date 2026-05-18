@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import type { MapTool, BrushSettings } from '../types';
 import type { CanvasRendererHandle, RenderContext } from './useCanvasRenderer';
-import { screenToWorld } from './useCanvasRenderer';
+import { screenToWorld, canvasLocalCoords } from './useCanvasRenderer';
 
 /**
  * useFowRenderer — Fog of War via offscreen canvas with destination-out compositing.
@@ -144,9 +144,7 @@ export function useFowRenderer(
 
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
-      const rect = canvas.getBoundingClientRect();
-      const sx = e.clientX - rect.left;
-      const sy = e.clientY - rect.top;
+      const [sx, sy] = canvasLocalCoords(e, canvas);
       const [wx, wy] = screenToWorld(sx, sy, renderer.viewportRef.current);
 
       isPaintingRef.current = true;
@@ -158,12 +156,10 @@ export function useFowRenderer(
 
     const onMove = (e: PointerEvent) => {
       if (!isPaintingRef.current) return;
-      const rect = canvas.getBoundingClientRect();
       // Use coalesced events for smooth strokes
       const events = (e as any).getCoalescedEvents?.() ?? [e];
       for (const ce of events) {
-        const sx = ce.clientX - rect.left;
-        const sy = ce.clientY - rect.top;
+        const [sx, sy] = canvasLocalCoords(ce, canvas);
         const [wx, wy] = screenToWorld(sx, sy, renderer.viewportRef.current);
         const last = lastPosRef.current;
         if (last) {
