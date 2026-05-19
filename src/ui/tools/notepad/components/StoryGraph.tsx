@@ -202,6 +202,22 @@ export function StoryGraph({ data, activeNoteId, campaignId, onSelectNote }: Sto
           const target = nodeMap.get(edge.target);
           if (!source || !target) return null;
 
+          // Self-loop
+          if (edge.source === edge.target) {
+            const loopR = 20;
+            const sx = source.x;
+            const sy = source.y - NODE_HEIGHT / 2;
+            return (
+              <path
+                key={i}
+                d={`M ${sx - 8} ${sy} C ${sx - 8} ${sy - loopR * 2} ${sx + 8} ${sy - loopR * 2} ${sx + 8} ${sy}`}
+                fill="none"
+                className={styles.edge}
+                markerEnd="url(#arrowhead)"
+              />
+            );
+          }
+
           // Detect bidirectional edge (reverse exists)
           const isBidirectional = data.edges.some(
             e => e.source === edge.target && e.target === edge.source
@@ -222,9 +238,8 @@ export function StoryGraph({ data, activeNoteId, campaignId, onSelectNote }: Sto
           const ty = target.y - Math.sin(angle) * (NODE_HEIGHT / 2 + 6);
 
           if (isBidirectional) {
-            // Curved path — offset perpendicular to the edge direction
+            // Curved arc to separate from the reverse edge
             const curvature = Math.min(40, dist * 0.2);
-            // Normal perpendicular (left side for this direction)
             const nx = -Math.sin(angle) * curvature;
             const ny = Math.cos(angle) * curvature;
             const mx = (sx + tx) / 2 + nx;
@@ -241,13 +256,12 @@ export function StoryGraph({ data, activeNoteId, campaignId, onSelectNote }: Sto
             );
           }
 
+          // Straight line for unidirectional edges
           return (
-            <line
+            <path
               key={i}
-              x1={sx}
-              y1={sy}
-              x2={tx}
-              y2={ty}
+              d={`M ${sx} ${sy} L ${tx} ${ty}`}
+              fill="none"
               className={styles.edge}
               markerEnd="url(#arrowhead)"
             />

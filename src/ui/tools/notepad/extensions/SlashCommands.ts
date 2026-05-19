@@ -98,6 +98,14 @@ export const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
+    title: 'Read Aloud',
+    description: 'Text to read to players',
+    icon: '🗣️',
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setCallout({ type: 'readaloud' }).run();
+    },
+  },
+  {
     title: 'Music',
     description: 'Insert music track reference',
     icon: '🎵',
