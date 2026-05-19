@@ -61,4 +61,44 @@ contextBridge.exposeInMainWorld('electronAPI', {
     readBundled: (key: string) =>
       ipcRenderer.invoke('soundboard:read-bundled', key),
   },
+  notes: {
+    list: (campaignId: string) =>
+      ipcRenderer.invoke('notes:list', campaignId),
+    get: (id: string) =>
+      ipcRenderer.invoke('notes:get', id),
+    save: (id: string, campaignId: string, folderId: string | null, title: string, contentJson: string, sortOrder: number) =>
+      ipcRenderer.invoke('notes:save', id, campaignId, folderId, title, contentJson, sortOrder),
+    delete: (id: string) =>
+      ipcRenderer.invoke('notes:delete', id),
+  },
+  noteFolders: {
+    list: (campaignId: string) =>
+      ipcRenderer.invoke('note-folders:list', campaignId),
+    save: (id: string, campaignId: string, parentId: string | null, name: string, sortOrder: number) =>
+      ipcRenderer.invoke('note-folders:save', id, campaignId, parentId, name, sortOrder),
+    delete: (id: string) =>
+      ipcRenderer.invoke('note-folders:delete', id),
+  },
+  noteLinks: {
+    list: (campaignId: string) =>
+      ipcRenderer.invoke('note-links:list', campaignId),
+    sync: (sourceNoteId: string, campaignId: string, targetNoteIds: string[]) =>
+      ipcRenderer.invoke('note-links:sync', sourceNoteId, campaignId, targetNoteIds),
+  },
+  noteGraph: {
+    listPositions: (campaignId: string) =>
+      ipcRenderer.invoke('note-graph:list-positions', campaignId),
+    savePosition: (noteId: string, campaignId: string, x: number, y: number) =>
+      ipcRenderer.invoke('note-graph:save-position', noteId, campaignId, x, y),
+  },
+  notePresets: {
+    list: (noteId: string) =>
+      ipcRenderer.invoke('note-presets:list', noteId),
+    save: (id: string, campaignId: string, noteId: string, name: string, mapStateJson: string, sortOrder: number) =>
+      ipcRenderer.invoke('note-presets:save', id, campaignId, noteId, name, mapStateJson, sortOrder),
+    delete: (id: string) =>
+      ipcRenderer.invoke('note-presets:delete', id),
+    load: (id: string) =>
+      ipcRenderer.invoke('note-presets:load', id),
+  },
 });
