@@ -39,9 +39,10 @@ interface NotepadProps {
   onToolStateChange: (state: unknown) => void;
   campaignId: string;
   onLoadMapPreset?: (mapStateJson: string) => void;
+  onCaptureMapState?: () => string | null;
 }
 
-export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPreset }: NotepadProps) {
+export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPreset, onCaptureMapState }: NotepadProps) {
   const state = toolState ?? DEFAULT_NOTEPAD_STATE;
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [folders, setFolders] = useState<NoteFolderItem[]>([]);
@@ -866,6 +867,7 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
           onSelectNote={handleSelectNoteById}
           onCollapse={() => patchState({ referencePanelVisible: false })}
           onLoadMapPreset={onLoadMapPreset ?? (() => {})}
+          onCaptureMapState={onCaptureMapState}
         />
       )}
 

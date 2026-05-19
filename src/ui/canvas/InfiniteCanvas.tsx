@@ -60,6 +60,7 @@ const ToolContent = memo(function ToolContent({
   onAdvanceTime,
   onSetTimeState,
   onLoadMapPreset,
+  onCaptureMapState,
 }: {
   toolType: ToolType;
   toolState: unknown;
@@ -69,6 +70,7 @@ const ToolContent = memo(function ToolContent({
   onAdvanceTime?: (minutes: number) => void;
   onSetTimeState?: (timeState: CampaignTimeState) => void;
   onLoadMapPreset?: (mapStateJson: string) => void;
+  onCaptureMapState?: () => string | null;
 }) {
   switch (toolType) {
     case 'combat-tracker':
@@ -159,6 +161,7 @@ const ToolContent = memo(function ToolContent({
           onToolStateChange={onToolStateChange}
           campaignId={campaignId}
           onLoadMapPreset={onLoadMapPreset}
+          onCaptureMapState={onCaptureMapState}
         />
       );
 
@@ -241,18 +244,53 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
   );
 
   // Load map preset: find first open map-display window and apply preset state
+  // Pending preset load ref (for when we auto-open a map window)
+  const pendingPresetRef = useRef<string | null>(null);
+
   const loadMapPresetHandler = useCallback(
     (mapStateJson: string) => {
       const mapWin = state.windows.find(w => w.toolType === 'map-display');
-      if (mapWin) {
-        try {
-          const presetState = JSON.parse(mapStateJson);
-          dispatch({ type: 'UPDATE_TOOL_STATE', id: mapWin.id, toolState: presetState });
-        } catch { /* invalid JSON, skip */ }
+      if (!mapWin) {
+        // Auto-open a map-display window and queue the preset
+        pendingPresetRef.current = mapStateJson;
+        dispatch({ type: 'OPEN_WINDOW', toolType: 'map-display', x: 100, y: 100 });
+        return;
       }
+      // If map has existing content, confirm overwrite
+      const hasContent = mapWin.toolState && (mapWin.toolState as { imagePath?: string }).imagePath;
+      if (hasContent) {
+        const confirmed = window.confirm('Load preset? This will overwrite the current map state.');
+        if (!confirmed) return;
+      }
+      try {
+        const presetState = JSON.parse(mapStateJson);
+        dispatch({ type: 'UPDATE_TOOL_STATE', id: mapWin.id, toolState: presetState });
+      } catch { /* invalid JSON, skip */ }
     },
     [state.windows, dispatch],
   );
+
+  // Apply pending preset when map window appears
+  useEffect(() => {
+    if (!pendingPresetRef.current) return;
+    const mapWin = state.windows.find(w => w.toolType === 'map-display');
+    if (mapWin) {
+      try {
+        const presetState = JSON.parse(pendingPresetRef.current);
+        dispatch({ type: 'UPDATE_TOOL_STATE', id: mapWin.id, toolState: presetState });
+      } catch { /* skip */ }
+      pendingPresetRef.current = null;
+    }
+  }, [state.windows, dispatch]);
+
+  // Capture current map state for saving presets
+  const captureMapStateHandler = useCallback((): string | null => {
+    const mapWin = state.windows.find(w => w.toolType === 'map-display');
+    if (!mapWin || !mapWin.toolState) return null;
+    try {
+      return JSON.stringify(mapWin.toolState);
+    } catch { return null; }
+  }, [state.windows]);
 
   // Focus presets
   const {
@@ -429,6 +467,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
                   onAdvanceTime={win.toolType.startsWith('time-') ? advanceTimeHandler : undefined}
                   onSetTimeState={win.toolType.startsWith('time-') ? setTimeStateHandler : undefined}
                   onLoadMapPreset={win.toolType === 'notepad' ? loadMapPresetHandler : undefined}
+                  onCaptureMapState={win.toolType === 'notepad' ? captureMapStateHandler : undefined}
                 />
               </CanvasWindow>
             ))}

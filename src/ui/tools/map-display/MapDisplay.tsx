@@ -198,17 +198,24 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   const loadImageRef = useRef(loadImage);
   useLayoutEffect(() => { loadImageRef.current = loadImage; });
 
-  // Restore saved map on mount
+  // Restore saved map on mount OR when imagePath changes externally (e.g. preset load)
+  const prevImagePathRef = useRef<string | null>(state.imagePath);
   useEffect(() => {
     const signal = { cancelled: false };
-    console.log('[MapDisplay] restore effect — imagePath:', state.imagePath, 'mapImage:', !!mapImage);
-    if (state.imagePath && !mapImage) {
+    const imagePathChanged = state.imagePath !== prevImagePathRef.current;
+    prevImagePathRef.current = state.imagePath;
+    console.log('[MapDisplay] restore effect — imagePath:', state.imagePath, 'mapImage:', !!mapImage, 'changed:', imagePathChanged);
+    if (state.imagePath && (!mapImage || imagePathChanged)) {
+      if (imagePathChanged) setMapImage(null);
       loadImageRef.current(state.imagePath, true, signal).then((vp) => {
         console.log('[MapDisplay] loadImage resolved — vp:', vp, 'cancelled:', signal.cancelled);
         if (vp && !signal.cancelled) {
           patchState({ viewport: vp });
         }
       });
+    } else if (!state.imagePath && mapImage) {
+      // Image was removed (e.g. preset with no image)
+      setMapImage(null);
     }
     return () => {
       signal.cancelled = true;

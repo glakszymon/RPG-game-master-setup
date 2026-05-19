@@ -112,6 +112,14 @@
 
 /* ── Map Presets ── */
 
+.presetHint {
+  font-size: 10px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  margin: 0 4px 8px;
+  line-height: 1.4;
+  font-style: italic;
+}
+
 .presetItem {
   display: flex;
   align-items: center;
@@ -139,6 +147,11 @@
   background: rgba(201, 176, 107, 0.1);
 }
 
+.presetLoaded {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+}
+
 .presetDelete {
   background: none;
   border: none;
@@ -153,6 +166,22 @@
 .presetDelete:hover {
   background: rgba(255, 80, 80, 0.15);
   color: #ff5050;
+}
+
+.presetEdit {
+  background: none;
+  border: none;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.3));
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.presetEdit:hover {
+  background: rgba(201, 176, 107, 0.15);
+  color: #C9B06B;
 }
 
 .presetSaveForm {
@@ -208,4 +237,133 @@
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(201, 176, 107, 0.3);
   color: var(--color-text-secondary);
+}
+
+/* ── Preset Save Dialog ── */
+
+.presetDialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.presetDialogBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.presetDialogContent {
+  position: relative;
+  background: rgba(30, 30, 35, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 20px;
+  width: 380px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.presetDialogTitle {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary, rgba(255, 255, 255, 0.95));
+}
+
+.presetDialogPreview {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.3);
+  margin-bottom: 12px;
+}
+
+.presetDialogNoImage {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.presetDialogInfo {
+  font-size: 11px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.presetDialogInput {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+}
+
+.presetDialogInput:focus {
+  border-color: rgba(201, 176, 107, 0.5);
+}
+
+.presetDialogActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.presetDialogCancel {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.7));
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.presetDialogCancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.presetDialogSave {
+  background: rgba(201, 176, 107, 0.2);
+  border: 1px solid rgba(201, 176, 107, 0.4);
+  color: #C9B06B;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.presetDialogSave:hover {
+  background: rgba(201, 176, 107, 0.3);
+}
+
+.presetDialogSave:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

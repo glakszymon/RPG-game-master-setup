@@ -3,10 +3,11 @@
  * backlinks (notes that link TO this note), and map presets.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NoteItem } from '../types';
 import type { GraphData } from '../hooks/useGraphData';
 import type { NoteMapPresetRow } from '../../../electron.d';
+import { PresetEditorDialog } from './PresetEditorDialog';
 import styles from './ReferencePanel.module.css';
 
 export interface MentionedEntity {
@@ -24,6 +25,7 @@ interface ReferencePanelProps {
   onSelectNote: (noteId: string) => void;
   onCollapse: () => void;
   onLoadMapPreset: (mapStateJson: string) => void;
+  onCaptureMapState?: () => string | null;
 }
 
 export function ReferencePanel({
@@ -37,8 +39,10 @@ export function ReferencePanel({
   onLoadMapPreset,
 }: ReferencePanelProps) {
   const [presets, setPresets] = useState<NoteMapPresetRow[]>([]);
-  const [showSaveInput, setShowSaveInput] = useState(false);
-  const [presetName, setPresetName] = useState('');
+  const [loadedPresetId, setLoadedPresetId] = useState<string | null>(null);
+  const loadedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [editorDialogOpen, setEditorDialogOpen] = useState(false);
+  const [editingPreset, setEditingPreset] = useState<{ id: string; name: string; mapState: string } | null>(null);
 
   // Load presets when active note changes
   useEffect(() => {
@@ -56,24 +60,29 @@ export function ReferencePanel({
     setPresets(rows);
   }
 
-  const handleSavePreset = useCallback(async () => {
-    if (!activeNoteId || !presetName.trim()) return;
+  const handleSaveFromEditor = useCallback(async (name: string, mapStateJson: string) => {
+    if (!activeNoteId) return;
     const api = window.electronAPI;
     if (!api) return;
 
-    // Capture current map state from any open map window
-    // The map state JSON is passed as empty object — the parent component
-    // will need to supply the actual map state. For now we use a snapshot approach:
-    // The notepad dispatches an event to request current map state.
-    const id = crypto.randomUUID();
-    const sortOrder = presets.length;
+    const id = editingPreset?.id ?? crypto.randomUUID();
+    const sortOrder = editingPreset ? presets.findIndex(p => p.id === editingPreset.id) : presets.length;
 
-    // We save a placeholder — the actual map state capture happens via onCaptureMapState
-    await api.notePresets.save(id, campaignId, activeNoteId, presetName.trim(), '{}', sortOrder);
+    await api.notePresets.save(id, campaignId, activeNoteId, name, mapStateJson, sortOrder >= 0 ? sortOrder : presets.length);
     await loadPresets(activeNoteId);
-    setPresetName('');
-    setShowSaveInput(false);
-  }, [activeNoteId, campaignId, presetName, presets.length]);
+    setEditorDialogOpen(false);
+    setEditingPreset(null);
+  }, [activeNoteId, campaignId, presets, editingPreset]);
+
+  const handleEditPreset = useCallback(async (presetId: string) => {
+    const api = window.electronAPI;
+    if (!api) return;
+    const preset = await api.notePresets.load(presetId);
+    if (preset && preset.map_state_json) {
+      setEditingPreset({ id: preset.id, name: preset.name, mapState: preset.map_state_json });
+      setEditorDialogOpen(true);
+    }
+  }, []);
 
   const handleDeletePreset = useCallback(async (presetId: string) => {
     const api = window.electronAPI;
@@ -88,8 +97,12 @@ export function ReferencePanel({
     const api = window.electronAPI;
     if (!api) return;
     const preset = await api.notePresets.load(presetId);
-    if (preset && preset.map_state_json !== '{}') {
+    if (preset && preset.map_state_json && preset.map_state_json !== '{}') {
       onLoadMapPreset(preset.map_state_json);
+      // Flash feedback
+      setLoadedPresetId(presetId);
+      if (loadedTimerRef.current) clearTimeout(loadedTimerRef.current);
+      loadedTimerRef.current = setTimeout(() => setLoadedPresetId(null), 1500);
     }
   }, [onLoadMapPreset]);
 
@@ -125,14 +138,24 @@ export function ReferencePanel({
           {/* Map Presets */}
           <section className={styles.section}>
             <h4 className={styles.sectionTitle}>Map Presets</h4>
+            <p className={styles.presetHint}>
+              Saves full map state: image, tokens, fog, viewport &amp; effects.
+            </p>
             {presets.map(preset => (
               <div key={preset.id} className={styles.presetItem}>
                 <button
-                  className={styles.presetLoad}
+                  className={`${styles.presetLoad} ${loadedPresetId === preset.id ? styles.presetLoaded : ''}`}
                   onClick={() => handleLoadPreset(preset.id)}
                   title="Load this preset"
                 >
-                  🗺️ {preset.name}
+                  {loadedPresetId === preset.id ? '✓ Loaded!' : `🗺️ ${preset.name}`}
+                </button>
+                <button
+                  className={styles.presetEdit}
+                  onClick={() => handleEditPreset(preset.id)}
+                  title="Edit preset"
+                >
+                  ✎
                 </button>
                 <button
                   className={styles.presetDelete}
@@ -143,31 +166,22 @@ export function ReferencePanel({
                 </button>
               </div>
             ))}
-            {showSaveInput ? (
-              <div className={styles.presetSaveForm}>
-                <input
-                  type="text"
-                  value={presetName}
-                  onChange={e => setPresetName(e.target.value)}
-                  placeholder="Preset name..."
-                  className={styles.presetInput}
-                  autoFocus
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') handleSavePreset();
-                    if (e.key === 'Escape') setShowSaveInput(false);
-                  }}
-                />
-                <button className={styles.presetSaveBtn} onClick={handleSavePreset}>
-                  Save
-                </button>
-              </div>
-            ) : (
-              <button
-                className={styles.addPresetBtn}
-                onClick={() => setShowSaveInput(true)}
-              >
-                + Save Map Preset
-              </button>
+            <button
+              className={styles.addPresetBtn}
+              onClick={() => { setEditingPreset(null); setEditorDialogOpen(true); }}
+            >
+              + Create Map Preset
+            </button>
+
+            {editorDialogOpen && (
+              <PresetEditorDialog
+                campaignId={campaignId}
+                initialName={editingPreset?.name}
+                initialMapState={editingPreset ? JSON.parse(editingPreset.mapState) : undefined}
+                entities={mentionedEntities}
+                onSave={handleSaveFromEditor}
+                onCancel={() => { setEditorDialogOpen(false); setEditingPreset(null); }}
+              />
             )}
           </section>
 
