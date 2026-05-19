@@ -7,13 +7,18 @@
 
 import { Node, mergeAttributes } from '@tiptap/core';
 
-export type CalloutType = 'info' | 'warning' | 'success' | 'danger';
+export type CalloutType = 'info' | 'warning' | 'success' | 'danger' | 'readaloud';
 
 const CALLOUT_COLORS: Record<CalloutType, string> = {
   info: '#5B9BD5',
   warning: '#C9B06B',
   success: '#6BBF6B',
   danger: '#D55B5B',
+  readaloud: '#D4A574',
+};
+
+const CALLOUT_STYLES: Partial<Record<CalloutType, string>> = {
+  readaloud: 'border-left: 4px solid #D4A574; padding: 12px 16px; margin: 12px 0; border-radius: 4px; background: rgba(212, 165, 116, 0.08);',
 };
 
 declare module '@tiptap/core' {
@@ -39,7 +44,7 @@ export const Callout = Node.create({
         parseHTML: (element: HTMLElement) => element.getAttribute('data-callout-type') || 'info',
         renderHTML: (attributes: { type: CalloutType }) => ({
           'data-callout-type': attributes.type,
-          style: `border-left: 4px solid ${CALLOUT_COLORS[attributes.type] || CALLOUT_COLORS.info}; padding: 12px 16px; margin: 12px 0; border-radius: 4px; background: rgba(255,255,255,0.03);`,
+          style: CALLOUT_STYLES[attributes.type] || `border-left: 4px solid ${CALLOUT_COLORS[attributes.type] || CALLOUT_COLORS.info}; padding: 12px 16px; margin: 12px 0; border-radius: 4px; background: rgba(255,255,255,0.03);`,
         }),
       },
     };

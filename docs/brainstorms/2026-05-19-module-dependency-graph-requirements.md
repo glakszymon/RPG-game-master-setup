@@ -39,6 +39,10 @@ The application's modules (Notepad, Bestiary, Encounter Sets, Map Display, Comba
 
 - R10. When loading a preset or creating an encounter group, the system checks for existing instances (same template + same source note) and reuses them instead of creating duplicates.
 
+### Cascade Deletion
+
+- R11. Deleting an instance from Encounter Sets cascades: removes the associated token from Map Display and combatant from Combat Tracker, with a confirmation dialog warning the user of consequences.
+
 ## Scope Boundaries
 
 - Party Tracker → Map Display and Party Tracker → Combat Tracker remain unchanged.

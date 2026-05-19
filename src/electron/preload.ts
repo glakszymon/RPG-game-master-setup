@@ -36,14 +36,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     listTemplates: () => ipcRenderer.invoke('bestiary:list-templates'),
     saveTemplate: (dataJson: string) => ipcRenderer.invoke('bestiary:save-template', dataJson),
     deleteTemplate: (id: string) => ipcRenderer.invoke('bestiary:delete-template', id),
-    listFolders: () => ipcRenderer.invoke('bestiary:list-folders'),
-    saveFolder: (id: string, parentId: string | null, name: string, sortOrder: number) =>
-      ipcRenderer.invoke('bestiary:save-folder', id, parentId, name, sortOrder),
+    listFolders: (campaignId?: string) => ipcRenderer.invoke('bestiary:list-folders', campaignId),
+    saveFolder: (id: string, parentId: string | null, name: string, sortOrder: number, campaignId?: string) =>
+      ipcRenderer.invoke('bestiary:save-folder', id, parentId, name, sortOrder, campaignId),
     deleteFolder: (id: string) => ipcRenderer.invoke('bestiary:delete-folder', id),
     listInstances: () => ipcRenderer.invoke('bestiary:list-instances'),
     saveInstance: (id: string, folderId: string, templateId: string | null, instanceName: string | null, overrides: string, sortOrder: number) =>
       ipcRenderer.invoke('bestiary:save-instance', id, folderId, templateId, instanceName, overrides, sortOrder),
     deleteInstance: (id: string) => ipcRenderer.invoke('bestiary:delete-instance', id),
+    getInstanceState: (instanceId: string) => ipcRenderer.invoke('bestiary:get-instance-state', instanceId),
+    updateInstanceState: (instanceId: string, stateJson: string) => ipcRenderer.invoke('bestiary:update-instance-state', instanceId, stateJson),
+    getInstanceDependents: (instanceId: string) => ipcRenderer.invoke('bestiary:get-instance-dependents', instanceId),
+    validateInstanceIds: (ids: string[]) => ipcRenderer.invoke('bestiary:validate-instance-ids', ids),
+    deleteInstanceCascade: (instanceId: string) => ipcRenderer.invoke('bestiary:delete-instance-cascade', instanceId),
+    batchCreateInstances: (templateIds: string[], folderId: string) => ipcRenderer.invoke('bestiary:batch-create-instances', templateIds, folderId),
+    createFolderWithInstances: (folderName: string, templateIds: string[], parentId?: string, campaignId?: string) =>
+      ipcRenderer.invoke('bestiary:create-folder-with-instances', folderName, templateIds, parentId, campaignId),
   },
   settings: {
     load: (campaignId: string, key: string) =>

@@ -178,6 +178,7 @@ export async function initDatabase(): Promise<void> {
   db.run(`
     CREATE TABLE IF NOT EXISTS bestiary_folders (
       id TEXT PRIMARY KEY,
+      campaign_id TEXT,
       parent_id TEXT,
       name TEXT NOT NULL,
       sort_order INTEGER NOT NULL DEFAULT 0,
@@ -200,7 +201,116 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS creature_instance_state (
+      instance_id TEXT PRIMARY KEY,
+      current_hp INTEGER,
+      max_hp INTEGER,
+      conditions TEXT DEFAULT '[]',
+      is_on_map INTEGER NOT NULL DEFAULT 0,
+      map_token_id TEXT,
+      is_in_combat INTEGER NOT NULL DEFAULT 0
+    );
+  `);
+
+  // Run migrations based on schema version
+  runMigrations();
+
   persist();
+}
+
+function runMigrations(): void {
+  if (!db) return;
+  const result = db.exec('PRAGMA user_version');
+  const currentVersion = (result[0]?.values[0]?.[0] as number) ?? 0;
+
+  if (currentVersion < 1) {
+    migrateTokensToInstances();
+    db.run('PRAGMA user_version = 1');
+  }
+
+  // Always ensure campaign_id column exists (idempotent)
+  try {
+    db.run('ALTER TABLE bestiary_folders ADD COLUMN campaign_id TEXT');
+  } catch {
+    // Column already exists
+  }
+  // Assign existing folders to the first campaign if unset
+  const campaigns = db.exec('SELECT id FROM campaigns LIMIT 1');
+  if (campaigns.length > 0 && campaigns[0].values.length > 0) {
+    const firstCampaignId = campaigns[0].values[0][0] as string;
+    db.run('UPDATE bestiary_folders SET campaign_id = ? WHERE campaign_id IS NULL', [firstCampaignId]);
+  }
+}
+
+function migrateTokensToInstances(): void {
+  if (!db) return;
+
+  // Scan all canvas_state JSON for tokens with sourceType: 'bestiary'
+  const canvasStates = db.exec('SELECT campaign_id, state_json FROM canvas_state');
+  if (canvasStates.length === 0) return;
+
+  const rows = canvasStates[0].values;
+  let anyMigrated = false;
+
+  // Create a "Migrated" folder for auto-created instances
+  const migratedFolderId = crypto.randomUUID();
+  let folderCreated = false;
+
+  for (const [campaignId, dataStr] of rows) {
+    if (!dataStr || typeof dataStr !== 'string') continue;
+    const data = JSON.parse(dataStr);
+    const windows = data?.windows;
+    if (!Array.isArray(windows)) continue;
+
+    let modified = false;
+    for (const win of windows) {
+      if (win.toolId !== 'map-display' || !win.toolState?.tokens) continue;
+      const tokens = win.toolState.tokens as Array<{ sourceType: string; sourceId: string; instanceId?: string }>;
+      for (const token of tokens) {
+        if (token.sourceType === 'bestiary' && token.sourceId) {
+          // Create instance in "Migrated" folder
+          if (!folderCreated) {
+            db.run(
+              `INSERT OR IGNORE INTO bestiary_folders (id, name, parent_id, sort_order, created_at)
+               VALUES (?, 'Migrated', NULL, 9999, datetime('now'))`,
+              [migratedFolderId]
+            );
+            folderCreated = true;
+          }
+          // Check if instance already exists for this template in migrated folder
+          const existing = db.exec(
+            `SELECT id FROM bestiary_instances WHERE folder_id = ? AND template_id = ?`,
+            [migratedFolderId, token.sourceId]
+          );
+          let instanceId: string;
+          if (existing.length > 0 && existing[0].values.length > 0) {
+            instanceId = existing[0].values[0][0] as string;
+          } else {
+            instanceId = crypto.randomUUID();
+            db.run(
+              `INSERT INTO bestiary_instances (id, folder_id, template_id, instance_name, overrides, sort_order, created_at)
+               VALUES (?, ?, ?, NULL, '{}', 0, datetime('now'))`,
+              [instanceId, migratedFolderId, token.sourceId]
+            );
+          }
+          token.sourceType = 'instance';
+          token.instanceId = instanceId;
+          token.sourceId = instanceId;
+          modified = true;
+          anyMigrated = true;
+        }
+      }
+    }
+
+    if (modified) {
+      db.run('UPDATE canvas_state SET state_json = ? WHERE campaign_id = ?', [JSON.stringify(data), campaignId]);
+    }
+  }
+
+  if (anyMigrated) {
+    console.log('[Migration] Migrated bestiary tokens to instance-based tokens');
+  }
 }
 
 function seedDemoCampaign(): void {
@@ -608,12 +718,14 @@ export interface BestiaryFolderRow {
   created_at: string;
 }
 
-export function listBestiaryFolders(): BestiaryFolderRow[] {
+export function listBestiaryFolders(campaignId?: string): BestiaryFolderRow[] {
   if (!db) throw new Error('Database not initialized');
 
-  const result = db.exec(
-    'SELECT id, parent_id, name, sort_order, created_at FROM bestiary_folders ORDER BY sort_order ASC',
-  );
+  const query = campaignId
+    ? 'SELECT id, parent_id, name, sort_order, created_at FROM bestiary_folders WHERE campaign_id = ? ORDER BY sort_order ASC'
+    : 'SELECT id, parent_id, name, sort_order, created_at FROM bestiary_folders ORDER BY sort_order ASC';
+  const params = campaignId ? [campaignId] : [];
+  const result = db.exec(query, params);
 
   if (result.length === 0) return [];
 
@@ -626,14 +738,14 @@ export function listBestiaryFolders(): BestiaryFolderRow[] {
   }));
 }
 
-export function saveBestiaryFolder(id: string, parentId: string | null, name: string, sortOrder: number): void {
+export function saveBestiaryFolder(id: string, parentId: string | null, name: string, sortOrder: number, campaignId?: string): void {
   if (!db) throw new Error('Database not initialized');
 
   db.run(
-    `INSERT INTO bestiary_folders (id, parent_id, name, sort_order)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO bestiary_folders (id, campaign_id, parent_id, name, sort_order)
+     VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET parent_id = excluded.parent_id, name = excluded.name, sort_order = excluded.sort_order`,
-    [id, parentId, name, sortOrder],
+    [id, campaignId ?? null, parentId, name, sortOrder],
   );
 
   persist();
@@ -695,7 +807,208 @@ export function deleteBestiaryInstance(id: string): void {
   if (!db) throw new Error('Database not initialized');
 
   db.run('DELETE FROM bestiary_instances WHERE id = ?', [id]);
+  db.run('DELETE FROM creature_instance_state WHERE instance_id = ?', [id]);
   persist();
+}
+
+// ── Creature Instance State ──
+
+export interface InstanceStateRow {
+  instance_id: string;
+  current_hp: number | null;
+  max_hp: number | null;
+  conditions: string;
+  is_on_map: number;
+  map_token_id: string | null;
+  is_in_combat: number;
+}
+
+export function getInstanceState(instanceId: string): InstanceStateRow | null {
+  if (!db) throw new Error('Database not initialized');
+
+  const results = db.exec(
+    'SELECT instance_id, current_hp, max_hp, conditions, is_on_map, map_token_id, is_in_combat FROM creature_instance_state WHERE instance_id = ?',
+    [instanceId],
+  );
+  if (results.length === 0 || results[0].values.length === 0) return null;
+
+  const row = results[0].values[0];
+  return {
+    instance_id: row[0] as string,
+    current_hp: row[1] as number | null,
+    max_hp: row[2] as number | null,
+    conditions: (row[3] as string) ?? '[]',
+    is_on_map: row[4] as number,
+    map_token_id: (row[5] as string) ?? null,
+    is_in_combat: row[6] as number,
+  };
+}
+
+export function updateInstanceState(instanceId: string, stateJson: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  const state = JSON.parse(stateJson) as Partial<InstanceStateRow>;
+  db.run(
+    `INSERT INTO creature_instance_state (instance_id, current_hp, max_hp, conditions, is_on_map, map_token_id, is_in_combat)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(instance_id) DO UPDATE SET
+       current_hp = COALESCE(excluded.current_hp, creature_instance_state.current_hp),
+       max_hp = COALESCE(excluded.max_hp, creature_instance_state.max_hp),
+       conditions = COALESCE(excluded.conditions, creature_instance_state.conditions),
+       is_on_map = COALESCE(excluded.is_on_map, creature_instance_state.is_on_map),
+       map_token_id = COALESCE(excluded.map_token_id, creature_instance_state.map_token_id),
+       is_in_combat = COALESCE(excluded.is_in_combat, creature_instance_state.is_in_combat)`,
+    [
+      instanceId,
+      state.current_hp ?? null,
+      state.max_hp ?? null,
+      state.conditions ?? '[]',
+      state.is_on_map ?? 0,
+      state.map_token_id ?? null,
+      state.is_in_combat ?? 0,
+    ],
+  );
+  persist();
+}
+
+export function validateInstanceIds(ids: string[]): string[] {
+  if (!db) throw new Error('Database not initialized');
+  if (ids.length === 0) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const result = db.exec(
+    `SELECT id FROM bestiary_instances WHERE id IN (${placeholders})`,
+    ids
+  );
+  if (result.length === 0) return [];
+  return result[0].values.map(row => row[0] as string);
+}
+
+export function getInstanceDependents(instanceId: string): { isOnMap: boolean; isInCombat: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  const results = db.exec(
+    'SELECT is_on_map, is_in_combat FROM creature_instance_state WHERE instance_id = ?',
+    [instanceId],
+  );
+  if (results.length === 0 || results[0].values.length === 0) {
+    return { isOnMap: false, isInCombat: false };
+  }
+  const row = results[0].values[0];
+  return { isOnMap: !!(row[0] as number), isInCombat: !!(row[1] as number) };
+}
+
+export function deleteInstanceCascade(instanceId: string): { hadMapToken: boolean; hadCombatant: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  const deps = getInstanceDependents(instanceId);
+  db.run('DELETE FROM creature_instance_state WHERE instance_id = ?', [instanceId]);
+  db.run('DELETE FROM bestiary_instances WHERE id = ?', [instanceId]);
+  persist();
+  return { hadMapToken: deps.isOnMap, hadCombatant: deps.isInCombat };
+}
+
+export function batchCreateInstances(templateIds: string[], folderId: string): string[] {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('BEGIN TRANSACTION');
+  try {
+    const instanceIds: string[] = [];
+    for (let i = 0; i < templateIds.length; i++) {
+      const id = crypto.randomUUID();
+      db.run(
+        `INSERT INTO bestiary_instances (id, folder_id, template_id, sort_order, created_at)
+         VALUES (?, ?, ?, ?, datetime('now'))`,
+        [id, folderId, templateIds[i], i],
+      );
+      instanceIds.push(id);
+    }
+    db.run('COMMIT');
+    persist();
+    return instanceIds;
+  } catch (e) {
+    db.run('ROLLBACK');
+    throw e;
+  }
+}
+
+export function createFolderWithInstances(
+  folderName: string,
+  templateIds: string[],
+  parentId?: string,
+  campaignId?: string,
+): { folderId: string; instanceIds: string[]; reused: number } {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('BEGIN TRANSACTION');
+  try {
+    // Find or create folder (scoped by campaign)
+    const existingFolder = campaignId
+      ? db.exec(
+          `SELECT id FROM bestiary_folders WHERE name = ? AND campaign_id = ? AND parent_id IS ?`,
+          [folderName, campaignId, parentId ?? null],
+        )
+      : db.exec(
+          `SELECT id FROM bestiary_folders WHERE name = ? AND parent_id IS ?`,
+          [folderName, parentId ?? null],
+        );
+
+    let folderId: string;
+    if (existingFolder.length > 0 && existingFolder[0].values.length > 0) {
+      folderId = existingFolder[0].values[0][0] as string;
+    } else {
+      folderId = crypto.randomUUID();
+      db.run(
+        `INSERT INTO bestiary_folders (id, campaign_id, parent_id, name, sort_order, created_at)
+         VALUES (?, ?, ?, ?, 0, datetime('now'))`,
+        [folderId, campaignId ?? null, parentId ?? null, folderName],
+      );
+    }
+
+    // Create instances, reusing existing ones in the same folder with same template
+    const instanceIds: string[] = [];
+    let reused = 0;
+    const reusedIds = new Set<string>(); // track already-reused instance IDs
+    for (let i = 0; i < templateIds.length; i++) {
+      // Find existing instances for this template in folder, excluding already-reused
+      const existingInst = db.exec(
+        `SELECT id FROM bestiary_instances WHERE folder_id = ? AND template_id = ?`,
+        [folderId, templateIds[i]],
+      );
+
+      let reusedId: string | null = null;
+      if (existingInst.length > 0) {
+        for (const row of existingInst[0].values) {
+          const id = row[0] as string;
+          if (!reusedIds.has(id)) {
+            reusedId = id;
+            reusedIds.add(id);
+            break;
+          }
+        }
+      }
+
+      if (reusedId) {
+        instanceIds.push(reusedId);
+        reused++;
+      } else {
+        const id = crypto.randomUUID();
+        db.run(
+          `INSERT INTO bestiary_instances (id, folder_id, template_id, sort_order, created_at)
+           VALUES (?, ?, ?, ?, datetime('now'))`,
+          [id, folderId, templateIds[i], i],
+        );
+        instanceIds.push(id);
+        reusedIds.add(id);
+      }
+    }
+
+    db.run('COMMIT');
+    persist();
+    return { folderId, instanceIds, reused };
+  } catch (e) {
+    db.run('ROLLBACK');
+    throw e;
+  }
 }
 
 // ── Campaign Settings ──

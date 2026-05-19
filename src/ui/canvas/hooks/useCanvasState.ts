@@ -231,8 +231,6 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
     }
 
     case 'UPDATE_TOOL_STATE': {
-      const ts = action.toolState as Record<string, unknown> | undefined;
-      console.log('[canvasReducer] UPDATE_TOOL_STATE — winId:', action.id, 'imagePath:', ts?.imagePath, 'tokens:', Array.isArray(ts?.tokens) ? (ts.tokens as unknown[]).length : 'N/A');
       return {
         ...state,
         windows: state.windows.map((w) =>

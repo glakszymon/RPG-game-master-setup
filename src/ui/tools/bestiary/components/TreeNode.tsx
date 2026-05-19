@@ -65,8 +65,9 @@ function InstanceRow({
       draggable
       onDragStart={(e) => {
         const payload = {
-          type: 'bestiary-creature' as const,
+          type: 'encounter-instance' as const,
           id: instance.id,
+          instanceId: instance.id,
           name,
           portraitPath: resolved?.avatarPath ?? null,
           meta: { cr, creatureType: resolved?.creatureType, hp: hp ?? resolved?.hpDefault, ac: resolved?.ac },

@@ -101,6 +101,14 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
       >
         ✦
       </button>
+      <span className={styles.divider} />
+      <button
+        className={`${styles.btn} ${editor.isActive('callout', { type: 'readaloud' }) ? styles.active : ''}`}
+        onClick={() => editor.chain().focus().toggleCallout({ type: 'readaloud' }).run()}
+        title="Read Aloud — text to read to players"
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>record_voice_over</span>
+      </button>
     </div>
   );
 }

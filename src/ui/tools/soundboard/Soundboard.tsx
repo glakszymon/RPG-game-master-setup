@@ -69,6 +69,47 @@ export function Soundboard({ toolState, onToolStateChange, campaignId }: Soundbo
     updateTrack(trackId, { isPlaying: false });
   }, [engine, updateTrack]);
 
+  // ── Cross-tool music event listeners (notepad → soundboard) ──
+  useEffect(() => {
+    const handlePlayEvent = (e: Event) => {
+      const { trackId, trackName, solo } = (e as CustomEvent).detail ?? {};
+      const tracks = stateRef.current.tracks;
+      const track = tracks.find(t => t.id === trackId)
+        || tracks.find(t => t.name.toLowerCase() === (trackName as string)?.toLowerCase());
+      if (!track) return;
+      engine.resume();
+      // Solo mode: stop all other tracks first
+      if (solo) {
+        for (const t of tracks) {
+          if (t.isPlaying && t.id !== track.id) {
+            engine.stopTrack(t.id);
+            updateTrack(t.id, { isPlaying: false });
+          }
+        }
+      }
+      if (!track.isPlaying) {
+        engine.playTrack(track.id, track.filePath, track.source, track.loop, track.volume);
+        updateTrack(track.id, { isPlaying: true });
+      }
+    };
+    const handleStopEvent = () => {
+      for (const t of stateRef.current.tracks) {
+        if (t.isPlaying) {
+          engine.stopTrack(t.id);
+          updateTrack(t.id, { isPlaying: false });
+        }
+      }
+    };
+    window.addEventListener('notepad:play-track', handlePlayEvent);
+    window.addEventListener('notepad:play-music', handlePlayEvent);
+    window.addEventListener('notepad:stop-music', handleStopEvent);
+    return () => {
+      window.removeEventListener('notepad:play-track', handlePlayEvent);
+      window.removeEventListener('notepad:play-music', handlePlayEvent);
+      window.removeEventListener('notepad:stop-music', handleStopEvent);
+    };
+  }, [engine, updateTrack]);
+
   const handleVolumeChange = useCallback((trackId: string, volume: number) => {
     engine.setTrackVolume(trackId, volume);
     updateTrack(trackId, { volume });

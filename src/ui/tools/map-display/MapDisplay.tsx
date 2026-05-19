@@ -20,7 +20,7 @@ const MAX_ZOOM = 5;
 
 export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   const state: MapDisplayState = { ...DEFAULT_MAP_STATE, ...toolState };
-  console.log('[MapDisplay] render — toolState?.imagePath:', (toolState as any)?.imagePath, 'state.imagePath:', state.imagePath);
+
   const canvasAreaRef = useRef<HTMLDivElement | null>(null);
 
   const stateRef = useRef(state);
@@ -204,12 +204,10 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     const signal = { cancelled: false };
     const imagePathChanged = state.imagePath !== prevImagePathRef.current;
     prevImagePathRef.current = state.imagePath;
-    console.log('[MapDisplay] restore effect — imagePath:', state.imagePath, 'mapImage:', !!mapImage, 'changed:', imagePathChanged);
     if (state.imagePath && (!mapImage || imagePathChanged)) {
       if (imagePathChanged) setMapImage(null);
       loadImageRef.current(state.imagePath, true, signal).then((vp) => {
-        console.log('[MapDisplay] loadImage resolved — vp:', vp, 'cancelled:', signal.cancelled);
-        if (vp && !signal.cancelled) {
+      if (vp && !signal.cancelled) {
           patchState({ viewport: vp });
         }
       });
@@ -222,6 +220,26 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
       loadingImageRef.current = false; // Allow next effect run to proceed (StrictMode)
     };
   }, [state.imagePath, mapImage, patchState]);
+
+  // Mount-time validation: remove tokens whose instances no longer exist
+  useEffect(() => {
+    const validate = async () => {
+      const api = window.electronAPI;
+      if (!api) return;
+      const instanceTokens = state.tokens.filter(t => t.sourceType === 'instance' && t.instanceId);
+      if (instanceTokens.length === 0) return;
+      const ids = instanceTokens.map(t => t.instanceId!);
+      const validIds = await api.bestiary.validateInstanceIds(ids);
+      const validSet = new Set(validIds);
+      const orphans = instanceTokens.filter(t => !validSet.has(t.instanceId!));
+      if (orphans.length > 0) {
+        const orphanIds = new Set(orphans.map(t => t.id));
+        patchState({ tokens: state.tokens.filter(t => !orphanIds.has(t.id)) });
+      }
+    };
+    validate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // only on mount
 
   // File picker handler
   const handleLoadMap = useCallback(async () => {
@@ -240,12 +258,26 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     try {
       const data = JSON.parse(raw) as Record<string, unknown>;
 
+      // Block direct bestiary drops — must go through Encounter Sets
+      if (data.type === 'bestiary-creature') {
+        console.warn('[MapDisplay] Direct bestiary drop blocked. Use Encounter Sets.');
+        return;
+      }
+
       let sourceType: MapToken['sourceType'];
+      let instanceId: string | undefined;
       switch (data.type) {
         case 'party-character': sourceType = 'party'; break;
-        case 'bestiary-creature': sourceType = 'bestiary'; break;
+        case 'encounter-instance': sourceType = 'instance'; instanceId = data.instanceId as string; break;
+        case 'preset-template': sourceType = 'preset-template'; break;
         case 'combat-combatant': sourceType = (data.sourceType as MapToken['sourceType']) ?? 'manual'; break;
         default: return;
+      }
+
+      // Duplicate prevention: same instance can't be on map twice
+      if (instanceId && state.tokens.some(t => t.instanceId === instanceId)) {
+        console.warn('[MapDisplay] Instance already placed on map:', instanceId);
+        return;
       }
 
       const container = canvasAreaRef.current;
@@ -262,6 +294,7 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
         id: `token-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         sourceType,
         sourceId: (data.id as string) ?? '',
+        instanceId,
         name: (data.name as string) ?? 'Unknown',
         avatarPath: (data.portraitPath as string | null) ?? null,
         x: mapX,
@@ -272,7 +305,7 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     } catch (err) {
       console.error('[MapDisplay] handleDrop — error:', err);
     }
-  }, [tokenActions, renderer]);
+  }, [tokenActions, renderer, state.tokens]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -380,6 +413,19 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   useEffect(() => {
     renderer.markDirty();
   }, [state.grid, state.tokens, state.activeTool, state.brushSettings, state.vfxInstances, renderer]);
+
+  // Listen for instance deletion events and remove affected tokens
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { instanceId } = (e as CustomEvent).detail as { instanceId: string };
+      const filtered = state.tokens.filter(t => t.instanceId !== instanceId);
+      if (filtered.length !== state.tokens.length) {
+        patchState({ tokens: filtered });
+      }
+    };
+    window.addEventListener('bestiary:instance-deleted', handler);
+    return () => window.removeEventListener('bestiary:instance-deleted', handler);
+  }, [state.tokens, patchState]);
 
   // ── Cursor tracking for preview circle ──
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
