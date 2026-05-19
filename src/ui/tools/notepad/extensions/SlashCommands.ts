@@ -115,7 +115,7 @@ export const SLASH_COMMANDS: SlashCommandItem[] = [
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).insertContent({
         type: 'musicMention',
-        attrs: { trackId: '', trackName: 'Track Name' },
+        attrs: { trackId: '', trackName: '', confirmed: false },
       }).run();
     },
   },
@@ -126,8 +126,24 @@ export const SLASH_COMMANDS: SlashCommandItem[] = [
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).insertContent({
         type: 'dateTag',
-        attrs: { dateText: 'Day, Month, Year' },
+        attrs: { dateText: '', day: 0, month: 0, year: 0, confirmed: false },
       }).run();
+    },
+  },
+  {
+    title: 'Link',
+    description: 'Link to another note',
+    icon: '🔗',
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).insertContent('[[').run();
+    },
+  },
+  {
+    title: 'Mention',
+    description: 'Mention a creature or character',
+    icon: '🐉',
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).insertContent('@').run();
     },
   },
 ];

@@ -116,7 +116,7 @@
   padding: 24px 32px 24px 20px;
   font-family: var(--font-body, "Exo 2", sans-serif);
   font-size: 15px;
-  line-height: 1.7;
+  line-height: 1.5;
   color: var(--color-text-primary);
   counter-reset: line-numbers;
   position: relative;
@@ -181,7 +181,7 @@
 }
 
 .editorContent :global(.tiptap) p {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
 .editorContent :global(.tiptap) ul,
@@ -319,6 +319,25 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.showReferencesBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.15s;
+}
+
+.showReferencesBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 /* ── Autocomplete Menu (Note Links / Entity Mentions) ── */
 
 .autocompleteMenu {
@@ -354,4 +373,16 @@
 .autocompleteItem:hover {
   background: rgba(201, 176, 107, 0.15);
   color: var(--color-accent, #C9B06B);
+}
+
+.autocompleteItemSelected {
+  background: rgba(201, 176, 107, 0.15);
+  color: var(--color-accent, #C9B06B);
+}
+
+.autocompleteEmpty {
+  padding: 8px 12px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+  font-size: 13px;
+  font-style: italic;
 }

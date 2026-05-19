@@ -51,8 +51,11 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
   const [noteLinkMenu, setNoteLinkMenu] = useState<{ query: string; from: number; pos: { top: number; left: number } } | null>(null);
   const [entityMenu, setEntityMenu] = useState<{ query: string; from: number; pos: { top: number; left: number } } | null>(null);
   const [mentionedEntities, setMentionedEntities] = useState<MentionedEntity[]>([]);
+  const [menuIndex, setMenuIndex] = useState(0);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingRef = useRef(false);
+  const noteLinkMenuRef = useRef<HTMLDivElement>(null);
+  const entityMenuRef = useRef<HTMLDivElement>(null);
 
   const patchState = useCallback(
     (patch: Partial<NotepadToolState>) => {
@@ -142,8 +145,8 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
       }
       setNoteLinkMenu(null);
 
-      // Entity mention: @query
-      const mentionMatch = textBefore.match(/@(\w*)$/);
+      // Entity mention: @query (supports Unicode for Polish names)
+      const mentionMatch = textBefore.match(/@([\w\u00C0-\u024F]*)$/);
       if (mentionMatch) {
         const coords = ed.view.coordsAtPos(from);
         const editorRect = ed.view.dom.closest(`.${styles.editorContent}`)?.getBoundingClientRect();
@@ -483,7 +486,7 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
     if (!editor || !entityMenu) return;
     const from = entityMenu.from;
     const textBefore = editor.state.doc.textBetween(Math.max(0, from - 50), from, '\n');
-    const mentionMatch = textBefore.match(/@(\w*)$/);
+    const mentionMatch = textBefore.match(/@([\w\u00C0-\u024F]*)$/);
     if (mentionMatch) {
       const deleteFrom = from - mentionMatch[0].length;
       editor.chain()
@@ -508,14 +511,35 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
       .slice(0, 8);
   }, [noteLinkMenu, notes, activeNote]);
 
-  // ── Entity suggestions (placeholder — will connect to party-tracker) ──
+  // ── Bestiary creatures for entity suggestions ──
+
+  const [bestiaryCreatures, setBestiaryCreatures] = useState<MentionedEntity[]>([]);
+
+  useEffect(() => {
+    async function loadBestiary() {
+      const api = window.electronAPI;
+      if (!api) return;
+      try {
+        const templates = await api.bestiary.listTemplates();
+        setBestiaryCreatures(templates.map(t => ({
+          id: t.id,
+          name: t.name,
+          type: 'creature',
+        })));
+      } catch { /* silent */ }
+    }
+    loadBestiary();
+  }, []);
+
+  // ── Entity suggestions (bestiary + already mentioned) ──
 
   const entitySuggestions = useMemo((): MentionedEntity[] => {
     if (!entityMenu) return [];
-    // TODO: Pull from party-tracker via IPC in the future
-    // For now, show entities already mentioned across all notes (deduped)
-    const all: MentionedEntity[] = [];
-    const seen = new Set<string>();
+
+    // Combine bestiary creatures + entities already mentioned in notes
+    const all: MentionedEntity[] = [...bestiaryCreatures];
+    const seen = new Set<string>(bestiaryCreatures.map(c => c.id));
+
     for (const n of notes) {
       try {
         const content = JSON.parse(n.contentJson);
@@ -532,8 +556,8 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
       } catch { /* skip */ }
     }
     const q = entityMenu.query.toLowerCase();
-    return all.filter(e => e.name.toLowerCase().includes(q)).slice(0, 8);
-  }, [entityMenu, notes]);
+    return all.filter(e => e.name.toLowerCase().includes(q)).slice(0, 10);
+  }, [entityMenu, notes, bestiaryCreatures]);
 
   // ── Cleanup ──
 
@@ -555,6 +579,90 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // ── Reset menu index when menus change ──
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setMenuIndex(0); }, [slashMenu]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setMenuIndex(0); }, [noteLinkMenu]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setMenuIndex(0); }, [entityMenu]);
+
+  // ── Scroll active menu item into view ──
+
+  useEffect(() => {
+    const container = noteLinkMenuRef.current ?? entityMenuRef.current;
+    if (!container) return;
+    const active = container.children[menuIndex] as HTMLElement | undefined;
+    active?.scrollIntoView({ block: 'nearest' });
+  }, [menuIndex]);
+
+  // ── Keyboard navigation for context menus ──
+
+  useEffect(() => {
+    if (!slashMenu && !noteLinkMenu && !entityMenu) return;
+
+    function handleMenuKeyDown(e: KeyboardEvent) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      if (e.key === 'Escape') {
+        setSlashMenu(null);
+        setNoteLinkMenu(null);
+        setEntityMenu(null);
+        return;
+      }
+
+      if (slashMenu) {
+        const len = slashMenu.items.length;
+        if (e.key === 'ArrowDown') setMenuIndex(i => (i + 1) % len);
+        else if (e.key === 'ArrowUp') setMenuIndex(i => (i - 1 + len) % len);
+        else if (e.key === 'Enter') {
+          // Handled via ref below
+          document.dispatchEvent(new CustomEvent('notepad:menu-confirm'));
+        }
+      } else if (noteLinkMenu) {
+        const len = noteLinkSuggestions.length;
+        if (len === 0) return;
+        if (e.key === 'ArrowDown') setMenuIndex(i => (i + 1) % len);
+        else if (e.key === 'ArrowUp') setMenuIndex(i => (i - 1 + len) % len);
+        else if (e.key === 'Enter') {
+          document.dispatchEvent(new CustomEvent('notepad:menu-confirm'));
+        }
+      } else if (entityMenu) {
+        const len = entitySuggestions.length;
+        if (len === 0) return;
+        if (e.key === 'ArrowDown') setMenuIndex(i => (i + 1) % len);
+        else if (e.key === 'ArrowUp') setMenuIndex(i => (i - 1 + len) % len);
+        else if (e.key === 'Enter') {
+          document.dispatchEvent(new CustomEvent('notepad:menu-confirm'));
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleMenuKeyDown, true);
+    return () => document.removeEventListener('keydown', handleMenuKeyDown, true);
+  }, [slashMenu, noteLinkMenu, entityMenu, noteLinkSuggestions.length, entitySuggestions.length]);
+
+  // ── Handle Enter confirm from keyboard ──
+
+  useEffect(() => {
+    function handleConfirm() {
+      if (slashMenu) {
+        const item = slashMenu.items[menuIndex];
+        if (item) handleSlashCommand(item);
+      } else if (noteLinkMenu && noteLinkSuggestions[menuIndex]) {
+        handleInsertNoteLink(noteLinkSuggestions[menuIndex]);
+      } else if (entityMenu && entitySuggestions[menuIndex]) {
+        handleInsertEntity(entitySuggestions[menuIndex]);
+      }
+    }
+    document.addEventListener('notepad:menu-confirm', handleConfirm);
+    return () => document.removeEventListener('notepad:menu-confirm', handleConfirm);
+  });
 
   // ── Click handler for note links in editor ──
 
@@ -676,6 +784,15 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
             ☰
           </button>
         )}
+        {!state.referencePanelVisible && (
+          <button
+            className={styles.showReferencesBtn}
+            onClick={() => patchState({ referencePanelVisible: true })}
+            title="Show references panel"
+          >
+            ▶
+          </button>
+        )}
         {activeNote ? (
           <>
             <EditorToolbar editor={editor} />
@@ -687,37 +804,46 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
                   <SlashCommandsMenu
                     items={slashMenu.items}
                     command={handleSlashCommand}
+                    selectedIndex={menuIndex}
                   />
                 </div>
               )}
               {/* Note link autocomplete */}
-              {noteLinkMenu && noteLinkSuggestions.length > 0 && (
-                <div className={styles.autocompleteMenu} style={{ position: 'absolute', top: noteLinkMenu.pos.top, left: noteLinkMenu.pos.left }}>
-                  {noteLinkSuggestions.map(note => (
-                    <button
-                      key={note.id}
-                      className={styles.autocompleteItem}
-                      onMouseDown={e => e.preventDefault()}
-                      onClick={() => handleInsertNoteLink(note)}
-                    >
-                      📄 {note.title}
-                    </button>
-                  ))}
+              {noteLinkMenu && (
+                <div ref={noteLinkMenuRef} className={styles.autocompleteMenu} style={{ position: 'absolute', top: noteLinkMenu.pos.top, left: noteLinkMenu.pos.left }}>
+                  {noteLinkSuggestions.length > 0 ? (
+                    noteLinkSuggestions.map((note, i) => (
+                      <button
+                        key={note.id}
+                        className={`${styles.autocompleteItem} ${i === menuIndex ? styles.autocompleteItemSelected : ''}`}
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => handleInsertNoteLink(note)}
+                      >
+                        📄 {note.title}
+                      </button>
+                    ))
+                  ) : (
+                    <div className={styles.autocompleteEmpty}>No matching notes</div>
+                  )}
                 </div>
               )}
               {/* Entity mention autocomplete */}
-              {entityMenu && entitySuggestions.length > 0 && (
-                <div className={styles.autocompleteMenu} style={{ position: 'absolute', top: entityMenu.pos.top, left: entityMenu.pos.left }}>
-                  {entitySuggestions.map(entity => (
-                    <button
-                      key={entity.id}
-                      className={styles.autocompleteItem}
-                      onMouseDown={e => e.preventDefault()}
-                      onClick={() => handleInsertEntity(entity)}
-                    >
-                      {entity.type === 'creature' ? '🐉' : '👤'} {entity.name}
-                    </button>
-                  ))}
+              {entityMenu && (
+                <div ref={entityMenuRef} className={styles.autocompleteMenu} style={{ position: 'absolute', top: entityMenu.pos.top, left: entityMenu.pos.left }}>
+                  {entitySuggestions.length > 0 ? (
+                    entitySuggestions.map((entity, i) => (
+                      <button
+                        key={entity.id}
+                        className={`${styles.autocompleteItem} ${i === menuIndex ? styles.autocompleteItemSelected : ''}`}
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => handleInsertEntity(entity)}
+                      >
+                        {entity.type === 'creature' ? '🐉' : '👤'} {entity.name}
+                      </button>
+                    ))
+                  ) : (
+                    <div className={styles.autocompleteEmpty}>No creatures in bestiary</div>
+                  )}
                 </div>
               )}
             </div>
