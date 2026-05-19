@@ -46,10 +46,10 @@ export function PresetEditorDialog({
 
   const handleEntityDragStart = useCallback((e: React.DragEvent, entity: MentionedEntity) => {
     const payload = {
-      type: 'bestiary-creature',
+      type: 'preset-template',
       id: entity.id,
       name: entity.name,
-      portraitPath: null,
+      portraitPath: entity.portraitPath || null,
     };
     e.dataTransfer.setData('application/json', JSON.stringify(payload));
     e.dataTransfer.effectAllowed = 'copy';

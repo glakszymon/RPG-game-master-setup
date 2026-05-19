@@ -76,16 +76,33 @@ export interface BestiaryInstanceRow {
   created_at: string;
 }
 
+export interface InstanceStateRow {
+  instance_id: string;
+  current_hp: number | null;
+  max_hp: number | null;
+  conditions: string;
+  is_on_map: number;
+  map_token_id: string | null;
+  is_in_combat: number;
+}
+
 export interface ElectronBestiaryAPI {
   listTemplates: () => Promise<BestiaryTemplateRow[]>;
   saveTemplate: (dataJson: string) => Promise<{ ok: boolean } | null>;
   deleteTemplate: (id: string) => Promise<{ ok: boolean } | null>;
-  listFolders: () => Promise<BestiaryFolderRow[]>;
-  saveFolder: (id: string, parentId: string | null, name: string, sortOrder: number) => Promise<{ ok: boolean } | null>;
+  listFolders: (campaignId?: string) => Promise<BestiaryFolderRow[]>;
+  saveFolder: (id: string, parentId: string | null, name: string, sortOrder: number, campaignId?: string) => Promise<{ ok: boolean } | null>;
   deleteFolder: (id: string) => Promise<{ ok: boolean } | null>;
   listInstances: () => Promise<BestiaryInstanceRow[]>;
   saveInstance: (id: string, folderId: string, templateId: string | null, instanceName: string | null, overrides: string, sortOrder: number) => Promise<{ ok: boolean } | null>;
   deleteInstance: (id: string) => Promise<{ ok: boolean } | null>;
+  getInstanceState: (instanceId: string) => Promise<InstanceStateRow | null>;
+  updateInstanceState: (instanceId: string, stateJson: string) => Promise<{ ok: boolean } | null>;
+  getInstanceDependents: (instanceId: string) => Promise<{ isOnMap: boolean; isInCombat: boolean } | null>;
+  validateInstanceIds: (ids: string[]) => Promise<string[]>;
+  deleteInstanceCascade: (instanceId: string) => Promise<{ hadMapToken: boolean; hadCombatant: boolean } | null>;
+  batchCreateInstances: (templateIds: string[], folderId: string) => Promise<string[] | null>;
+  createFolderWithInstances: (folderName: string, templateIds: string[], parentId?: string, campaignId?: string) => Promise<{ folderId: string; instanceIds: string[]; reused: number } | null>;
 }
 
 export interface ElectronSettingsAPI {

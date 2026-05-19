@@ -6,7 +6,7 @@
  * Right panel: full instance editor (CreatureForm-like) for the selected instance.
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useBestiaryState } from './hooks/useBestiaryState';
 import { useCreatureStructure } from './hooks/useCreatureStructure';
 import { templateToFieldValues } from './templateConversion';
@@ -40,9 +40,9 @@ export function EncounterSets({ toolState, onToolStateChange, campaignId }: Enco
   const {
     templates, folders, instances, loading,
     saveFolder, deleteFolder,
-    saveInstance, deleteInstance,
+    saveInstance,
     resolveInstance,
-  } = useBestiaryState();
+  } = useBestiaryState(campaignId);
 
   // ── Selected instance ──
   const selectedInstance = useMemo(() => {
@@ -111,10 +111,31 @@ export function EncounterSets({ toolState, onToolStateChange, campaignId }: Enco
     });
   }, [templates, instances, saveInstance]);
 
-  const handleDeleteInstance = useCallback((id: string) => {
-    deleteInstance(id);
-    if (state.selectedInstanceId === id) patchState({ selectedInstanceId: null });
-  }, [deleteInstance, state.selectedInstanceId, patchState]);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; isOnMap: boolean; isInCombat: boolean } | null>(null);
+
+  const handleDeleteInstance = useCallback(async (id: string) => {
+    const api = window.electronAPI;
+    if (!api) return;
+    const deps = await api.bestiary.getInstanceDependents(id);
+    if (deps && (deps.isOnMap || deps.isInCombat)) {
+      setDeleteConfirm({ id, ...deps });
+    } else {
+      await api.bestiary.deleteInstanceCascade(id);
+      if (state.selectedInstanceId === id) patchState({ selectedInstanceId: null });
+      window.dispatchEvent(new CustomEvent('bestiary:data-changed'));
+    }
+  }, [state.selectedInstanceId, patchState]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteConfirm) return;
+    const api = window.electronAPI;
+    if (!api) return;
+    await api.bestiary.deleteInstanceCascade(deleteConfirm.id);
+    if (state.selectedInstanceId === deleteConfirm.id) patchState({ selectedInstanceId: null });
+    window.dispatchEvent(new CustomEvent('bestiary:instance-deleted', { detail: { instanceId: deleteConfirm.id } }));
+    window.dispatchEvent(new CustomEvent('bestiary:data-changed'));
+    setDeleteConfirm(null);
+  }, [deleteConfirm, state.selectedInstanceId, patchState]);
 
   const handleDuplicateInstance = useCallback((id: string) => {
     const inst = instances.find(i => i.id === id);
@@ -230,6 +251,25 @@ export function EncounterSets({ toolState, onToolStateChange, campaignId }: Enco
           )}
         </div>
       </div>
+
+      {/* Cascade delete confirmation dialog */}
+      {deleteConfirm && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h4>Delete Instance?</h4>
+            <p>This instance is currently active:</p>
+            <ul>
+              {deleteConfirm.isOnMap && <li>Placed on Map</li>}
+              {deleteConfirm.isInCombat && <li>In Combat Tracker</li>}
+            </ul>
+            <p>Deleting will remove it from all modules.</p>
+            <div className={styles.modalActions}>
+              <button onClick={confirmDelete} className={styles.dangerBtn}>Delete</button>
+              <button onClick={() => setDeleteConfirm(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

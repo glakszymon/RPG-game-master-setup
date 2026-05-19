@@ -30,8 +30,8 @@ function MusicMentionView({ node, updateAttributes, editor }: NodeViewProps) {
   }
 
   function handlePlay() {
-    document.dispatchEvent(new CustomEvent('notepad:play-music', {
-      detail: { trackId: node.attrs.trackId, trackName: node.attrs.trackName },
+    window.dispatchEvent(new CustomEvent('notepad:play-music', {
+      detail: { trackId: node.attrs.trackId, trackName: node.attrs.trackName, solo: node.attrs.solo },
     }));
   }
 
@@ -94,7 +94,7 @@ function MusicMentionView({ node, updateAttributes, editor }: NodeViewProps) {
       <span
         onClick={handlePlay}
         onDoubleClick={() => { if (editor.isEditable) setEditing(true); }}
-        title={`Play: ${node.attrs.trackName}`}
+        title={`Play: ${node.attrs.trackName}${node.attrs.solo ? ' (solo — mutes others)' : ''}`}
         style={{
           background: 'rgba(147, 130, 220, 0.15)',
           color: '#9382dc',
@@ -110,6 +110,15 @@ function MusicMentionView({ node, updateAttributes, editor }: NodeViewProps) {
         }}
       >
         ▶ {node.attrs.trackName || 'Unknown Track'}
+        {editor.isEditable && (
+          <span
+            onClick={(e) => { e.stopPropagation(); updateAttributes({ solo: !node.attrs.solo }); }}
+            title={node.attrs.solo ? 'Solo ON (click to disable)' : 'Solo OFF (click to mute others on play)'}
+            style={{ opacity: node.attrs.solo ? 1 : 0.4, fontSize: '0.85em', cursor: 'pointer' }}
+          >
+            🔇
+          </span>
+        )}
       </span>
     </NodeViewWrapper>
   );
@@ -125,6 +134,7 @@ export const MusicMention = Node.create({
     return {
       trackId: { default: '' },
       trackName: { default: '' },
+      solo: { default: false },
       confirmed: { default: false },
     };
   },

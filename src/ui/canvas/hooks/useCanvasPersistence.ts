@@ -34,7 +34,6 @@ export function useCanvasPersistence(
 
     api.canvas.load(campaignId).then((json: string | null) => {
       if (!json) {
-        console.log('[Persistence] No saved state for campaign:', campaignId);
         // New campaign — reset to empty state
         dispatch({ type: 'LOAD_STATE', state: { windows: [], background: 'dot-grid', nextWindowId: 0 } as any });
       } else {
@@ -44,13 +43,14 @@ export function useCanvasPersistence(
           const validToolTypes = new Set(['combat-tracker','party-tracker','bestiary','encounter-sets','notepad','map-display','soundboard','weather-generator','time-clock','time-calendar','time-session-timer','shop-generator','dice-roller']);
           loaded.windows = (loaded.windows || []).filter((w) => {
             if (!validToolTypes.has(w.toolType)) {
-              console.warn('[Persistence] Removing window with unknown toolType:', w.toolType);
               return false;
             }
             return true;
           });
           const mapWindows = loaded.windows.filter((w) => w.toolType === 'map-display');
-          console.log('[Persistence] Loaded state — windows:', loaded.windows.length, 'map windows:', mapWindows.length, 'map imagePaths:', mapWindows.map((w) => (w.toolState as any)?.imagePath));
+          if (mapWindows.length > 0) {
+            console.log('[Persistence] Loaded', loaded.windows.length, 'windows,', mapWindows.length, 'maps');
+          }
           dispatch({ type: 'LOAD_STATE', state: loaded });
         } catch {
           // ignore corrupt data
@@ -68,8 +68,6 @@ export function useCanvasPersistence(
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      const mapWindows = state.windows?.filter((w) => w.toolType === 'map-display');
-      console.log('[Persistence] Saving — map imagePaths:', mapWindows?.map((w) => (w.toolState as any)?.imagePath));
       api.canvas.save(campaignId, JSON.stringify(state));
     }, SAVE_DEBOUNCE_MS);
 

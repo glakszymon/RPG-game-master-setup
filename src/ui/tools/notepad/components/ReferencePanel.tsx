@@ -14,10 +14,13 @@ export interface MentionedEntity {
   id: string;
   name: string;
   type: string; // 'character' | 'creature'
+  portraitPath?: string | null;
+  count: number; // how many times mentioned (for instance creation)
 }
 
 interface ReferencePanelProps {
   activeNoteId: string | null;
+  activeNoteTitle: string;
   notes: NoteItem[];
   graphData: GraphData;
   mentionedEntities: MentionedEntity[];
@@ -30,6 +33,7 @@ interface ReferencePanelProps {
 
 export function ReferencePanel({
   activeNoteId,
+  activeNoteTitle,
   notes,
   graphData,
   mentionedEntities,
@@ -46,6 +50,7 @@ export function ReferencePanel({
 
   // Load presets when active note changes
   useEffect(() => {
+    createdInstancesRef.current = null;
     if (!activeNoteId) {
       setPresets([]); // eslint-disable-line react-hooks/set-state-in-effect
       return;
@@ -98,13 +103,82 @@ export function ReferencePanel({
     if (!api) return;
     const preset = await api.notePresets.load(presetId);
     if (preset && preset.map_state_json && preset.map_state_json !== '{}') {
-      onLoadMapPreset(preset.map_state_json);
+      // Convert preset-template tokens to instances before loading
+      const mapState = JSON.parse(preset.map_state_json) as { tokens?: Array<{ sourceType: string; sourceId: string; instanceId?: string }> };
+      const tokens = mapState.tokens ?? [];
+      const presetTokens = tokens.filter(t => t.sourceType === 'preset-template');
+
+      if (presetTokens.length > 0) {
+        const templateIds = presetTokens.map(t => t.sourceId);
+
+        // Reuse instances from previously created encounter group if templates match
+        const cached = createdInstancesRef.current;
+        let instanceIds: string[];
+
+        if (cached && cached.templateIds.length === templateIds.length && templateIds.every((id, i) => id === cached.templateIds[i])) {
+          // Reuse existing folder — no need to create a second one
+          instanceIds = cached.instanceIds;
+        } else {
+          // No matching folder exists yet — create one
+          const result = await api.bestiary.createFolderWithInstances(
+            activeNoteTitle || preset.name || 'Preset',
+            templateIds,
+            undefined,
+            campaignId,
+          );
+          if (!result || 'error' in result) return;
+          instanceIds = result.instanceIds;
+          createdInstancesRef.current = { folderId: result.folderId, instanceIds, templateIds };
+          window.dispatchEvent(new CustomEvent('bestiary:data-changed'));
+        }
+
+        presetTokens.forEach((token, i) => {
+          token.sourceType = 'instance';
+          token.sourceId = instanceIds[i];
+          token.instanceId = instanceIds[i];
+        });
+      }
+
+      onLoadMapPreset(JSON.stringify(mapState));
       // Flash feedback
       setLoadedPresetId(presetId);
       if (loadedTimerRef.current) clearTimeout(loadedTimerRef.current);
       loadedTimerRef.current = setTimeout(() => setLoadedPresetId(null), 1500);
     }
-  }, [onLoadMapPreset]);
+  }, [onLoadMapPreset, campaignId, activeNoteTitle]);
+
+  // Create Encounter Group from creature mentions
+  const [encounterGroupCreated, setEncounterGroupCreated] = useState(false);
+  // Store created instance IDs so handleLoadPreset can reuse them instead of creating a second folder
+  const createdInstancesRef = useRef<{ folderId: string; instanceIds: string[]; templateIds: string[] } | null>(null);
+
+  const handleCreateEncounterGroup = useCallback(async () => {
+    const api = window.electronAPI;
+    if (!api) return;
+    const creatures = mentionedEntities.filter(e => e.type === 'creature');
+    if (creatures.length === 0) return;
+    // Expand by count: if @Goblin appears 3 times, send template ID 3 times
+    const creatureIds: string[] = [];
+    for (const c of creatures) {
+      for (let i = 0; i < c.count; i++) {
+        creatureIds.push(c.id);
+      }
+    }
+    const folderName = activeNoteTitle || 'Encounter Group';
+    try {
+      const result = await api.bestiary.createFolderWithInstances(folderName, creatureIds, undefined, campaignId);
+      if (!result || 'error' in result) {
+        console.error('[ReferencePanel] Failed:', result);
+        return;
+      }
+      createdInstancesRef.current = { folderId: result.folderId, instanceIds: result.instanceIds, templateIds: creatureIds };
+      window.dispatchEvent(new CustomEvent('bestiary:data-changed'));
+      setEncounterGroupCreated(true);
+      setTimeout(() => setEncounterGroupCreated(false), 2000);
+    } catch (err) {
+      console.error('[ReferencePanel] createFolderWithInstances error:', err);
+    }
+  }, [mentionedEntities, activeNoteTitle, campaignId]);
 
   // Compute backlinks: notes that link TO the active note
   const backlinks = activeNoteId
@@ -194,9 +268,19 @@ export function ReferencePanel({
                   <span className={styles.entityIcon}>
                     {entity.type === 'creature' ? '🐉' : '👤'}
                   </span>
-                  <span className={styles.entityName}>{entity.name}</span>
+                  <span className={styles.entityName}>
+                    {entity.name}{entity.count > 1 ? ` ×${entity.count}` : ''}
+                  </span>
                 </div>
               ))}
+              {mentionedEntities.some(e => e.type === 'creature') && (
+                <button
+                  className={styles.addPresetBtn}
+                  onClick={handleCreateEncounterGroup}
+                >
+                  {encounterGroupCreated ? '✓ Created!' : '+ Create Encounter Group'}
+                </button>
+              )}
             </section>
           )}
 

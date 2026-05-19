@@ -98,17 +98,6 @@ export const SLASH_COMMANDS: SlashCommandItem[] = [
     },
   },
   {
-    title: 'Macro',
-    description: 'Macro step sequence (scene automation)',
-    icon: '⚡',
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).insertContent({
-        type: 'macroBlock',
-        attrs: { steps: '[]' },
-      }).run();
-    },
-  },
-  {
     title: 'Music',
     description: 'Insert music track reference',
     icon: '🎵',
@@ -121,12 +110,23 @@ export const SLASH_COMMANDS: SlashCommandItem[] = [
   },
   {
     title: 'Date',
-    description: 'Insert in-world date tag',
+    description: 'Set current calendar date',
     icon: '📅',
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).insertContent({
         type: 'dateTag',
         attrs: { dateText: '', day: 0, month: 0, year: 0, confirmed: false },
+      }).run();
+    },
+  },
+  {
+    title: 'Event',
+    description: 'Add calendar event/holiday',
+    icon: '🎉',
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).insertContent({
+        type: 'eventTag',
+        attrs: { eventName: '', day: 0, month: 0, confirmed: false },
       }).run();
     },
   },

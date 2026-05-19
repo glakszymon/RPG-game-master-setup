@@ -135,9 +135,12 @@ export function CombatTracker({ toolState, onToolStateChange }: CombatTrackerPro
     try {
       const data: DragData = JSON.parse(raw);
 
-      if (data.type === 'party-character' || data.type === 'bestiary-creature') {
+      if (data.type === 'party-character' || data.type === 'bestiary-creature' || data.type === 'encounter-instance') {
         const hp = data.hp ?? data.meta?.hp ?? 10;
         const armor = data.armor ?? data.meta?.ac ?? 0;
+        const sourceType = data.type === 'party-character' ? 'party'
+          : data.type === 'encounter-instance' ? 'instance'
+          : 'bestiary';
         addCombatant({
           name: data.name ?? 'Unknown',
           portraitPath: data.portraitPath ?? null,
@@ -147,7 +150,7 @@ export function CombatTracker({ toolState, onToolStateChange }: CombatTrackerPro
           initiativeModifier: data.initiativeModifier ?? 0,
           initiativeRoll: null,
           conditions: [],
-          sourceType: data.type === 'party-character' ? 'party' : 'bestiary',
+          sourceType,
           sourceId: data.id ?? null,
         });
       } else if (data.type === 'encounter-set' && data.creatures) {

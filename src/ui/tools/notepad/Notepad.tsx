@@ -6,7 +6,7 @@
  * Autosaves content to SQLite via IPC.
  */
 
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -16,9 +16,9 @@ import Highlight from '@tiptap/extension-highlight';
 import { Callout } from './extensions/Callout';
 import { NoteLink } from './extensions/NoteLink';
 import { EntityMention } from './extensions/EntityMention';
-import { MacroBlock } from './extensions/macro-block/MacroBlock';
 import { MusicMention } from './extensions/MusicMention';
 import { DateTag } from './extensions/DateTag';
+import { EventTag } from './extensions/EventTag';
 import { SLASH_COMMANDS } from './extensions/SlashCommands';
 import type { SlashCommandItem } from './extensions/SlashCommands';
 import { NotepadSidebar } from './components/NotepadSidebar';
@@ -29,7 +29,6 @@ import { StoryGraph } from './components/StoryGraph';
 import { ReferencePanel } from './components/ReferencePanel';
 import type { MentionedEntity } from './components/ReferencePanel';
 import { useGraphData } from './hooks/useGraphData';
-import { useMacroExecutor } from './hooks/useMacroExecutor';
 import { DEFAULT_NOTEPAD_STATE } from './types';
 import type { NotepadToolState, NoteItem, NoteFolderItem, SidebarTab } from './types';
 import styles from './Notepad.module.css';
@@ -55,6 +54,7 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
   const [menuIndex, setMenuIndex] = useState(0);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingRef = useRef(false);
+  const extractMentionsRef = useRef<(content: unknown) => void>(() => {});
   const noteLinkMenuRef = useRef<HTMLDivElement>(null);
   const entityMenuRef = useRef<HTMLDivElement>(null);
 
@@ -67,9 +67,6 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
 
   // ── Graph Data ──
   const { graphData, refresh: refreshGraph } = useGraphData(campaignId, notes);
-
-  // ── Macro Executor ──
-  useMacroExecutor({ onLoadMapPreset });
 
   // ── Tiptap Editor ──
 
@@ -87,14 +84,17 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
       Callout,
       NoteLink,
       EntityMention,
-      MacroBlock,
       MusicMention,
       DateTag,
+      EventTag,
     ],
     content: '',
     onUpdate: ({ editor: ed }) => {
       if (loadingRef.current) return;
-      debouncedSave(ed.getJSON());
+      const json = ed.getJSON();
+      debouncedSave(json);
+      // Update mentions inline (extractMentions uses refs so it's safe from stale closure)
+      extractMentionsRef.current(json);
 
       // Check for triggers
       const { from } = ed.state.selection;
@@ -227,7 +227,12 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
   }
 
   function loadNoteIntoEditor(note: NoteItem) {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
+    // Cancel any pending save from previous note
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
     loadingRef.current = true;
     setActiveNote(note);
     try {
@@ -236,7 +241,9 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
       // Extract mentions from loaded content
       extractMentions(content);
     } catch {
-      editor.commands.setContent('');
+      if (editor && !editor.isDestroyed) {
+        editor.commands.setContent('');
+      }
       setMentionedEntities([]);
     }
     loadingRef.current = false;
@@ -244,20 +251,26 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
 
   // ── Extract @mentions from Tiptap JSON ──
 
-  function extractMentions(content: unknown) {
-    const entities: MentionedEntity[] = [];
-    const seen = new Set<string>();
+  const mentionRequestRef = useRef(0);
+
+  async function extractMentions(content: unknown) {
+    const requestId = ++mentionRequestRef.current;
+    const countMap = new Map<string, { name: string; type: string; count: number }>();
 
     function walk(node: unknown) {
       if (!node || typeof node !== 'object') return;
       const n = node as { type?: string; attrs?: { entityId?: string; entityName?: string; entityType?: string }; content?: unknown[] };
-      if (n.type === 'entityMention' && n.attrs?.entityId && !seen.has(n.attrs.entityId)) {
-        seen.add(n.attrs.entityId);
-        entities.push({
-          id: n.attrs.entityId,
-          name: n.attrs.entityName || 'Unknown',
-          type: n.attrs.entityType || 'character',
-        });
+      if (n.type === 'entityMention' && n.attrs?.entityId) {
+        const existing = countMap.get(n.attrs.entityId);
+        if (existing) {
+          existing.count++;
+        } else {
+          countMap.set(n.attrs.entityId, {
+            name: n.attrs.entityName || 'Unknown',
+            type: n.attrs.entityType || 'character',
+            count: 1,
+          });
+        }
       }
       if (Array.isArray(n.content)) {
         n.content.forEach(walk);
@@ -265,8 +278,45 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
     }
 
     walk(content);
-    setMentionedEntities(entities);
+
+    const entities: MentionedEntity[] = Array.from(countMap.entries()).map(([id, data]) => ({
+      id,
+      name: data.name,
+      type: data.type,
+      count: data.count,
+    }));
+
+    // Set immediately with what we have (no portraits yet)
+    if (requestId === mentionRequestRef.current) {
+      setMentionedEntities(entities);
+    }
+
+    // Enrich creature entities with portraitPath from bestiary templates
+    const api = window.electronAPI;
+    if (api && entities.some(e => e.type === 'creature')) {
+      try {
+        const templates = await api.bestiary.listTemplates();
+        if (requestId !== mentionRequestRef.current) return; // stale
+        const templateMap = new Map(templates.map(t => [t.id, t]));
+        for (const entity of entities) {
+          if (entity.type === 'creature') {
+            const tmpl = templateMap.get(entity.id);
+            if (tmpl) {
+              entity.portraitPath = tmpl.avatar_path;
+            }
+          }
+        }
+        setMentionedEntities([...entities]);
+      } catch {
+        // Silently continue without portraits
+      }
+    }
   }
+
+  // Keep ref fresh for stale-closure-safe access from onUpdate
+  useLayoutEffect(() => {
+    extractMentionsRef.current = extractMentions;
+  });
 
   // ── Extract note links and sync to DB ──
 
@@ -322,13 +372,13 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
       activeNote.sortOrder,
     );
 
-    // Extract & sync links and mentions
+    // Extract & sync links
     extractAndSyncLinks(contentJson);
-    extractMentions(contentJson);
 
-    // Update local state
-    setActiveNote(prev => prev ? { ...prev, title, contentJson: json } : null);
-    setNotes(prev => prev.map(n => n.id === activeNote.id ? { ...n, title, contentJson: json } : n));
+    // Update local state (only if still on the same note)
+    const savedNoteId = activeNote.id;
+    setActiveNote(prev => prev?.id === savedNoteId ? { ...prev, title, contentJson: json } : prev);
+    setNotes(prev => prev.map(n => n.id === savedNoteId ? { ...n, title, contentJson: json } : n));
   }
 
   function extractTitle(content: unknown): string {
@@ -526,6 +576,8 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
           id: t.id,
           name: t.name,
           type: 'creature',
+          portraitPath: t.avatar_path,
+          count: 1,
         })));
       } catch { /* silent */ }
     }
@@ -549,7 +601,7 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
           const nd = node as { type?: string; attrs?: { entityId?: string; entityName?: string; entityType?: string }; content?: unknown[] };
           if (nd.type === 'entityMention' && nd.attrs?.entityId && !seen.has(nd.attrs.entityId)) {
             seen.add(nd.attrs.entityId);
-            all.push({ id: nd.attrs.entityId, name: nd.attrs.entityName || 'Unknown', type: nd.attrs.entityType || 'character' });
+            all.push({ id: nd.attrs.entityId, name: nd.attrs.entityName || 'Unknown', type: nd.attrs.entityType || 'character', count: 1 });
           }
           if (Array.isArray(nd.content)) nd.content.forEach(walk);
         }
@@ -860,6 +912,7 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
       {state.referencePanelVisible && (
         <ReferencePanel
           activeNoteId={activeNote?.id ?? null}
+          activeNoteTitle={activeNote?.title ?? ''}
           notes={notes}
           graphData={graphData}
           mentionedEntities={mentionedEntities}

@@ -10,6 +10,8 @@ import {
   listBestiaryTemplates, saveBestiaryTemplate, deleteBestiaryTemplate,
   listBestiaryFolders, saveBestiaryFolder, deleteBestiaryFolder,
   listBestiaryInstances, saveBestiaryInstance, deleteBestiaryInstance,
+  getInstanceState, updateInstanceState, getInstanceDependents, validateInstanceIds, deleteInstanceCascade,
+  batchCreateInstances, createFolderWithInstances,
   loadCampaignSetting, saveCampaignSetting,
   listNoteFolders, saveNoteFolder, deleteNoteFolder,
   listNotes, getNote, saveNote, deleteNote,
@@ -138,12 +140,12 @@ app.on('ready', async () => {
     try { deleteBestiaryTemplate(id); return { ok: true }; } catch { return null; }
   });
 
-  ipcMain.handle('bestiary:list-folders', () => {
-    try { return listBestiaryFolders(); } catch { return []; }
+  ipcMain.handle('bestiary:list-folders', (_event, campaignId?: string) => {
+    try { return listBestiaryFolders(campaignId); } catch { return []; }
   });
 
-  ipcMain.handle('bestiary:save-folder', (_event, id: string, parentId: string | null, name: string, sortOrder: number) => {
-    try { saveBestiaryFolder(id, parentId, name, sortOrder); return { ok: true }; } catch { return null; }
+  ipcMain.handle('bestiary:save-folder', (_event, id: string, parentId: string | null, name: string, sortOrder: number, campaignId?: string) => {
+    try { saveBestiaryFolder(id, parentId, name, sortOrder, campaignId); return { ok: true }; } catch { return null; }
   });
 
   ipcMain.handle('bestiary:delete-folder', (_event, id: string) => {
@@ -160,6 +162,34 @@ app.on('ready', async () => {
 
   ipcMain.handle('bestiary:delete-instance', (_event, id: string) => {
     try { deleteBestiaryInstance(id); return { ok: true }; } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:get-instance-state', (_event, instanceId: string) => {
+    try { return getInstanceState(instanceId); } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:update-instance-state', (_event, instanceId: string, stateJson: string) => {
+    try { updateInstanceState(instanceId, stateJson); return { ok: true }; } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:get-instance-dependents', (_event, instanceId: string) => {
+    try { return getInstanceDependents(instanceId); } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:validate-instance-ids', (_event, ids: string[]) => {
+    try { return validateInstanceIds(ids); } catch { return []; }
+  });
+
+  ipcMain.handle('bestiary:delete-instance-cascade', (_event, instanceId: string) => {
+    try { return deleteInstanceCascade(instanceId); } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:batch-create-instances', (_event, templateIds: string[], folderId: string) => {
+    try { return batchCreateInstances(templateIds, folderId); } catch { return null; }
+  });
+
+  ipcMain.handle('bestiary:create-folder-with-instances', (_event, folderName: string, templateIds: string[], parentId?: string, campaignId?: string) => {
+    try { return createFolderWithInstances(folderName, templateIds, parentId, campaignId); } catch (e) { console.error('[IPC] createFolderWithInstances error:', e); return { error: String(e) }; }
   });
 
   // ── Campaign Settings IPC handlers ──

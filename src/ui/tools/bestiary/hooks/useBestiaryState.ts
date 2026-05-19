@@ -58,7 +58,7 @@ function parseInstanceRow(row: BestiaryInstanceRow): CreatureInstance {
   };
 }
 
-export function useBestiaryState() {
+export function useBestiaryState(campaignId?: string) {
   const [templates, setTemplates] = useState<CreatureTemplate[]>([]);
   const [folders, setFolders] = useState<BestiaryFolder[]>([]);
   const [instances, setInstances] = useState<CreatureInstance[]>([]);
@@ -66,32 +66,38 @@ export function useBestiaryState() {
   const loadingRef = useRef(false);
 
   // Load all data on mount
+  const load = useCallback(async () => {
+    const api = window.electronAPI?.bestiary;
+    if (!api) { setLoading(false); return; }
+
+    try {
+      const [tRows, fRows, iRows] = await Promise.all([
+        api.listTemplates(),
+        api.listFolders(campaignId),
+        api.listInstances(),
+      ]);
+      setTemplates(tRows.map(parseTemplateRow));
+      setFolders(fRows.map(parseFolderRow));
+      setInstances(iRows.map(parseInstanceRow));
+    } catch (err) {
+      console.error('Failed to load bestiary data', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [campaignId]);
+
   useEffect(() => {
     if (loadingRef.current) return;
     loadingRef.current = true;
-
-    async function load() {
-      const api = window.electronAPI?.bestiary;
-      if (!api) { setLoading(false); return; }
-
-      try {
-        const [tRows, fRows, iRows] = await Promise.all([
-          api.listTemplates(),
-          api.listFolders(),
-          api.listInstances(),
-        ]);
-        setTemplates(tRows.map(parseTemplateRow));
-        setFolders(fRows.map(parseFolderRow));
-        setInstances(iRows.map(parseInstanceRow));
-      } catch (err) {
-        console.error('Failed to load bestiary data', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     load();
-  }, []);
+  }, [load]);
+
+  // Listen for external data changes (e.g. "Create Encounter Group" from Notepad)
+  useEffect(() => {
+    const handler = () => { load(); };
+    window.addEventListener('bestiary:data-changed', handler);
+    return () => window.removeEventListener('bestiary:data-changed', handler);
+  }, [load]);
 
   // ── Template CRUD ──
 
@@ -129,7 +135,7 @@ export function useBestiaryState() {
     const api = window.electronAPI?.bestiary;
     if (!api) return;
 
-    await api.saveFolder(folder.id, folder.parentId, folder.name, folder.sortOrder);
+    await api.saveFolder(folder.id, folder.parentId, folder.name, folder.sortOrder, campaignId);
     setFolders(prev => {
       const idx = prev.findIndex(f => f.id === folder.id);
       if (idx >= 0) {
@@ -139,7 +145,7 @@ export function useBestiaryState() {
       }
       return [...prev, folder];
     });
-  }, []);
+  }, [campaignId]);
 
   const deleteFolder = useCallback(async (id: string) => {
     const api = window.electronAPI?.bestiary;

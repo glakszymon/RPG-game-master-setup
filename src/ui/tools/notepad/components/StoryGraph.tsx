@@ -119,8 +119,9 @@ export function StoryGraph({ data, activeNoteId, campaignId, onSelectNote }: Sto
       }
       const newX = dragRef.current.nodeStartX + dx;
       const newY = dragRef.current.nodeStartY + dy;
+      const dragNodeId = dragRef.current.nodeId;
       setNodes(prev => prev.map(n =>
-        n.id === dragRef.current!.nodeId ? { ...n, x: newX, y: newY } : n
+        n.id === dragNodeId ? { ...n, x: newX, y: newY } : n
       ));
       return;
     }
@@ -201,18 +202,44 @@ export function StoryGraph({ data, activeNoteId, campaignId, onSelectNote }: Sto
           const target = nodeMap.get(edge.target);
           if (!source || !target) return null;
 
+          // Detect bidirectional edge (reverse exists)
+          const isBidirectional = data.edges.some(
+            e => e.source === edge.target && e.target === edge.source
+          );
+
           // Calculate edge connection points (from border of rectangles)
           const dx = target.x - source.x;
           const dy = target.y - source.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
           const angle = Math.atan2(dy, dx);
 
           // Source point: exit from rectangle border
           const sx = source.x + Math.cos(angle) * (NODE_WIDTH / 2);
           const sy = source.y + Math.sin(angle) * (NODE_HEIGHT / 2);
 
-          // Target point: enter rectangle border
-          const tx = target.x - Math.cos(angle) * (NODE_WIDTH / 2);
-          const ty = target.y - Math.sin(angle) * (NODE_HEIGHT / 2);
+          // Target point: enter rectangle border (offset for arrowhead)
+          const tx = target.x - Math.cos(angle) * (NODE_WIDTH / 2 + 6);
+          const ty = target.y - Math.sin(angle) * (NODE_HEIGHT / 2 + 6);
+
+          if (isBidirectional) {
+            // Curved path — offset perpendicular to the edge direction
+            const curvature = Math.min(40, dist * 0.2);
+            // Normal perpendicular (left side for this direction)
+            const nx = -Math.sin(angle) * curvature;
+            const ny = Math.cos(angle) * curvature;
+            const mx = (sx + tx) / 2 + nx;
+            const my = (sy + ty) / 2 + ny;
+
+            return (
+              <path
+                key={i}
+                d={`M ${sx} ${sy} Q ${mx} ${my} ${tx} ${ty}`}
+                fill="none"
+                className={styles.edge}
+                markerEnd="url(#arrowhead)"
+              />
+            );
+          }
 
           return (
             <line

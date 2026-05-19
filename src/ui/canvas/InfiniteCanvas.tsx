@@ -6,7 +6,7 @@
  * minimap, and minimize tray.
  */
 
-import { useCallback, useMemo, useState, useRef, useEffect, memo } from 'react';
+import { useCallback, useMemo, useState, useRef, useEffect, useLayoutEffect, memo } from 'react';
 import { usePanZoom } from './hooks/usePanZoom';
 import { canvasReducer, initialCanvasState } from './hooks/useCanvasState';
 import { useUndoRedo } from './hooks/useUndoRedo';
@@ -242,6 +242,33 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
     (timeState: CampaignTimeState) => dispatch({ type: 'SET_TIME_STATE', timeState }),
     [dispatch],
   );
+
+  // Listen for notepad date/event events → update campaign calendar
+  const timeStateRef = useRef(state.timeState);
+  useLayoutEffect(() => { timeStateRef.current = state.timeState; });
+  useEffect(() => {
+    const handleSetDate = (e: Event) => {
+      const { day, month, year } = (e as CustomEvent).detail ?? {};
+      if (day == null || month == null || year == null) return;
+      const ts = timeStateRef.current;
+      if (!ts) return;
+      dispatch({ type: 'SET_TIME_STATE', timeState: { ...ts, currentDay: day, currentMonth: month, currentYear: year } });
+    };
+    const handleAddEvent = (e: Event) => {
+      const { day, month, name, color } = (e as CustomEvent).detail ?? {};
+      if (day == null || month == null || !name) return;
+      const ts = timeStateRef.current;
+      if (!ts) return;
+      const holidays = [...(ts.calendar?.holidays ?? []), { day, month, name, color }];
+      dispatch({ type: 'SET_TIME_STATE', timeState: { ...ts, calendar: { ...ts.calendar, holidays } } });
+    };
+    window.addEventListener('notepad:set-date', handleSetDate);
+    window.addEventListener('notepad:add-event', handleAddEvent);
+    return () => {
+      window.removeEventListener('notepad:set-date', handleSetDate);
+      window.removeEventListener('notepad:add-event', handleAddEvent);
+    };
+  }, [dispatch]);
 
   // Load map preset: find first open map-display window and apply preset state
   // Pending preset load ref (for when we auto-open a map window)
