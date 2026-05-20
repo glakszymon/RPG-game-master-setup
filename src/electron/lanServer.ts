@@ -77,7 +77,12 @@ export async function startServer(preferredPort?: number): Promise<LanStartResul
 
   httpServer = createServer(expressApp);
   io = new SocketIOServer(httpServer, {
-    cors: { origin: '*' },
+    cors: {
+      origin: '*',
+      methods: ['GET', 'POST'],
+    },
+    allowEIO3: true,
+    transports: ['polling', 'websocket'],
   });
 
   io.on('connection', (socket) => {

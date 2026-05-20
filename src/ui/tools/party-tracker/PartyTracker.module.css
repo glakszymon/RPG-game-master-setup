@@ -78,7 +78,6 @@
   margin-top: var(--space-1);
   min-width: 180px;
   background: var(--glass-bg-elevated);
-  backdrop-filter: var(--glass-blur-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
@@ -164,7 +163,6 @@
 .card {
   position: relative;
   background: var(--glass-bg-surface);
-  backdrop-filter: var(--glass-blur-surface);
   border: var(--glass-border);
   border-radius: var(--radius-lg);
   display: flex;

@@ -67,7 +67,6 @@
   flex-direction: column;
   overflow-y: auto;
   background: var(--glass-bg-surface);
-  backdrop-filter: var(--glass-blur-surface);
   flex-shrink: 0;
 }
 
@@ -664,7 +663,6 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg-surface);
-  backdrop-filter: blur(var(--glass-blur));
   overflow: hidden;
   transition: border-color var(--duration-fast) var(--easing-default);
 }
@@ -985,7 +983,6 @@
   border-radius: var(--radius-md);
   padding: var(--space-1) 0;
   min-width: 180px;
-  backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--shadow-lg);
 }
 
@@ -1094,7 +1091,6 @@
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  backdrop-filter: blur(var(--glass-blur));
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
@@ -1154,7 +1150,6 @@
   gap: var(--space-2);
   padding: var(--space-2);
   background: var(--color-bg-surface);
-  backdrop-filter: blur(var(--glass-blur));
   border-bottom: 1px solid var(--color-border);
 }
 

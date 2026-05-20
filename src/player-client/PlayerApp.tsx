@@ -15,7 +15,7 @@ export function PlayerApp() {
   useEffect(() => {
     // Connect to the same host that served this page
     const socket = io(window.location.origin, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
     });
     socketRef.current = socket;
 
@@ -66,7 +66,7 @@ export function PlayerApp() {
 
   return (
     <div className={styles.root} style={rotationStyle}>
-      {state.map && <MapRenderer map={state.map} />}
+      {state.map && <MapRenderer map={state.map} activeSource={state.combat?.activeSource ?? null} />}
       {state.combat?.isStarted && <InitiativeOverlay combat={state.combat} />}
     </div>
   );

@@ -35,7 +35,7 @@ export function PlayerPreview({ playerViewState, allWindows }: PlayerPreviewProp
         state.map = {
           imageUrl: ms.imagePath,
           viewport: ms.viewport,
-          tokens: ms.tokens.map(t => ({ id: t.id, x: t.x, y: t.y, scale: t.scale, name: t.name, avatarUrl: t.avatarPath })),
+          tokens: ms.tokens.map(t => ({ id: t.id, x: t.x, y: t.y, scale: t.scale, name: t.name, avatarUrl: t.avatarPath, sourceType: t.sourceType, sourceId: t.sourceId, conditions: [], hp: null, maxHp: null, isDead: false })),
           fowUrl: ms.fowDataUrl,
           grid: ms.grid,
           vfx: [],
@@ -46,6 +46,9 @@ export function PlayerPreview({ playerViewState, allWindows }: PlayerPreviewProp
         state.combat = {
           combatants: cs.combatants.map(c => ({ id: c.id, name: c.name, portraitUrl: c.portraitPath, initiative: c.initiativeRoll })),
           activeCombatantIndex: cs.activeCombatantIndex,
+          activeSource: cs.isStarted && cs.activeCombatantIndex >= 0 && cs.combatants[cs.activeCombatantIndex]
+            ? { sourceType: cs.combatants[cs.activeCombatantIndex].sourceType, sourceId: cs.combatants[cs.activeCombatantIndex].sourceId }
+            : null,
           currentRound: cs.currentRound,
           isStarted: cs.isStarted,
         };

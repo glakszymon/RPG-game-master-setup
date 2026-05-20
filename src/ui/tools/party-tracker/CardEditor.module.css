@@ -86,7 +86,6 @@
 
 .previewCard {
   background: var(--glass-bg-surface);
-  backdrop-filter: var(--glass-blur-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;

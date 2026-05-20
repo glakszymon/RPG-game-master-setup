@@ -44,7 +44,6 @@
   font-size: var(--text-sm);
   color: var(--color-text-accent);
   background: var(--glass-bg-elevated);
-  backdrop-filter: var(--glass-blur-elevated);
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-md);
   padding: var(--space-1) var(--space-3);
@@ -75,7 +74,6 @@
   font-size: 20px;
   color: var(--color-text-accent);
   background: var(--glass-bg-elevated);
-  backdrop-filter: var(--glass-blur-elevated);
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-md);
   cursor: pointer;

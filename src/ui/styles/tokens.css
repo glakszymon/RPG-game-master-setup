@@ -11,10 +11,11 @@
    * KOLORY — Tła
    * ─────────────────────────────────────────── */
   --color-bg-base: #0f1117;
-  --color-bg-surface: rgba(255, 255, 255, 0.05);
-  --color-bg-elevated: rgba(255, 255, 255, 0.08);
+  --color-bg-surface: rgba(30, 30, 35, 0.92);
+  --color-bg-elevated: rgba(38, 38, 44, 0.95);
+  --color-bg-sunken: rgba(0, 0, 0, 0.25);
   --color-bg-overlay: rgba(0, 0, 0, 0.6);
-  --color-bg-hover: rgba(255, 255, 255, 0.03);
+  --color-bg-hover: rgba(255, 255, 255, 0.06);
 
   /* ───────────────────────────────────────────
    * KOLORY — Accent (blady złoty / stare złoto)
@@ -125,10 +126,10 @@
    * Surface = karty, panele (delikatny)
    * Elevated = modale, dropdowny (mocniejszy)
    * ─────────────────────────────────────────── */
-  --glass-bg-surface: rgba(255, 255, 255, 0.05);
-  --glass-bg-elevated: rgba(255, 255, 255, 0.08);
-  --glass-blur-surface: blur(12px);
-  --glass-blur-elevated: blur(20px);
+  --glass-bg-surface: rgba(30, 30, 35, 0.92);
+  --glass-bg-elevated: rgba(38, 38, 44, 0.95);
+  --glass-blur-surface: none;
+  --glass-blur-elevated: none;
   --glass-border: 1px solid var(--color-border);
 
   /* ───────────────────────────────────────────
