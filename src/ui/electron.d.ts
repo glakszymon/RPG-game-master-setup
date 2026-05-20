@@ -192,6 +192,28 @@ export interface ElectronNotePresetsAPI {
   load: (id: string) => Promise<NoteMapPresetRow | null>;
 }
 
+export interface LanStartResult {
+  success: boolean;
+  port: number | null;
+  addresses: string[];
+  error?: string;
+}
+
+export interface LanServerStatus {
+  running: boolean;
+  port: number | null;
+  connections: number;
+  addresses: string[];
+}
+
+export interface ElectronLanAPI {
+  start: (port?: number) => Promise<LanStartResult>;
+  stop: () => Promise<{ ok: boolean } | null>;
+  status: () => Promise<LanServerStatus>;
+  broadcast: (channel: string, data: unknown) => Promise<{ ok: boolean }>;
+  registerAsset: (filename: string, base64Data: string) => Promise<string | null>;
+}
+
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
   presets: ElectronPresetsAPI;
@@ -205,6 +227,7 @@ export interface ElectronAPI {
   noteLinks: ElectronNoteLinksAPI;
   noteGraph: ElectronNoteGraphAPI;
   notePresets: ElectronNotePresetsAPI;
+  lan: ElectronLanAPI;
 }
 
 declare global {

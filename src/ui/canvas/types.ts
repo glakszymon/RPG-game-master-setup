@@ -15,7 +15,8 @@ export type ToolType =
   | 'time-calendar'
   | 'time-session-timer'
   | 'shop-generator'
-  | 'dice-roller';
+  | 'dice-roller'
+  | 'player-view';
 
 export interface WindowState {
   id: string;
@@ -81,6 +82,7 @@ export const TOOL_MIN_SIZES: Record<ToolType, { minWidth: number; minHeight: num
   'time-session-timer': { minWidth: 280, minHeight: 250 },
   'shop-generator': { minWidth: 350, minHeight: 300 },
   'dice-roller': { minWidth: 250, minHeight: 200 },
+  'player-view': { minWidth: 350, minHeight: 400 },
 };
 
 /** Default sizes for new windows */
@@ -98,6 +100,7 @@ export const TOOL_DEFAULT_SIZES: Record<ToolType, { width: number; height: numbe
   'time-session-timer': { width: 350, height: 350 },
   'shop-generator': { width: 450, height: 380 },
   'dice-roller': { width: 300, height: 250 },
+  'player-view': { width: 500, height: 500 },
 };
 
 /** Tool display names and icons */
@@ -115,6 +118,7 @@ export const TOOL_INFO: Record<ToolType, { name: string; icon: string }> = {
   'time-session-timer': { name: 'Session Timer', icon: '⏱️' },
   'shop-generator': { name: 'Shop Generator', icon: '🏪' },
   'dice-roller': { name: 'Dice Roller', icon: '🎲' },
+  'player-view': { name: 'Player View', icon: '📡' },
 };
 
 /** Context menu categories */
@@ -137,7 +141,7 @@ export const TOOL_CATEGORIES = [
   },
   {
     label: 'Audio/Visual',
-    tools: ['soundboard'] as ToolType[],
+    tools: ['soundboard', 'player-view'] as ToolType[],
   },
 ] as const;
 

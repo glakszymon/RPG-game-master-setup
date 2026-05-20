@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { isDev } from './utils.js';
+import { startServer, stopServer, getStatus, broadcast, registerAsset } from './lanServer.js';
 import {
   initDatabase,
   saveCanvasState, loadCanvasState,
@@ -328,5 +329,37 @@ app.on('ready', async () => {
 
   ipcMain.handle('note-presets:load', (_event, id: string) => {
     try { return getNoteMapPreset(id); } catch { return null; }
+  });
+
+  // ── LAN Server IPC handlers ──
+
+  ipcMain.handle('lan:start', async (_event, port?: number) => {
+    try { return await startServer(port); } catch { return { success: false, port: null, addresses: [], error: 'Unknown error' }; }
+  });
+
+  ipcMain.handle('lan:stop', async () => {
+    try { await stopServer(); return { ok: true }; } catch { return null; }
+  });
+
+  ipcMain.handle('lan:status', () => {
+    return getStatus();
+  });
+
+  ipcMain.handle('lan:broadcast', (_event, channel: string, data: unknown) => {
+    broadcast(channel, data);
+    return { ok: true };
+  });
+
+  ipcMain.handle('lan:register-asset', (_event, filename: string, base64Data: string) => {
+    try {
+      const buffer = Buffer.from(base64Data, 'base64');
+      const urlPath = registerAsset(filename, buffer);
+      return urlPath;
+    } catch { return null; }
+  });
+
+  // Graceful shutdown on app quit
+  app.on('before-quit', async () => {
+    await stopServer();
   });
 });

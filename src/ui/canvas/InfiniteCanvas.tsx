@@ -23,7 +23,7 @@ import { MinimizeTray } from './MinimizeTray';
 import { PresetToolbar } from './PresetToolbar';
 import { ShortcutsOverlay } from './ShortcutsOverlay';
 import { CampaignSettings } from './CampaignSettings/CampaignSettings';
-import type { ToolType, ViewportTransform, CampaignTimeState } from './types';
+import type { ToolType, ViewportTransform, CampaignTimeState, WindowState } from './types';
 import { PartyTracker } from '../tools/party-tracker';
 import type { PartyTrackerState } from '../tools/party-tracker';
 import styles from './InfiniteCanvas.module.css';
@@ -40,6 +40,8 @@ import { CombatTracker } from '../tools/combat-tracker';
 import type { CombatTrackerState } from '../tools/combat-tracker';
 import { Notepad } from '../tools/notepad';
 import type { NotepadToolState } from '../tools/notepad/types';
+import { PlayerView } from '../tools/player-view';
+import type { PlayerViewState } from '../tools/player-view';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
 function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
@@ -61,6 +63,7 @@ const ToolContent = memo(function ToolContent({
   onSetTimeState,
   onLoadMapPreset,
   onCaptureMapState,
+  allWindows,
 }: {
   toolType: ToolType;
   toolState: unknown;
@@ -71,6 +74,7 @@ const ToolContent = memo(function ToolContent({
   onSetTimeState?: (timeState: CampaignTimeState) => void;
   onLoadMapPreset?: (mapStateJson: string) => void;
   onCaptureMapState?: () => string | null;
+  allWindows?: WindowState[];
 }) {
   switch (toolType) {
     case 'combat-tracker':
@@ -162,6 +166,16 @@ const ToolContent = memo(function ToolContent({
           campaignId={campaignId}
           onLoadMapPreset={onLoadMapPreset}
           onCaptureMapState={onCaptureMapState}
+        />
+      );
+
+    case 'player-view':
+      return (
+        <PlayerView
+          toolState={toolState as PlayerViewState | undefined}
+          onToolStateChange={onToolStateChange}
+          campaignId={campaignId}
+          allWindows={allWindows}
         />
       );
 
@@ -495,6 +509,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
                   onSetTimeState={win.toolType.startsWith('time-') ? setTimeStateHandler : undefined}
                   onLoadMapPreset={win.toolType === 'notepad' ? loadMapPresetHandler : undefined}
                   onCaptureMapState={win.toolType === 'notepad' ? captureMapStateHandler : undefined}
+                  allWindows={win.toolType === 'player-view' ? state.windows : undefined}
                 />
               </CanvasWindow>
             ))}
