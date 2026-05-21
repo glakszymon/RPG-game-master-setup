@@ -270,6 +270,7 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
         case 'party-character': sourceType = 'party'; break;
         case 'encounter-instance': sourceType = 'instance'; instanceId = data.instanceId as string; break;
         case 'preset-template': sourceType = 'preset-template'; break;
+        case 'npc-character': sourceType = 'npc'; break;
         case 'combat-combatant': sourceType = (data.sourceType as MapToken['sourceType']) ?? 'manual'; break;
         default: return;
       }

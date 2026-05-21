@@ -16,6 +16,7 @@ export type ToolType =
   | 'time-session-timer'
   | 'shop-generator'
   | 'dice-roller'
+  | 'npc-tool'
   | 'player-view';
 
 export interface WindowState {
@@ -87,6 +88,7 @@ export const TOOL_MIN_SIZES: Record<ToolType, { minWidth: number; minHeight: num
   'time-session-timer': { minWidth: 280, minHeight: 250 },
   'shop-generator': { minWidth: 350, minHeight: 300 },
   'dice-roller': { minWidth: 250, minHeight: 200 },
+  'npc-tool': { minWidth: 400, minHeight: 350 },
   'player-view': { minWidth: 350, minHeight: 400 },
 };
 
@@ -105,6 +107,7 @@ export const TOOL_DEFAULT_SIZES: Record<ToolType, { width: number; height: numbe
   'time-session-timer': { width: 350, height: 350 },
   'shop-generator': { width: 450, height: 380 },
   'dice-roller': { width: 300, height: 250 },
+  'npc-tool': { width: 500, height: 450 },
   'player-view': { width: 500, height: 500 },
 };
 
@@ -123,6 +126,7 @@ export const TOOL_INFO: Record<ToolType, { name: string; icon: string }> = {
   'time-session-timer': { name: 'Session Timer', icon: '⏱️' },
   'shop-generator': { name: 'Shop Generator', icon: '🏪' },
   'dice-roller': { name: 'Dice Roller', icon: '🎲' },
+  'npc-tool': { name: 'NPC Tool', icon: '🧑' },
   'player-view': { name: 'Player View', icon: '📡' },
 };
 
@@ -134,7 +138,7 @@ export const TOOL_CATEGORIES = [
   },
   {
     label: 'Party & NPCs',
-    tools: ['party-tracker', 'bestiary'] as ToolType[],
+    tools: ['party-tracker', 'bestiary', 'npc-tool'] as ToolType[],
   },
   {
     label: 'World & Time',

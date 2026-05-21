@@ -24,7 +24,7 @@ export interface Combatant {
   initiativeModifier: number;
   initiativeRoll: number | null;
   conditions: ActiveCondition[];
-  sourceType: 'party' | 'bestiary' | 'instance' | 'manual';
+  sourceType: 'party' | 'bestiary' | 'instance' | 'npc' | 'manual';
   sourceId: string | null;
 }
 
