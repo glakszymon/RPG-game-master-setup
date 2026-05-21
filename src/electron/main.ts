@@ -13,6 +13,7 @@ import {
   listBestiaryInstances, saveBestiaryInstance, deleteBestiaryInstance,
   getInstanceState, updateInstanceState, getInstanceDependents, validateInstanceIds, deleteInstanceCascade,
   batchCreateInstances, createFolderWithInstances,
+  seedSrdCreatures,
   loadCampaignSetting, saveCampaignSetting,
   listNoteFolders, saveNoteFolder, deleteNoteFolder,
   listNotes, getNote, saveNote, deleteNote,
@@ -191,6 +192,10 @@ app.on('ready', async () => {
 
   ipcMain.handle('bestiary:create-folder-with-instances', (_event, folderName: string, templateIds: string[], parentId?: string, campaignId?: string) => {
     try { return createFolderWithInstances(folderName, templateIds, parentId, campaignId); } catch (e) { console.error('[IPC] createFolderWithInstances error:', e); return { error: String(e) }; }
+  });
+
+  ipcMain.handle('bestiary:seed-srd', () => {
+    try { return seedSrdCreatures(); } catch (e) { console.error('[IPC] seedSrdCreatures error:', e); return null; }
   });
 
   // ── Campaign Settings IPC handlers ──

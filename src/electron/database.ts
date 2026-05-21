@@ -10,6 +10,8 @@ import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { convertAllSrdMonsters } from './srdConversion.js';
+import type { SrdMonsterRaw } from './srdConversion.js';
 
 let db: Database | null = null;
 let dbPath: string = '';
@@ -174,6 +176,9 @@ export async function initDatabase(): Promise<void> {
 
   // ── Migration: add field_values column if missing ──
   migrateBestiaryFieldValues();
+
+  // ── Seed SRD creatures on first launch ──
+  seedSrdCreatures();
 
   db.run(`
     CREATE TABLE IF NOT EXISTS bestiary_folders (
@@ -613,6 +618,52 @@ function migrateExistingRows(): void {
   if (count > 0) {
     console.log(`[bestiary] Migrated ${count} template(s) to field_values format`);
   }
+}
+
+// ── SRD Seed ──
+
+/** Seed the bestiary library with SRD monsters from assets/monsters.json (idempotent) */
+export function seedSrdCreatures(): { seeded: number; skipped: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  // Check if already seeded (look for well-known entry)
+  const existing = db.exec("SELECT id FROM bestiary_templates WHERE id = 'srd-aboleth'");
+  if (existing.length > 0 && existing[0].values.length > 0) {
+    return { seeded: 0, skipped: true };
+  }
+
+  // Locate monsters.json — try app resources first, fallback to project assets
+  let monstersPath = path.join(app.getAppPath(), 'assets', 'monsters.json');
+  if (!fs.existsSync(monstersPath)) {
+    // Dev mode: relative to electron source
+    monstersPath = path.join(__dirname, '..', '..', 'assets', 'monsters.json');
+  }
+  if (!fs.existsSync(monstersPath)) {
+    console.warn('[bestiary] Could not find assets/monsters.json for SRD seeding');
+    return { seeded: 0, skipped: false };
+  }
+
+  const raw: SrdMonsterRaw[] = JSON.parse(fs.readFileSync(monstersPath, 'utf-8'));
+  const rows = convertAllSrdMonsters(raw);
+
+  let count = 0;
+  for (const r of rows) {
+    db.run(
+      `INSERT OR IGNORE INTO bestiary_templates (id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, field_values, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        r.id, r.name, r.creature_type, r.cr, r.hp_formula, r.hp_default, r.ac,
+        r.speed, r.ability_scores, r.saving_throws, r.actions, r.actions_mode,
+        r.actions_text, r.traits, r.custom_fields, r.tags, r.avatar_path,
+        r.field_values, r.created_at, r.updated_at,
+      ],
+    );
+    count++;
+  }
+
+  persist();
+  console.log(`[bestiary] Seeded ${count} SRD creatures`);
+  return { seeded: count, skipped: false };
 }
 
 export interface BestiaryTemplateRow {
