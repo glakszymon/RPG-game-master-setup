@@ -12,9 +12,9 @@ import type { FieldValue } from '../../components/dynamic-fields';
 export function templateToFieldValues(t: CreatureTemplate): Record<string, FieldValue> {
   const vals: Record<string, FieldValue> = {};
 
-  // Basic
+  // Creature type — select field (capitalize for display)
   if (t.creatureType) {
-    vals['creature_type'] = { type: 'radio', selected: t.creatureType };
+    vals['creature_type'] = { type: 'select', selected: t.creatureType.charAt(0).toUpperCase() + t.creatureType.slice(1) };
   }
   if (t.tags.length > 0) {
     vals['descriptive_tags'] = { type: 'tag-list', tags: t.tags };
@@ -30,11 +30,10 @@ export function templateToFieldValues(t: CreatureTemplate): Record<string, Field
   if (t.hpFormula) {
     vals['hp_formula'] = { type: 'text-field', value: t.hpFormula };
   }
+
+  // Speed as speed-list (Record<string, number | null>)
   if (Object.keys(t.speed).length > 0) {
-    const speedTags = Object.entries(t.speed).map(([mode, val]) =>
-      mode === 'walk' ? `${val} ft.` : `${mode} ${val} ft.`
-    );
-    vals['speed'] = { type: 'tag-list', tags: speedTags };
+    vals['speed'] = { type: 'speed-list', values: { ...t.speed } };
   }
 
   // Abilities
@@ -47,9 +46,12 @@ export function templateToFieldValues(t: CreatureTemplate): Record<string, Field
     };
   }
 
-  // CR
+  // CR as number
   if (t.cr) {
-    vals['cr'] = { type: 'text-field', value: t.cr };
+    const crNum = t.cr.includes('/')
+      ? Number(t.cr.split('/')[0]) / Number(t.cr.split('/')[1])
+      : Number(t.cr) || 0;
+    vals['cr'] = { type: 'number', value: crNum };
   }
 
   // Traits
@@ -105,9 +107,15 @@ export function fieldValuesToTemplate(
 ): CreatureTemplate {
   const t = { ...base, updatedAt: new Date().toISOString() };
 
-  // creature_type
+  // creature_type (supports both 'radio' legacy and 'select' new)
   const ctVal = fieldValues['creature_type'];
-  t.creatureType = (ctVal?.type === 'radio' ? ctVal.selected : null) as CreatureTemplate['creatureType'];
+  if (ctVal?.type === 'radio') {
+    t.creatureType = ctVal.selected as CreatureTemplate['creatureType'];
+  } else if (ctVal?.type === 'select') {
+    t.creatureType = (ctVal.selected?.toLowerCase() ?? null) as CreatureTemplate['creatureType'];
+  } else {
+    t.creatureType = null;
+  }
 
   // descriptive_tags
   const tagsVal = fieldValues['descriptive_tags'];
@@ -125,9 +133,15 @@ export function fieldValuesToTemplate(
   const hpfVal = fieldValues['hp_formula'];
   t.hpFormula = hpfVal?.type === 'text-field' ? hpfVal.value || null : null;
 
-  // speed
+  // speed (supports both 'speed-list' new and 'tag-list' legacy)
   const speedVal = fieldValues['speed'];
-  if (speedVal?.type === 'tag-list') {
+  if (speedVal?.type === 'speed-list') {
+    const speed: Record<string, number> = {};
+    for (const [key, val] of Object.entries(speedVal.values)) {
+      if (val != null && val > 0) speed[key] = val;
+    }
+    t.speed = speed;
+  } else if (speedVal?.type === 'tag-list') {
     const speed: Record<string, number> = {};
     for (const tag of speedVal.tags) {
       const match = tag.match(/^(?:(\w+)\s+)?(\d+)\s*ft\.?$/i);
@@ -151,9 +165,20 @@ export function fieldValuesToTemplate(
     t.savingThrows = null;
   }
 
-  // cr
+  // cr (supports both 'number' new and 'text-field' legacy)
   const crVal = fieldValues['cr'];
-  t.cr = crVal?.type === 'text-field' ? crVal.value || null : null;
+  if (crVal?.type === 'number') {
+    const num = crVal.value;
+    // Convert fractional CRs back to string
+    if (num === 0.125) t.cr = '1/8';
+    else if (num === 0.25) t.cr = '1/4';
+    else if (num === 0.5) t.cr = '1/2';
+    else t.cr = String(num);
+  } else if (crVal?.type === 'text-field') {
+    t.cr = crVal.value || null;
+  } else {
+    t.cr = null;
+  }
 
   // traits
   const traitsVal = fieldValues['traits'];

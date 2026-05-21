@@ -1270,3 +1270,248 @@
 .dangerBtn:hover {
   background: var(--color-danger-hover, #c62828);
 }
+
+/* ── Compact Encounter Cards ── */
+
+.encounterCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  padding: 12px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.compactCard {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s;
+}
+
+.compactCard:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.compactCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compactCardAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.compactCardAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.compactCardTitle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.compactCardName {
+  font-size: var(--text-sm, 13px);
+  font-weight: 600;
+  color: var(--color-text-primary, #e0e0e0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compactCardType {
+  font-size: 10px;
+  color: var(--color-text-muted, #888);
+  text-transform: capitalize;
+}
+
+.compactCardCr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(251, 191, 36, 0.12);
+  flex-shrink: 0;
+}
+
+.compactCardCrLabel {
+  font-size: 9px;
+  color: var(--color-text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.compactCardCrValue {
+  font-size: var(--text-sm, 13px);
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.compactCardStats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.compactStat {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.compactStatLabel {
+  font-size: 10px;
+  color: var(--color-text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.compactStatValue {
+  font-size: var(--text-xs, 11px);
+  color: var(--color-text-primary, #e0e0e0);
+  font-weight: 500;
+}
+
+.compactCardAbilities {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  padding: 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.compactAbility {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.compactAbilityLabel {
+  font-size: 9px;
+  color: var(--color-text-muted, #888);
+  font-weight: 600;
+}
+
+.compactAbilityValue {
+  font-size: var(--text-xs, 11px);
+  color: var(--color-text-primary, #e0e0e0);
+  font-weight: 600;
+}
+
+.compactAbilityMod {
+  font-size: 9px;
+  color: var(--color-text-secondary, #aaa);
+}
+
+.compactCardFooter {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  color: var(--color-text-muted, #888);
+}
+
+/* ── Compact Card: sections (saves, senses, etc.) ── */
+
+.compactCardSection {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.compactSectionLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-secondary, #aaa);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.compactSectionText {
+  font-size: var(--text-xs, 11px);
+  color: var(--color-text-primary, #e0e0e0);
+}
+
+/* ── Compact Card: action/trait blocks ── */
+
+.compactCardBlock {
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compactBlockTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f87171;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.compactActionItem {
+  font-size: var(--text-xs, 11px);
+  color: var(--color-text-primary, #e0e0e0);
+  line-height: 1.4;
+}
+
+.compactActionName {
+  font-weight: 700;
+  font-style: italic;
+}
+
+.compactActionHit {
+  color: #60a5fa;
+}
+
+.compactActionDmg {
+  color: #f87171;
+}
+
+.compactActionDesc {
+  color: var(--color-text-secondary, #ccc);
+}
+
+/* ── Compact Card: tags ── */
+
+.compactCardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.compactTag {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-muted, #888);
+}

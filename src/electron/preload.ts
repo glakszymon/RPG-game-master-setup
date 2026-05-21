@@ -52,6 +52,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     batchCreateInstances: (templateIds: string[], folderId: string) => ipcRenderer.invoke('bestiary:batch-create-instances', templateIds, folderId),
     createFolderWithInstances: (folderName: string, templateIds: string[], parentId?: string, campaignId?: string) =>
       ipcRenderer.invoke('bestiary:create-folder-with-instances', folderName, templateIds, parentId, campaignId),
+    seedSrd: () => ipcRenderer.invoke('bestiary:seed-srd'),
   },
   settings: {
     load: (campaignId: string, key: string) =>

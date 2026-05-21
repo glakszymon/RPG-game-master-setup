@@ -10,6 +10,8 @@ import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { convertAllSrdMonsters } from './srdConversion.js';
+import type { SrdMonsterRaw } from './srdConversion.js';
 
 let db: Database | null = null;
 let dbPath: string = '';
@@ -174,6 +176,10 @@ export async function initDatabase(): Promise<void> {
 
   // ── Migration: add field_values column if missing ──
   migrateBestiaryFieldValues();
+
+  // ── Seed SRD creatures on first launch ──
+  seedSrdCreatures();
+  backfillSrdAvatars();
 
   db.run(`
     CREATE TABLE IF NOT EXISTS bestiary_folders (
@@ -552,8 +558,12 @@ function migrateExistingRows(): void {
 
     const vals: Record<string, unknown> = {};
 
-    if (creature_type) vals['creature_type'] = { type: 'radio', selected: creature_type };
-    if (cr) vals['cr'] = { type: 'text-field', value: cr };
+    if (creature_type) vals['creature_type'] = { type: 'select', selected: (creature_type as string).charAt(0).toUpperCase() + (creature_type as string).slice(1) };
+    if (cr) {
+      const crStr = cr as string;
+      const crNum = crStr.includes('/') ? Number(crStr.split('/')[0]) / Number(crStr.split('/')[1]) : Number(crStr) || 0;
+      vals['cr'] = { type: 'number', value: crNum };
+    }
     if (hp_default != null) vals['hp_default'] = { type: 'number', value: hp_default };
     if (hp_formula) vals['hp_formula'] = { type: 'text-field', value: hp_formula };
     if (ac != null) vals['ac'] = { type: 'number', value: ac };
@@ -561,10 +571,7 @@ function migrateExistingRows(): void {
     if (speed) {
       try {
         const speedObj = JSON.parse(speed as string) as Record<string, number>;
-        const speedTags = Object.entries(speedObj).map(([mode, val]) =>
-          mode === 'walk' ? `${val} ft.` : `${mode} ${val} ft.`
-        );
-        if (speedTags.length > 0) vals['speed'] = { type: 'tag-list', tags: speedTags };
+        if (Object.keys(speedObj).length > 0) vals['speed'] = { type: 'speed-list', values: speedObj };
       } catch { /* skip */ }
     }
 
@@ -613,6 +620,207 @@ function migrateExistingRows(): void {
   if (count > 0) {
     console.log(`[bestiary] Migrated ${count} template(s) to field_values format`);
   }
+}
+
+// ── SRD Seed ──
+
+/** Seed the bestiary library with SRD monsters from assets/monsters.json (idempotent) */
+export function seedSrdCreatures(): { seeded: number; skipped: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  // Check if already seeded (look for well-known entry)
+  const existing = db.exec("SELECT id FROM bestiary_templates WHERE id = 'srd-aboleth'");
+  if (existing.length > 0 && existing[0].values.length > 0) {
+    return { seeded: 0, skipped: true };
+  }
+
+  // Locate monsters.json — try app resources first, fallback to project assets
+  let monstersPath = path.join(app.getAppPath(), 'assets', 'monsters.json');
+  if (!fs.existsSync(monstersPath)) {
+    // Dev mode: relative to electron source
+    monstersPath = path.join(__dirname, '..', '..', 'assets', 'monsters.json');
+  }
+  if (!fs.existsSync(monstersPath)) {
+    console.warn('[bestiary] Could not find assets/monsters.json for SRD seeding');
+    return { seeded: 0, skipped: false };
+  }
+
+  const raw: SrdMonsterRaw[] = JSON.parse(fs.readFileSync(monstersPath, 'utf-8'));
+  const rows = convertAllSrdMonsters(raw);
+
+  // Resolve token avatar images from Too Many Tokens asset pack
+  const tokensDir = path.join(path.dirname(monstersPath), 'too-many-tokens-dnd-1.1.1');
+
+  // Fallback name mapping for monsters without exact directory match
+  const FALLBACK_NAMES: Record<string, string> = {
+    'Deep Gnome (Svirfneblin)': 'Deep Gnome',
+    'Hell Hound': 'Hellhound',
+    'Mummy Lord': 'Mummy',
+    'Succubus/Incubus': 'Succubus',
+    'Vampire': 'Vampire Spawn',
+    'Giant Rat (Diseased)': 'Giant Rat',
+    'Giant Sea Horse': 'Giant Seahorse',
+  };
+
+  // For dragons: Adult/Ancient fall back to Young, then Wyrmling
+  const getDragonFallbacks = (name: string): string[] => {
+    const colors = ['Black', 'Blue', 'Brass', 'Bronze', 'Copper', 'Gold', 'Green', 'Red', 'Silver', 'White'];
+    for (const color of colors) {
+      if (name.includes(color)) {
+        return [`Young ${color} Dragon`, `${color} Dragon Wyrmling`];
+      }
+    }
+    return [];
+  };
+
+  // Track used file paths globally to ensure uniqueness
+  const usedFiles = new Set<string>();
+
+  // Cache of directory file listings
+  const dirFilesCache = new Map<string, string[]>();
+  const getDirFiles = (dirName: string): string[] => {
+    if (dirFilesCache.has(dirName)) return dirFilesCache.get(dirName)!;
+    const dir = path.join(tokensDir, dirName);
+    if (!fs.existsSync(dir)) { dirFilesCache.set(dirName, []); return []; }
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.webp')).sort();
+    dirFilesCache.set(dirName, files);
+    return files;
+  };
+
+  const resolveAvatar = (monsterName: string): string | null => {
+    // Build list of candidate directories to try
+    const candidates: string[] = [monsterName];
+    if (FALLBACK_NAMES[monsterName]) candidates.push(FALLBACK_NAMES[monsterName]);
+    candidates.push(...getDragonFallbacks(monsterName));
+
+    for (const dirName of candidates) {
+      const files = getDirFiles(dirName);
+      for (const file of files) {
+        const fullPath = path.join(tokensDir, dirName, file);
+        if (!usedFiles.has(fullPath)) {
+          usedFiles.add(fullPath);
+          try {
+            const imgBuffer = fs.readFileSync(fullPath);
+            return `data:image/webp;base64,${imgBuffer.toString('base64')}`;
+          } catch {
+            continue;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  let count = 0;
+  for (const r of rows) {
+    const avatar = resolveAvatar(r.name) ?? r.avatar_path;
+    db.run(
+      `INSERT OR IGNORE INTO bestiary_templates (id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, field_values, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        r.id, r.name, r.creature_type, r.cr, r.hp_formula, r.hp_default, r.ac,
+        r.speed, r.ability_scores, r.saving_throws, r.actions, r.actions_mode,
+        r.actions_text, r.traits, r.custom_fields, r.tags, avatar,
+        r.field_values, r.created_at, r.updated_at,
+      ],
+    );
+    count++;
+  }
+
+  persist();
+  console.log(`[bestiary] Seeded ${count} SRD creatures`);
+  return { seeded: count, skipped: false };
+}
+
+/** Backfill avatar images for SRD creatures that have null avatar_path */
+export function backfillSrdAvatars(): number {
+  if (!db) throw new Error('Database not initialized');
+
+  // Find the tokens directory
+  let tokensDir = path.join(app.getAppPath(), 'assets', 'too-many-tokens-dnd-1.1.1');
+  if (!fs.existsSync(tokensDir)) {
+    tokensDir = path.join(__dirname, '..', '..', 'assets', 'too-many-tokens-dnd-1.1.1');
+  }
+  if (!fs.existsSync(tokensDir)) {
+    console.warn('[bestiary] Could not find token assets for avatar backfill');
+    return 0;
+  }
+
+  // Fallback name mapping
+  const FALLBACK_NAMES: Record<string, string> = {
+    'Deep Gnome (Svirfneblin)': 'Deep Gnome',
+    'Hell Hound': 'Hellhound',
+    'Mummy Lord': 'Mummy',
+    'Succubus/Incubus': 'Succubus',
+    'Vampire': 'Vampire Spawn',
+    'Giant Rat (Diseased)': 'Giant Rat',
+    'Giant Sea Horse': 'Giant Seahorse',
+  };
+
+  const getDragonFallbacks = (name: string): string[] => {
+    const colors = ['Black', 'Blue', 'Brass', 'Bronze', 'Copper', 'Gold', 'Green', 'Red', 'Silver', 'White'];
+    for (const color of colors) {
+      if (name.includes(color)) {
+        return [`Young ${color} Dragon`, `${color} Dragon Wyrmling`];
+      }
+    }
+    return [];
+  };
+
+  // Collect already-used avatar file paths from existing templates to avoid duplicates
+  const usedFiles = new Set<string>();
+
+  // Get SRD templates with null avatars
+  const result = db.exec(
+    "SELECT id, name FROM bestiary_templates WHERE avatar_path IS NULL AND id LIKE 'srd-%'"
+  );
+  if (result.length === 0 || result[0].values.length === 0) return 0;
+
+  const dirFilesCache = new Map<string, string[]>();
+  const getDirFiles = (dirName: string): string[] => {
+    if (dirFilesCache.has(dirName)) return dirFilesCache.get(dirName)!;
+    const dir = path.join(tokensDir, dirName);
+    if (!fs.existsSync(dir)) { dirFilesCache.set(dirName, []); return []; }
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.webp')).sort();
+    dirFilesCache.set(dirName, files);
+    return files;
+  };
+
+  let updated = 0;
+  for (const [id, name] of result[0].values) {
+    const monsterName = name as string;
+    const candidates: string[] = [monsterName];
+    if (FALLBACK_NAMES[monsterName]) candidates.push(FALLBACK_NAMES[monsterName]);
+    candidates.push(...getDragonFallbacks(monsterName));
+
+    let found = false;
+    for (const dirName of candidates) {
+      if (found) break;
+      const files = getDirFiles(dirName);
+      for (const file of files) {
+        const fullPath = path.join(tokensDir, dirName, file);
+        if (!usedFiles.has(fullPath)) {
+          usedFiles.add(fullPath);
+          try {
+            const imgBuffer = fs.readFileSync(fullPath);
+            const dataUrl = `data:image/webp;base64,${imgBuffer.toString('base64')}`;
+            db.run('UPDATE bestiary_templates SET avatar_path = ? WHERE id = ?', [dataUrl, id]);
+            updated++;
+            found = true;
+          } catch {
+            // skip
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  if (updated > 0) {
+    persist();
+    console.log(`[bestiary] Backfilled ${updated} SRD creature avatars`);
+  }
+  return updated;
 }
 
 export interface BestiaryTemplateRow {

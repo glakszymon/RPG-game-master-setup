@@ -103,6 +103,7 @@ export interface ElectronBestiaryAPI {
   deleteInstanceCascade: (instanceId: string) => Promise<{ hadMapToken: boolean; hadCombatant: boolean } | null>;
   batchCreateInstances: (templateIds: string[], folderId: string) => Promise<string[] | null>;
   createFolderWithInstances: (folderName: string, templateIds: string[], parentId?: string, campaignId?: string) => Promise<{ folderId: string; instanceIds: string[]; reused: number } | null>;
+  seedSrd: () => Promise<{ seeded: number; skipped: boolean } | null>;
 }
 
 export interface ElectronSettingsAPI {
