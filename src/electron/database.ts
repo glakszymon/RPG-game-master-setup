@@ -650,17 +650,65 @@ export function seedSrdCreatures(): { seeded: number; skipped: boolean } {
 
   // Resolve token avatar images from Too Many Tokens asset pack
   const tokensDir = path.join(path.dirname(monstersPath), 'too-many-tokens-dnd-1.1.1');
-  const resolveAvatar = (monsterName: string): string | null => {
-    try {
-      const dir = path.join(tokensDir, monsterName);
-      if (!fs.existsSync(dir)) return null;
-      const files = fs.readdirSync(dir).filter(f => f.endsWith('.webp')).sort();
-      if (files.length === 0) return null;
-      const imgBuffer = fs.readFileSync(path.join(dir, files[0]));
-      return `data:image/webp;base64,${imgBuffer.toString('base64')}`;
-    } catch {
-      return null;
+
+  // Fallback name mapping for monsters without exact directory match
+  const FALLBACK_NAMES: Record<string, string> = {
+    'Deep Gnome (Svirfneblin)': 'Deep Gnome',
+    'Hell Hound': 'Hellhound',
+    'Mummy Lord': 'Mummy',
+    'Succubus/Incubus': 'Succubus',
+    'Vampire': 'Vampire Spawn',
+    'Giant Rat (Diseased)': 'Giant Rat',
+    'Giant Sea Horse': 'Giant Seahorse',
+  };
+
+  // For dragons: Adult/Ancient fall back to Young, then Wyrmling
+  const getDragonFallbacks = (name: string): string[] => {
+    const colors = ['Black', 'Blue', 'Brass', 'Bronze', 'Copper', 'Gold', 'Green', 'Red', 'Silver', 'White'];
+    for (const color of colors) {
+      if (name.includes(color)) {
+        return [`Young ${color} Dragon`, `${color} Dragon Wyrmling`];
+      }
     }
+    return [];
+  };
+
+  // Track used file paths globally to ensure uniqueness
+  const usedFiles = new Set<string>();
+
+  // Cache of directory file listings
+  const dirFilesCache = new Map<string, string[]>();
+  const getDirFiles = (dirName: string): string[] => {
+    if (dirFilesCache.has(dirName)) return dirFilesCache.get(dirName)!;
+    const dir = path.join(tokensDir, dirName);
+    if (!fs.existsSync(dir)) { dirFilesCache.set(dirName, []); return []; }
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.webp')).sort();
+    dirFilesCache.set(dirName, files);
+    return files;
+  };
+
+  const resolveAvatar = (monsterName: string): string | null => {
+    // Build list of candidate directories to try
+    const candidates: string[] = [monsterName];
+    if (FALLBACK_NAMES[monsterName]) candidates.push(FALLBACK_NAMES[monsterName]);
+    candidates.push(...getDragonFallbacks(monsterName));
+
+    for (const dirName of candidates) {
+      const files = getDirFiles(dirName);
+      for (const file of files) {
+        const fullPath = path.join(tokensDir, dirName, file);
+        if (!usedFiles.has(fullPath)) {
+          usedFiles.add(fullPath);
+          try {
+            const imgBuffer = fs.readFileSync(fullPath);
+            return `data:image/webp;base64,${imgBuffer.toString('base64')}`;
+          } catch {
+            continue;
+          }
+        }
+      }
+    }
+    return null;
   };
 
   let count = 0;
@@ -698,25 +746,73 @@ export function backfillSrdAvatars(): number {
     return 0;
   }
 
+  // Fallback name mapping
+  const FALLBACK_NAMES: Record<string, string> = {
+    'Deep Gnome (Svirfneblin)': 'Deep Gnome',
+    'Hell Hound': 'Hellhound',
+    'Mummy Lord': 'Mummy',
+    'Succubus/Incubus': 'Succubus',
+    'Vampire': 'Vampire Spawn',
+    'Giant Rat (Diseased)': 'Giant Rat',
+    'Giant Sea Horse': 'Giant Seahorse',
+  };
+
+  const getDragonFallbacks = (name: string): string[] => {
+    const colors = ['Black', 'Blue', 'Brass', 'Bronze', 'Copper', 'Gold', 'Green', 'Red', 'Silver', 'White'];
+    for (const color of colors) {
+      if (name.includes(color)) {
+        return [`Young ${color} Dragon`, `${color} Dragon Wyrmling`];
+      }
+    }
+    return [];
+  };
+
+  // Collect already-used avatar file paths from existing templates to avoid duplicates
+  const usedFiles = new Set<string>();
+
   // Get SRD templates with null avatars
   const result = db.exec(
     "SELECT id, name FROM bestiary_templates WHERE avatar_path IS NULL AND id LIKE 'srd-%'"
   );
   if (result.length === 0 || result[0].values.length === 0) return 0;
 
+  const dirFilesCache = new Map<string, string[]>();
+  const getDirFiles = (dirName: string): string[] => {
+    if (dirFilesCache.has(dirName)) return dirFilesCache.get(dirName)!;
+    const dir = path.join(tokensDir, dirName);
+    if (!fs.existsSync(dir)) { dirFilesCache.set(dirName, []); return []; }
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.webp')).sort();
+    dirFilesCache.set(dirName, files);
+    return files;
+  };
+
   let updated = 0;
   for (const [id, name] of result[0].values) {
-    try {
-      const dir = path.join(tokensDir, name as string);
-      if (!fs.existsSync(dir)) continue;
-      const files = fs.readdirSync(dir).filter(f => f.endsWith('.webp')).sort();
-      if (files.length === 0) continue;
-      const imgBuffer = fs.readFileSync(path.join(dir, files[0]));
-      const dataUrl = `data:image/webp;base64,${imgBuffer.toString('base64')}`;
-      db.run('UPDATE bestiary_templates SET avatar_path = ? WHERE id = ?', [dataUrl, id]);
-      updated++;
-    } catch {
-      // Skip individual failures silently
+    const monsterName = name as string;
+    const candidates: string[] = [monsterName];
+    if (FALLBACK_NAMES[monsterName]) candidates.push(FALLBACK_NAMES[monsterName]);
+    candidates.push(...getDragonFallbacks(monsterName));
+
+    let found = false;
+    for (const dirName of candidates) {
+      if (found) break;
+      const files = getDirFiles(dirName);
+      for (const file of files) {
+        const fullPath = path.join(tokensDir, dirName, file);
+        if (!usedFiles.has(fullPath)) {
+          usedFiles.add(fullPath);
+          try {
+            const imgBuffer = fs.readFileSync(fullPath);
+            const dataUrl = `data:image/webp;base64,${imgBuffer.toString('base64')}`;
+            db.run('UPDATE bestiary_templates SET avatar_path = ? WHERE id = ?', [dataUrl, id]);
+            updated++;
+            found = true;
+          } catch {
+            // skip
+          }
+          break;
+        }
+      }
     }
   }
 
