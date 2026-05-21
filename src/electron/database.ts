@@ -270,6 +270,10 @@ export async function initDatabase(): Promise<void> {
       weight REAL,
       cost TEXT,
       properties TEXT,
+      damage TEXT,
+      damage_type TEXT,
+      ac INTEGER,
+      item_type TEXT,
       spell_level INTEGER,
       school TEXT,
       casting_time TEXT,
@@ -306,6 +310,15 @@ function runMigrations(): void {
     db.run('ALTER TABLE bestiary_folders ADD COLUMN campaign_id TEXT');
   } catch {
     // Column already exists
+  }
+
+  // Add structured item fields to library_entries (idempotent)
+  for (const col of ['damage TEXT', 'damage_type TEXT', 'ac INTEGER', 'item_type TEXT']) {
+    try {
+      db.run(`ALTER TABLE library_entries ADD COLUMN ${col}`);
+    } catch {
+      // Column already exists
+    }
   }
   // Assign existing folders to the first campaign if unset
   const campaigns = db.exec('SELECT id FROM campaigns LIMIT 1');
@@ -1784,12 +1797,12 @@ export function listLibraryEntries(): LibraryEntryRow[] {
   if (!db) throw new Error('Database not initialized');
 
   const result = db.exec(
-    'SELECT id, source, category, name, description, rarity, weight, cost, properties, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at FROM library_entries ORDER BY name ASC',
+    'SELECT id, source, category, name, description, rarity, weight, cost, properties, damage, damage_type, ac, item_type, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at FROM library_entries ORDER BY name ASC',
   );
 
   if (result.length === 0) return [];
 
-  return result[0].values.map(([id, source, category, name, description, rarity, weight, cost, properties, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at]) => ({
+  return result[0].values.map(([id, source, category, name, description, rarity, weight, cost, properties, damage, damage_type, ac, item_type, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at]) => ({
     id: id as string,
     source: source as string,
     category: category as string,
@@ -1799,6 +1812,10 @@ export function listLibraryEntries(): LibraryEntryRow[] {
     weight: weight as number | null,
     cost: cost as string | null,
     properties: properties as string | null,
+    damage: damage as string | null,
+    damage_type: damage_type as string | null,
+    ac: ac as number | null,
+    item_type: item_type as string | null,
     spell_level: spell_level as number | null,
     school: school as string | null,
     casting_time: casting_time as string | null,
@@ -1816,18 +1833,21 @@ export function saveLibraryEntry(dataJson: string): void {
 
   const e = JSON.parse(dataJson);
   db.run(
-    `INSERT INTO library_entries (id, source, category, name, description, rarity, weight, cost, properties, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `INSERT INTO library_entries (id, source, category, name, description, rarity, weight, cost, properties, damage, damage_type, ac, item_type, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name, category = excluded.category, description = excluded.description,
        rarity = excluded.rarity, weight = excluded.weight, cost = excluded.cost,
-       properties = excluded.properties, spell_level = excluded.spell_level, school = excluded.school,
+       properties = excluded.properties, damage = excluded.damage, damage_type = excluded.damage_type,
+       ac = excluded.ac, item_type = excluded.item_type,
+       spell_level = excluded.spell_level, school = excluded.school,
        casting_time = excluded.casting_time, range_text = excluded.range_text, components = excluded.components,
        duration = excluded.duration, tags = excluded.tags, updated_at = datetime('now')`,
     [
       e.id, e.source ?? 'custom', e.category, e.name, e.description ?? null,
       e.rarity ?? null, e.weight ?? null, e.cost ?? null,
-      JSON.stringify(e.properties ?? []), e.spellLevel ?? null,
+      JSON.stringify(e.properties ?? []), e.damage ?? null, e.damageType ?? null,
+      e.ac ?? null, e.itemType ?? null, e.spellLevel ?? null,
       e.school ?? null, e.castingTime ?? null, e.range ?? null,
       e.components ?? null, e.duration ?? null,
       JSON.stringify(e.tags ?? []), e.createdAt ?? new Date().toISOString(),
@@ -1847,11 +1867,14 @@ export function deleteLibraryEntry(id: string): void {
 export function seedLibrarySrd(): { seeded: number; skipped: boolean } {
   if (!db) throw new Error('Database not initialized');
 
-  // Check if already seeded
-  const existing = db.exec("SELECT id FROM library_entries WHERE id = 'srd-longsword'");
-  if (existing.length > 0 && existing[0].values.length > 0) {
+  // Check if already seeded with structured data
+  const existing = db.exec("SELECT damage FROM library_entries WHERE id = 'srd-longsword'");
+  if (existing.length > 0 && existing[0].values.length > 0 && existing[0].values[0][0] !== null) {
     return { seeded: 0, skipped: true };
   }
+
+  // Delete old SRD entries to reseed with structured data
+  db.run("DELETE FROM library_entries WHERE source = 'srd'");
 
   let seeded = 0;
 
@@ -1864,9 +1887,9 @@ export function seedLibrarySrd(): { seeded: number; skipped: boolean } {
     const items = JSON.parse(fs.readFileSync(itemsPath, 'utf-8'));
     for (const item of items) {
       db.run(
-        `INSERT OR IGNORE INTO library_entries (id, source, category, name, description, rarity, weight, cost, properties, tags, created_at, updated_at)
-         VALUES (?, 'srd', ?, ?, ?, ?, ?, ?, ?, '[]', datetime('now'), datetime('now'))`,
-        [item.id, item.category, item.name, item.description ?? null, item.rarity ?? null, item.weight ?? null, item.cost ?? null, JSON.stringify(item.properties ?? [])],
+        `INSERT OR IGNORE INTO library_entries (id, source, category, name, description, rarity, weight, cost, properties, damage, damage_type, ac, item_type, tags, created_at, updated_at)
+         VALUES (?, 'srd', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '[]', datetime('now'), datetime('now'))`,
+        [item.id, item.category, item.name, item.description ?? null, item.rarity ?? null, item.weight ?? null, item.cost ?? null, JSON.stringify(item.properties ?? []), item.damage ?? null, item.damageType ?? null, item.ac ?? null, item.itemType ?? null],
       );
       seeded++;
     }

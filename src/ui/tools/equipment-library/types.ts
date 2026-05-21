@@ -28,6 +28,10 @@ export interface LibraryEntry {
   weight: number | null;
   cost: string | null;
   properties: string[];
+  damage: string | null;          // e.g. "1d8", "2d6+1"
+  damageType: string | null;      // e.g. "Slashing", "Piercing"
+  ac: number | null;              // Armor Class bonus/value
+  itemType: string | null;        // e.g. "Melee Weapon", "Heavy Armor", "Shield"
   // Spell-specific fields (null for items)
   spellLevel: number | null;      // 0 = cantrip
   school: SpellSchool | null;
@@ -52,6 +56,10 @@ export interface LibraryEntryRow {
   weight: number | null;
   cost: string | null;
   properties: string | null;      // JSON
+  damage: string | null;
+  damage_type: string | null;
+  ac: number | null;
+  item_type: string | null;
   spell_level: number | null;
   school: string | null;
   casting_time: string | null;
@@ -75,6 +83,10 @@ export function rowToEntry(row: LibraryEntryRow): LibraryEntry {
     weight: row.weight,
     cost: row.cost,
     properties: row.properties ? JSON.parse(row.properties) : [],
+    damage: row.damage,
+    damageType: row.damage_type,
+    ac: row.ac,
+    itemType: row.item_type,
     spellLevel: row.spell_level,
     school: (row.school as SpellSchool) ?? null,
     castingTime: row.casting_time,
@@ -99,6 +111,10 @@ export function entryToRow(entry: LibraryEntry): LibraryEntryRow {
     weight: entry.weight,
     cost: entry.cost,
     properties: JSON.stringify(entry.properties),
+    damage: entry.damage,
+    damage_type: entry.damageType,
+    ac: entry.ac,
+    item_type: entry.itemType,
     spell_level: entry.spellLevel,
     school: entry.school,
     casting_time: entry.castingTime,

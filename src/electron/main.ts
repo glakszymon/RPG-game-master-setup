@@ -23,7 +23,7 @@ import {
   listNpcs, getNpc, saveNpc, deleteNpc,
   listNpcCustomFieldDefs, saveNpcCustomFieldDef, deleteNpcCustomFieldDef,
   listNpcNameLists, saveNpcNameList, deleteNpcNameList,
-  listLibraryEntries, saveLibraryEntry, deleteLibraryEntry, seedLibrarySrd,
+  // listLibraryEntries, saveLibraryEntry, deleteLibraryEntry, seedLibrarySrd,
 } from './database.js';
 
 app.on('ready', async () => {
@@ -387,23 +387,23 @@ app.on('ready', async () => {
     try { return deleteNpcNameList(id); } catch { return null; }
   });
 
-  // ── Equipment & Spells Library IPC handlers ──
+  // ── Equipment & Spells Library IPC handlers (disabled) ──
 
-  ipcMain.handle('library:list-entries', () => {
-    try { return listLibraryEntries(); } catch { return []; }
-  });
+  // ipcMain.handle('library:list-entries', () => {
+  //   try { return listLibraryEntries(); } catch { return []; }
+  // });
 
-  ipcMain.handle('library:save-entry', (_event, dataJson: string) => {
-    try { saveLibraryEntry(dataJson); return { ok: true }; } catch { return null; }
-  });
+  // ipcMain.handle('library:save-entry', (_event, dataJson: string) => {
+  //   try { saveLibraryEntry(dataJson); return { ok: true }; } catch { return null; }
+  // });
 
-  ipcMain.handle('library:delete-entry', (_event, id: string) => {
-    try { deleteLibraryEntry(id); return { ok: true }; } catch { return null; }
-  });
+  // ipcMain.handle('library:delete-entry', (_event, id: string) => {
+  //   try { deleteLibraryEntry(id); return { ok: true }; } catch { return null; }
+  // });
 
-  ipcMain.handle('library:seed-srd', () => {
-    try { return seedLibrarySrd(); } catch { return null; }
-  });
+  // ipcMain.handle('library:seed-srd', () => {
+  //   try { return seedLibrarySrd(); } catch { return null; }
+  // });
 
   // ── LAN Server IPC handlers ──
 

@@ -29,6 +29,10 @@ export function EntryForm({ entry, defaultCategory, onSave, onCancel, uid }: Ent
   const [range, setRange] = useState(entry?.range ?? '');
   const [components, setComponents] = useState(entry?.components ?? '');
   const [duration, setDuration] = useState(entry?.duration ?? '');
+  const [damage, setDamage] = useState(entry?.damage ?? '');
+  const [damageType, setDamageType] = useState(entry?.damageType ?? '');
+  const [ac, setAc] = useState(entry?.ac?.toString() ?? '');
+  const [itemType, setItemType] = useState(entry?.itemType ?? '');
 
   const isSpell = category === 'spell';
 
@@ -46,6 +50,10 @@ export function EntryForm({ entry, defaultCategory, onSave, onCancel, uid }: Ent
       weight: !isSpell && weight ? parseFloat(weight) : null,
       cost: !isSpell ? cost || null : null,
       properties: !isSpell && properties ? properties.split(',').map(p => p.trim()).filter(Boolean) : [],
+      damage: !isSpell && damage ? damage : null,
+      damageType: !isSpell && damageType ? damageType : null,
+      ac: !isSpell && ac ? parseInt(ac, 10) : null,
+      itemType: !isSpell && itemType ? itemType : null,
       spellLevel: isSpell ? parseInt(spellLevel, 10) : null,
       school: isSpell && school ? school : null,
       castingTime: isSpell ? castingTime || null : null,
@@ -58,7 +66,7 @@ export function EntryForm({ entry, defaultCategory, onSave, onCancel, uid }: Ent
     };
 
     onSave(result);
-  }, [name, category, description, rarity, weight, cost, properties, spellLevel, school, castingTime, range, components, duration, entry, uid, onSave, isSpell]);
+  }, [name, category, description, rarity, weight, cost, properties, damage, damageType, ac, itemType, spellLevel, school, castingTime, range, components, duration, entry, uid, onSave, isSpell]);
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
@@ -105,6 +113,22 @@ export function EntryForm({ entry, defaultCategory, onSave, onCancel, uid }: Ent
           <label className={styles.formField}>
             <span>Properties (comma-separated)</span>
             <input type="text" value={properties} onChange={e => setProperties(e.target.value)} placeholder="e.g. finesse, light" />
+          </label>
+          <label className={styles.formField}>
+            <span>Item Type</span>
+            <input type="text" value={itemType} onChange={e => setItemType(e.target.value)} placeholder="e.g. Melee Weapon, Heavy Armor" />
+          </label>
+          <label className={styles.formField}>
+            <span>Damage</span>
+            <input type="text" value={damage} onChange={e => setDamage(e.target.value)} placeholder="e.g. 1d8" />
+          </label>
+          <label className={styles.formField}>
+            <span>Damage Type</span>
+            <input type="text" value={damageType} onChange={e => setDamageType(e.target.value)} placeholder="e.g. Slashing" />
+          </label>
+          <label className={styles.formField}>
+            <span>AC</span>
+            <input type="number" value={ac} onChange={e => setAc(e.target.value)} placeholder="e.g. 16" />
           </label>
         </>
       )}

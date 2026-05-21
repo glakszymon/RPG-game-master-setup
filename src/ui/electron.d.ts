@@ -263,33 +263,37 @@ export interface ElectronNpcAPI {
   deleteNameList: (id: string) => Promise<{ ok: boolean } | null>;
 }
 
-export interface LibraryEntryRow {
-  id: string;
-  source: string;
-  category: string;
-  name: string;
-  description: string | null;
-  rarity: string | null;
-  weight: number | null;
-  cost: string | null;
-  properties: string | null;
-  spell_level: number | null;
-  school: string | null;
-  casting_time: string | null;
-  range_text: string | null;
-  components: string | null;
-  duration: string | null;
-  tags: string | null;
-  created_at: string;
-  updated_at: string;
-}
+// export interface LibraryEntryRow {
+//   id: string;
+//   source: string;
+//   category: string;
+//   name: string;
+//   description: string | null;
+//   rarity: string | null;
+//   weight: number | null;
+//   cost: string | null;
+//   properties: string | null;
+//   damage: string | null;
+//   damage_type: string | null;
+//   ac: number | null;
+//   item_type: string | null;
+//   spell_level: number | null;
+//   school: string | null;
+//   casting_time: string | null;
+//   range_text: string | null;
+//   components: string | null;
+//   duration: string | null;
+//   tags: string | null;
+//   created_at: string;
+//   updated_at: string;
+// }
 
-export interface ElectronLibraryAPI {
-  listEntries: () => Promise<LibraryEntryRow[]>;
-  saveEntry: (dataJson: string) => Promise<{ ok: boolean } | null>;
-  deleteEntry: (id: string) => Promise<{ ok: boolean } | null>;
-  seedSrd: () => Promise<{ seeded: number; skipped: boolean } | null>;
-}
+// export interface ElectronLibraryAPI {
+//   listEntries: () => Promise<LibraryEntryRow[]>;
+//   saveEntry: (dataJson: string) => Promise<{ ok: boolean } | null>;
+//   deleteEntry: (id: string) => Promise<{ ok: boolean } | null>;
+//   seedSrd: () => Promise<{ seeded: number; skipped: boolean } | null>;
+// }
 
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
@@ -307,7 +311,7 @@ export interface ElectronAPI {
   lan: ElectronLanAPI;
   floating: ElectronFloatingAPI;
   npc: ElectronNpcAPI;
-  library: ElectronLibraryAPI;
+  // library: ElectronLibraryAPI;
 }
 
 declare global {

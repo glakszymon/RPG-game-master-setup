@@ -48,8 +48,8 @@ import { WeatherGenerator } from '../tools/weather-generator';
 import type { WeatherGeneratorState } from '../tools/weather-generator';
 import { NpcTool } from '../tools/npc-tool';
 import type { NpcToolState } from '../tools/npc-tool/types';
-import { EquipmentLibrary } from '../tools/equipment-library';
-import type { EquipmentLibraryToolState } from '../tools/equipment-library/types';
+// import { EquipmentLibrary } from '../tools/equipment-library';
+// import type { EquipmentLibraryToolState } from '../tools/equipment-library/types';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
 function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
@@ -205,13 +205,13 @@ const ToolContent = memo(function ToolContent({
         />
       );
 
-    case 'equipment-library':
-      return (
-        <EquipmentLibrary
-          toolState={toolState as EquipmentLibraryToolState | undefined}
-          onToolStateChange={onToolStateChange}
-        />
-      );
+    // case 'equipment-library':
+    //   return (
+    //     <EquipmentLibrary
+    //       toolState={toolState as EquipmentLibraryToolState | undefined}
+    //       onToolStateChange={onToolStateChange}
+    //     />
+    //   );
 
     default:
       return <ToolPlaceholder toolType={toolType} />;
