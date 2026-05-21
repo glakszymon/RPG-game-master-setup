@@ -4,6 +4,7 @@ import styles from './CampaignCard.module.css';
 
 interface CampaignCardProps {
   campaign: CampaignData;
+  backgroundUrl?: string;
   onClick: () => void;
   onEdit: () => void;
   onArchive: () => void;
@@ -16,7 +17,7 @@ interface CampaignCardProps {
  * Shows icon, name, system, last session date, and status badge.
  * Three-dots menu provides edit/archive/delete actions.
  */
-function CampaignCard({ campaign, onClick, onEdit, onArchive, onDelete }: CampaignCardProps) {
+function CampaignCard({ campaign, backgroundUrl, onClick, onEdit, onArchive, onDelete }: CampaignCardProps) {
   const lastSession = new Date(campaign.last_session_at).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -24,7 +25,15 @@ function CampaignCard({ campaign, onClick, onEdit, onArchive, onDelete }: Campai
   });
 
   return (
-    <div className={styles.card} onClick={onClick}>
+    <div
+      className={styles.card}
+      onClick={onClick}
+      style={backgroundUrl ? {
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url(${backgroundUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      } : undefined}
+    >
       {/* Three-dots menu */}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
@@ -63,8 +72,13 @@ function CampaignCard({ campaign, onClick, onEdit, onArchive, onDelete }: Campai
       </div>
 
       {/* Info */}
-      <h3 className={styles.name}>{campaign.name}</h3>
-      {campaign.system && <p className={styles.system}>{campaign.system}</p>}
+      <div className={styles.info}>
+        <h3 className={styles.name}>{campaign.name}</h3>
+        {campaign.system && <p className={styles.system}>{campaign.system}</p>}
+        {campaign.id === 'demo-campaign' && (
+          <span className={`${styles.badge} ${styles.badgeDemo}`}>Demo</span>
+        )}
+      </div>
 
       {/* Footer */}
       <div className={styles.footer}>

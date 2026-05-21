@@ -53,20 +53,21 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-6);
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
   flex: 1;
+  align-content: start;
 }
 
 /* ── New Campaign Card (placeholder) ── */
 
 .newCampaignCard {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  min-height: 200px;
+  height: 160px;
   background: var(--glass-bg-surface);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-lg);

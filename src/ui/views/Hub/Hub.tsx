@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { CampaignData } from '../../electron.d';
 import { CampaignCard } from './CampaignCard';
 import { CampaignWizard } from './CampaignWizard';
+import iconBg from '../../../../assets/icon.png';
 import styles from './Hub.module.css';
 
 interface HubProps {
@@ -20,6 +21,7 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
   const [showWizard, setShowWizard] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<CampaignData | null>(null);
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
+  const [cardBackgrounds, setCardBackgrounds] = useState<Record<string, string>>({});
 
   const loadCampaigns = useCallback(async () => {
     const api = window.electronAPI;
@@ -47,6 +49,26 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
     });
   }, [campaigns]);
 
+  // Load per-card background images
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api || campaigns.length === 0) return;
+
+    const loadBgs = async () => {
+      const bgs: Record<string, string> = {};
+      for (const c of campaigns) {
+        const json = await api.settings.load(c.id, 'background_image');
+        if (!json) continue;
+        const path = JSON.parse(json) as string | null;
+        if (!path) continue;
+        const dataUrl = await api.dialog.readImage(path);
+        if (dataUrl) bgs[c.id] = dataUrl;
+      }
+      setCardBackgrounds(bgs);
+    };
+    loadBgs();
+  }, [campaigns]);
+
   const handleDelete = async (id: string) => {
     const api = window.electronAPI;
     if (!api) return;
@@ -71,11 +93,13 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
   return (
     <div
       className={styles.hub}
-      style={backgroundUrl ? {
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url(${backgroundUrl})`,
+      style={{
+        backgroundImage: backgroundUrl
+          ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url(${backgroundUrl})`
+          : `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url(${iconBg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-      } : undefined}
+      }}
     >
       <header className={styles.header}>
         <h1 className={styles.title}>Game Master Panel</h1>
@@ -89,6 +113,7 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
           <CampaignCard
             key={campaign.id}
             campaign={campaign}
+            backgroundUrl={cardBackgrounds[campaign.id]}
             onClick={() => handleOpenCampaign(campaign.id)}
             onEdit={() => setEditingCampaign(campaign)}
             onArchive={() => handleArchive(campaign)}
@@ -108,20 +133,18 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
       {/* Campaign Wizard / Edit Modal */}
       <CampaignWizard
         open={showWizard || editingCampaign !== null}
-        onClose={() => { setShowWizard(false); setEditingCampaign(null); }}
+        onClose={() => { setShowWizard(false); setEditingCampaign(null); loadCampaigns(); }}
         editData={editingCampaign}
         onSave={async (name, system, iconType, iconValue) => {
           const api = window.electronAPI;
           if (!api) return;
           if (editingCampaign) {
             await api.campaigns.update(editingCampaign.id, name, system, iconType, iconValue);
-          } else {
-            const id = crypto.randomUUID();
-            await api.campaigns.create(id, name, system, iconType, iconValue);
+            return;
           }
-          setShowWizard(false);
-          setEditingCampaign(null);
-          await loadCampaigns();
+          const id = crypto.randomUUID();
+          await api.campaigns.create(id, name, system, iconType, iconValue);
+          return id;
         }}
       />
     </div>
