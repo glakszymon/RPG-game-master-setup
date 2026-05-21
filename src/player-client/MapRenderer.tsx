@@ -1,13 +1,29 @@
 import { useEffect, useRef } from 'react';
-import type { PlayerMapState } from './types';
+import type { PlayerMapState, HpAnimationEvent } from './types';
 
 interface MapRendererProps {
   map: PlayerMapState;
   activeSource: { sourceType: string; sourceId: string | null } | null;
+  hpEvents?: HpAnimationEvent[];
 }
 
 const TOKEN_RADIUS = 20;
 const GLOW_PERIOD = 1500;
+const FLOAT_DURATION = 1200;
+const FLOAT_DISTANCE = 48;
+const MAX_FLOATING_TEXTS = 50;
+
+interface FloatingText {
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  startTime: number;
+}
+
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
 
 const VFX_COLORS: Record<string, string> = {
   fire: 'rgba(255, 69, 0, 0.6)',
@@ -19,7 +35,7 @@ const VFX_COLORS: Record<string, string> = {
   ice: 'rgba(136, 204, 255, 0.6)',
 };
 
-export function MapRenderer({ map, activeSource }: MapRendererProps) {
+export function MapRenderer({ map, activeSource, hpEvents }: MapRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mapImageRef = useRef<HTMLImageElement | null>(null);
   const fowImageRef = useRef<HTMLImageElement | null>(null);
@@ -29,6 +45,7 @@ export function MapRenderer({ map, activeSource }: MapRendererProps) {
   const rafRef = useRef<number>(0);
   const lastImageUrl = useRef<string | null>(null);
   const lastFowUrl = useRef<string | null>(null);
+  const floatingTextsRef = useRef<FloatingText[]>([]);
 
   // Always keep latest state in refs
   mapRef.current = map;
@@ -84,6 +101,29 @@ export function MapRenderer({ map, activeSource }: MapRendererProps) {
       img.onload = () => { currentMap.set(token.id, img); };
     }
   }, [map.tokens]);
+
+  // Process incoming HP events into floating texts
+  useEffect(() => {
+    if (!hpEvents || hpEvents.length === 0) return;
+    const currentMap = mapRef.current;
+
+    for (const ev of hpEvents) {
+      const token = currentMap.tokens.find(
+        t => t.sourceType === ev.sourceType && t.sourceId === ev.sourceId,
+      );
+      if (!token) continue;
+
+      const texts = floatingTextsRef.current;
+      if (texts.length >= MAX_FLOATING_TEXTS) texts.shift();
+      texts.push({
+        x: token.x + (Math.random() - 0.5) * 20,
+        y: token.y,
+        text: ev.delta > 0 ? `+${ev.delta}` : `${ev.delta}`,
+        color: ev.delta > 0 ? '#4ade80' : '#ef4444',
+        startTime: performance.now(),
+      });
+    }
+  }, [hpEvents]);
 
   // Single rAF render loop
   useEffect(() => {
@@ -288,6 +328,35 @@ export function MapRenderer({ map, activeSource }: MapRendererProps) {
           const fow = fowImageRef.current;
           ctx.drawImage(fow, offsetX, offsetY, drawW, drawH);
           ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // Draw floating HP texts
+        const now = performance.now();
+        const texts = floatingTextsRef.current;
+        for (let i = texts.length - 1; i >= 0; i--) {
+          const ft = texts[i];
+          const elapsed = now - ft.startTime;
+          if (elapsed >= FLOAT_DURATION) {
+            texts.splice(i, 1);
+            continue;
+          }
+          const progress = elapsed / FLOAT_DURATION;
+          const eased = easeOutCubic(progress);
+          const tx = offsetX + ft.x * scale;
+          const ty = offsetY + (ft.y - eased * FLOAT_DISTANCE) * scale;
+          const alpha = 1 - progress;
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.font = `bold ${Math.max(14, 18 * scale)}px system-ui`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = ft.color;
+          ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+          ctx.lineWidth = 3;
+          ctx.strokeText(ft.text, tx, ty);
+          ctx.fillText(ft.text, tx, ty);
+          ctx.restore();
         }
 
         // Fantasy border around the map

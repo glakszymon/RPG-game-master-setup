@@ -10,6 +10,7 @@ export interface PlayerViewState {
   sharedWindows: string[];
   rotation: 0 | 90 | 180 | 270;
   interactionMode: 'disabled' | 'immediate' | 'approval';
+  showEffectsLegend: boolean;
 }
 
 export const DEFAULT_PLAYER_VIEW_STATE: PlayerViewState = {
@@ -20,4 +21,5 @@ export const DEFAULT_PLAYER_VIEW_STATE: PlayerViewState = {
   sharedWindows: [],
   rotation: 0,
   interactionMode: 'disabled',
+  showEffectsLegend: false,
 };

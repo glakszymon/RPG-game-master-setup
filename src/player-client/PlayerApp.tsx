@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { MapRenderer } from './MapRenderer';
 import { InitiativeOverlay } from './InitiativeOverlay';
+import { ConditionsLegend } from './ConditionsLegend';
 import styles from './PlayerApp.module.css';
-import type { PlayerBroadcastState } from './types';
+import type { PlayerBroadcastState, HpAnimationEvent } from './types';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
 export function PlayerApp() {
   const [state, setState] = useState<PlayerBroadcastState | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
+  const [hpEvents, setHpEvents] = useState<HpAnimationEvent[] | undefined>(undefined);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -25,6 +27,10 @@ export function PlayerApp() {
 
     socket.on('state-update', (data: PlayerBroadcastState) => {
       setState(data);
+      // Extract HP events (transient — set then clear)
+      if (data.hpEvents && data.hpEvents.length > 0) {
+        setHpEvents(data.hpEvents);
+      }
     });
 
     socket.on('server-shutdown', () => {
@@ -66,8 +72,11 @@ export function PlayerApp() {
 
   return (
     <div className={styles.root} style={rotationStyle}>
-      {state.map && <MapRenderer map={state.map} activeSource={state.combat?.activeSource ?? null} />}
+      {state.map && <MapRenderer map={state.map} activeSource={state.combat?.activeSource ?? null} hpEvents={hpEvents} />}
       {state.combat?.isStarted && <InitiativeOverlay combat={state.combat} />}
+      {state.conditionsLegend && state.conditionsLegend.length > 0 && (
+        <ConditionsLegend conditions={state.conditionsLegend} />
+      )}
     </div>
   );
 }
