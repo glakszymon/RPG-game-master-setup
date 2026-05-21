@@ -410,9 +410,10 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
   }, [patchState]);
 
   // Mark dirty when grid/state changes that affect rendering
+  // Only track properties that aren't already triggering re-draw via onDraw deps
   useEffect(() => {
     renderer.markDirty();
-  }, [state.grid, state.tokens, state.activeTool, state.brushSettings, state.vfxInstances, renderer]);
+  }, [state.grid, state.activeTool, state.brushSettings, renderer]);
 
   // Listen for instance deletion events and remove affected tokens
   useEffect(() => {
@@ -427,7 +428,8 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
     return () => window.removeEventListener('bestiary:instance-deleted', handler);
   }, [state.tokens, patchState]);
 
-  // ── Cursor tracking for preview circle ──
+  // ── Cursor tracking for preview circle (throttled via rAF) ──
+  const cursorRafRef = useRef(0);
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const container = canvasAreaRef.current;
     if (!container) return;
@@ -439,14 +441,19 @@ export function MapDisplay({ toolState, onToolStateChange }: MapDisplayProps) {
       }
       return;
     }
-    const rect = container.getBoundingClientRect();
-    const scaleX = container.clientWidth / rect.width;
-    const scaleY = container.clientHeight / rect.height;
-    const sx = (e.clientX - rect.left) * scaleX;
-    const sy = (e.clientY - rect.top) * scaleY;
-    const [wx, wy] = screenToWorld(sx, sy, renderer.viewportRef.current);
-    cursorWorldRef.current = { x: wx, y: wy };
-    renderer.markDirty();
+    // Throttle: only update once per frame
+    if (cursorRafRef.current) return;
+    cursorRafRef.current = requestAnimationFrame(() => {
+      cursorRafRef.current = 0;
+      const rect = container.getBoundingClientRect();
+      const scaleX = container.clientWidth / rect.width;
+      const scaleY = container.clientHeight / rect.height;
+      const sx = (e.clientX - rect.left) * scaleX;
+      const sy = (e.clientY - rect.top) * scaleY;
+      const [wx, wy] = screenToWorld(sx, sy, renderer.viewportRef.current);
+      cursorWorldRef.current = { x: wx, y: wy };
+      renderer.markDirty();
+    });
   }, [renderer]);
 
   const handleCanvasMouseLeave = useCallback(() => {

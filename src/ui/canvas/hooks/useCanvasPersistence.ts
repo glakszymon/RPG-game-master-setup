@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import type { CanvasState } from '../types';
 import type { CanvasAction } from './useCanvasState';
 
-const SAVE_DEBOUNCE_MS = 2000;
+const SAVE_DEBOUNCE_MS = 3000;
 
 export function useCanvasPersistence(
   state: CanvasState,
@@ -19,6 +19,8 @@ export function useCanvasPersistence(
   const loadedRef = useRef<string | null>(null);
   /** True once load has completed (or no data to load). Prevents saving before restore. */
   const readyRef = useRef(false);
+  /** Track last saved reference to skip no-op saves */
+  const lastSavedRef = useRef<CanvasState | null>(null);
 
   // Load on mount or when campaignId changes
   useEffect(() => {
@@ -65,9 +67,11 @@ export function useCanvasPersistence(
     const api = window.electronAPI;
     if (!api?.canvas?.save) return;
     if (!readyRef.current) return; // Don't save until load is done
+    if (state === lastSavedRef.current) return; // Skip if same reference
 
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
+      lastSavedRef.current = state;
       api.canvas.save(campaignId, JSON.stringify(state));
     }, SAVE_DEBOUNCE_MS);
 
