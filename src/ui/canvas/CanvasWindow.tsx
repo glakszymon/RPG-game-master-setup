@@ -5,7 +5,7 @@
  * Custom pointer events for 8-directional resize.
  */
 
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, memo } from 'react';
 import { ToolWindow } from '../components/ToolWindow';
 import { useWindowResize, type ResizeEdge } from './hooks/useWindowResize';
 import { TOOL_MIN_SIZES, TOOL_INFO } from './types';
@@ -33,7 +33,7 @@ const RESIZE_EDGES: ResizeEdge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 /** Tools that need full-bleed body (no padding, no scroll) */
 const FULL_BLEED_TOOLS: ReadonlySet<ToolType> = new Set(['map-display']);
 
-function CanvasWindow({
+const CanvasWindow = memo(function CanvasWindow({
   window: win,
   scale,
   zIndex,
@@ -192,6 +192,6 @@ function CanvasWindow({
       </ToolWindow>
     </div>
   );
-}
+});
 
 export { CanvasWindow };

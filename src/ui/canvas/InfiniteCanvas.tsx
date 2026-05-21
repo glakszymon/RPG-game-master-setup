@@ -245,16 +245,19 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
   );
 
   // Stable per-window onToolStateChange callbacks (avoids re-render cascade)
-  // Built as a memo keyed on window ids + dispatch so no ref is read during render.
-  const windowIds = state.windows.map((w) => w.id);
-  const toolStateHandlers = useMemo(() => {
-    const map = new Map<string, (s: unknown) => void>();
-    for (const id of windowIds) {
-      map.set(id, (s: unknown) => dispatch({ type: 'UPDATE_TOOL_STATE', id, toolState: s }));
+  // Use a ref-based factory so handlers never change identity.
+  const dispatchRef = useRef(dispatch);
+  useLayoutEffect(() => { dispatchRef.current = dispatch; });
+
+  const toolStateHandlerCache = useRef(new Map<string, (s: unknown) => void>());
+  const getToolStateHandler = useCallback((id: string) => {
+    let handler = toolStateHandlerCache.current.get(id);
+    if (!handler) {
+      handler = (s: unknown) => dispatchRef.current({ type: 'UPDATE_TOOL_STATE', id, toolState: s });
+      toolStateHandlerCache.current.set(id, handler);
     }
-    return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [windowIds.join(','), dispatch]);
+    return handler;
+  }, []);
 
   useCanvasPersistence(state, dispatch, campaignId ?? 'default');
 
@@ -299,13 +302,17 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
   // Pending preset load ref (for when we auto-open a map window)
   const pendingPresetRef = useRef<string | null>(null);
 
+  // Keep a ref to windows for stable callbacks
+  const windowsRef = useRef(state.windows);
+  useLayoutEffect(() => { windowsRef.current = state.windows; });
+
   const loadMapPresetHandler = useCallback(
     (mapStateJson: string) => {
-      const mapWin = state.windows.find(w => w.toolType === 'map-display');
+      const mapWin = windowsRef.current.find(w => w.toolType === 'map-display');
       if (!mapWin) {
         // Auto-open a map-display window and queue the preset
         pendingPresetRef.current = mapStateJson;
-        dispatch({ type: 'OPEN_WINDOW', toolType: 'map-display', x: 100, y: 100 });
+        dispatchRef.current({ type: 'OPEN_WINDOW', toolType: 'map-display', x: 100, y: 100 });
         return;
       }
       // If map has existing content, confirm overwrite
@@ -316,10 +323,10 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
       }
       try {
         const presetState = JSON.parse(mapStateJson);
-        dispatch({ type: 'UPDATE_TOOL_STATE', id: mapWin.id, toolState: presetState });
+        dispatchRef.current({ type: 'UPDATE_TOOL_STATE', id: mapWin.id, toolState: presetState });
       } catch { /* invalid JSON, skip */ }
     },
-    [state.windows, dispatch],
+    [],
   );
 
   // Apply pending preset when map window appears
@@ -337,12 +344,12 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
 
   // Capture current map state for saving presets
   const captureMapStateHandler = useCallback((): string | null => {
-    const mapWin = state.windows.find(w => w.toolType === 'map-display');
+    const mapWin = windowsRef.current.find(w => w.toolType === 'map-display');
     if (!mapWin || !mapWin.toolState) return null;
     try {
       return JSON.stringify(mapWin.toolState);
     } catch { return null; }
-  }, [state.windows]);
+  }, []);
 
   // Focus presets
   const {
@@ -513,7 +520,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
                 <ToolContent
                   toolType={win.toolType}
                   toolState={win.toolState}
-                  onToolStateChange={toolStateHandlers.get(win.id)!}
+                  onToolStateChange={getToolStateHandler(win.id)}
                   campaignId={campaignId ?? 'default'}
                   timeState={win.toolType.startsWith('time-') || win.toolType === 'weather-generator' ? state.timeState : undefined}
                   onAdvanceTime={win.toolType.startsWith('time-') ? advanceTimeHandler : undefined}
@@ -549,7 +556,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
       {state.timeState && (
         <PinnedTimers
           timeState={state.timeState}
-          onSetTimeState={(ts) => dispatch({ type: 'SET_TIME_STATE', timeState: ts })}
+          onSetTimeState={setTimeStateHandler}
         />
       )}
       <Minimap
@@ -571,6 +578,17 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
         open={showSettings}
         onOpenChange={setShowSettings}
         campaignId={campaignId ?? 'default'}
+        timeState={state.timeState}
+        onSetTimeState={setTimeStateHandler}
+        partyState={
+          state.windows.find((w) => w.toolType === 'party-tracker')?.toolState as PartyTrackerState | undefined
+        }
+        onPartyStateChange={(newState) => {
+          const ptWindow = state.windows.find((w) => w.toolType === 'party-tracker');
+          if (ptWindow) {
+            getToolStateHandler(ptWindow.id)(newState);
+          }
+        }}
       />
     </div>
   );

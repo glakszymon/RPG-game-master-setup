@@ -3,7 +3,7 @@
  * Renders compact TimerItem cards that are always visible on the canvas.
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef, useLayoutEffect } from 'react';
 import { TimerItem } from './TimerItem';
 import styles from './PinnedTimers.module.css';
 import type { CampaignTimeState, CustomTimer } from '../../canvas/types';
@@ -19,11 +19,18 @@ export function PinnedTimers({ timeState, onSetTimeState }: PinnedTimersProps) {
     [timeState.customTimers],
   );
 
+  // Use refs to avoid recreating callbacks on every timeState change
+  const timeStateRef = useRef(timeState);
+  useLayoutEffect(() => { timeStateRef.current = timeState; });
+  const onSetTimeStateRef = useRef(onSetTimeState);
+  useLayoutEffect(() => { onSetTimeStateRef.current = onSetTimeState; });
+
   const patchTimers = useCallback(
     (fn: (timers: CustomTimer[]) => CustomTimer[]) => {
-      onSetTimeState({ ...timeState, customTimers: fn(timeState.customTimers) });
+      const ts = timeStateRef.current;
+      onSetTimeStateRef.current({ ...ts, customTimers: fn(ts.customTimers) });
     },
-    [timeState, onSetTimeState],
+    [],
   );
 
   const handleDelete = useCallback((id: string) => {
