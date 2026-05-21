@@ -216,6 +216,10 @@ export interface ElectronLanAPI {
   registerAsset: (filename: string, base64Data: string) => Promise<string | null>;
 }
 
+export interface ElectronFloatingAPI {
+  saveAudioSegment: (campaignId: string, buffer: ArrayBuffer, filename: string) => Promise<{ ok: boolean } | null>;
+}
+
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
   presets: ElectronPresetsAPI;
@@ -230,6 +234,7 @@ export interface ElectronAPI {
   noteGraph: ElectronNoteGraphAPI;
   notePresets: ElectronNotePresetsAPI;
   lan: ElectronLanAPI;
+  floating: ElectronFloatingAPI;
 }
 
 declare global {

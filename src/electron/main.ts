@@ -368,6 +368,20 @@ app.on('ready', async () => {
     } catch { return null; }
   });
 
+  // ── Floating Utilities IPC handlers ──
+
+  ipcMain.handle('floating:save-audio-segment', (_event, campaignId: string, buffer: ArrayBuffer, filename: string) => {
+    try {
+      const audioDir = path.join(app.getPath('userData'), 'campaigns', campaignId, 'recordings');
+      fs.mkdirSync(audioDir, { recursive: true });
+      const destPath = path.join(audioDir, filename);
+      fs.writeFileSync(destPath, Buffer.from(buffer));
+      return { ok: true };
+    } catch {
+      return null;
+    }
+  });
+
   // Graceful shutdown on app quit
   app.on('before-quit', async () => {
     await stopServer();

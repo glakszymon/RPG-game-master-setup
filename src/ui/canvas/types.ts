@@ -32,6 +32,9 @@ export interface WindowState {
 
 export type BackgroundType = 'solid' | 'dot-grid' | 'line-grid';
 
+export type { FloatingWidgetState, FloatingUtilityType } from '../floating/types';
+import type { FloatingWidgetState } from '../floating/types';
+
 export interface CanvasState {
   windows: WindowState[];
   background: BackgroundType;
@@ -39,6 +42,8 @@ export interface CanvasState {
   nextWindowId: number;
   /** Shared time state across all time tool windows */
   timeState: CampaignTimeState;
+  /** Viewport-fixed floating utility widgets */
+  floatingWidgets: FloatingWidgetState[];
 }
 
 export interface ViewportTransform {

@@ -1,0 +1,91 @@
+/* ── FloatingWidget ── */
+
+.floatingWidget {
+  z-index: 9000;
+  min-width: 200px;
+  border-radius: 10px;
+  background: rgba(30, 30, 40, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  user-select: none;
+}
+
+.titleBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: grab;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.titleBar:active {
+  cursor: grabbing;
+}
+
+.titleIcon {
+  font-size: 14px;
+}
+
+.titleText {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #aaa);
+}
+
+.titleActions {
+  display: flex;
+  gap: 2px;
+}
+
+.actionBtn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary, #aaa);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.actionBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary, #fff);
+}
+
+.body {
+  padding: 8px;
+}
+
+/* ── Minimized Icon ── */
+
+.minimizedIcon {
+  z-index: 9000;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 30, 40, 0.85);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.minimizedIcon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}

@@ -123,4 +123,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     registerAsset: (filename: string, base64Data: string) =>
       ipcRenderer.invoke('lan:register-asset', filename, base64Data),
   },
+  floating: {
+    saveAudioSegment: (campaignId: string, buffer: ArrayBuffer, filename: string) =>
+      ipcRenderer.invoke('floating:save-audio-segment', campaignId, buffer, filename),
+  },
 });

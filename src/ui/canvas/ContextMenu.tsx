@@ -8,17 +8,20 @@
 import { useCallback, useRef } from 'react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { TOOL_CATEGORIES, TOOL_INFO } from './types';
+import { FLOATING_WIDGET_INFO } from '../floating/types';
 import type { ToolType } from './types';
+import type { FloatingUtilityType } from '../floating/types';
 import styles from './ContextMenu.module.css';
 
 interface ContextMenuProps {
   onOpenTool: (toolType: ToolType, canvasX: number, canvasY: number) => void;
+  onOpenFloating?: (widgetType: FloatingUtilityType) => void;
   /** Convert viewport coords to canvas coords */
   viewportToCanvas: (clientX: number, clientY: number) => { x: number; y: number };
   children: React.ReactNode;
 }
 
-function CanvasContextMenu({ onOpenTool, viewportToCanvas, children }: ContextMenuProps) {
+function CanvasContextMenu({ onOpenTool, onOpenFloating, viewportToCanvas, children }: ContextMenuProps) {
   const contextPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
@@ -66,6 +69,26 @@ function CanvasContextMenu({ onOpenTool, viewportToCanvas, children }: ContextMe
               <ContextMenu.Separator className={styles.separator} />
             </ContextMenu.Group>
           ))}
+          {onOpenFloating && (
+            <ContextMenu.Group>
+              <ContextMenu.Label className={styles.groupLabel}>
+                Floating Utilities
+              </ContextMenu.Label>
+              {(Object.keys(FLOATING_WIDGET_INFO) as FloatingUtilityType[]).map((wType) => {
+                const info = FLOATING_WIDGET_INFO[wType];
+                return (
+                  <ContextMenu.Item
+                    key={wType}
+                    className={styles.item}
+                    onSelect={() => onOpenFloating(wType)}
+                  >
+                    <span className={styles.itemIcon}>{info.icon}</span>
+                    <span>{info.name}</span>
+                  </ContextMenu.Item>
+                );
+              })}
+            </ContextMenu.Group>
+          )}
         </ContextMenu.Content>
       </ContextMenu.Portal>
     </ContextMenu.Root>
