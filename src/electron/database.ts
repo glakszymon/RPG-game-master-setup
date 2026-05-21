@@ -557,8 +557,12 @@ function migrateExistingRows(): void {
 
     const vals: Record<string, unknown> = {};
 
-    if (creature_type) vals['creature_type'] = { type: 'radio', selected: creature_type };
-    if (cr) vals['cr'] = { type: 'text-field', value: cr };
+    if (creature_type) vals['creature_type'] = { type: 'select', selected: (creature_type as string).charAt(0).toUpperCase() + (creature_type as string).slice(1) };
+    if (cr) {
+      const crStr = cr as string;
+      const crNum = crStr.includes('/') ? Number(crStr.split('/')[0]) / Number(crStr.split('/')[1]) : Number(crStr) || 0;
+      vals['cr'] = { type: 'number', value: crNum };
+    }
     if (hp_default != null) vals['hp_default'] = { type: 'number', value: hp_default };
     if (hp_formula) vals['hp_formula'] = { type: 'text-field', value: hp_formula };
     if (ac != null) vals['ac'] = { type: 'number', value: ac };
@@ -566,10 +570,7 @@ function migrateExistingRows(): void {
     if (speed) {
       try {
         const speedObj = JSON.parse(speed as string) as Record<string, number>;
-        const speedTags = Object.entries(speedObj).map(([mode, val]) =>
-          mode === 'walk' ? `${val} ft.` : `${mode} ${val} ft.`
-        );
-        if (speedTags.length > 0) vals['speed'] = { type: 'tag-list', tags: speedTags };
+        if (Object.keys(speedObj).length > 0) vals['speed'] = { type: 'speed-list', values: speedObj };
       } catch { /* skip */ }
     }
 
