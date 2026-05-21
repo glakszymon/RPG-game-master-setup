@@ -29,6 +29,7 @@ app.on('ready', async () => {
   const mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    icon: path.join(app.getAppPath(), 'assets/icon.png'),
     webPreferences: {
       preload: path.join(app.getAppPath(), 'dist-electron/preload.js'),
       contextIsolation: true,

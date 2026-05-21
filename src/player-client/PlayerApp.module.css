@@ -19,7 +19,7 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  background: #0a0a0f;
+  background: #0a0a0f url('/icon.png') center center / 30% no-repeat;
   color: #aaa;
   font-family: system-ui, sans-serif;
 }
@@ -45,7 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0a0a0f;
+  background: #0a0a0f url('/icon.png') center center / 30% no-repeat;
   font-family: system-ui, sans-serif;
 }
 
