@@ -3,6 +3,7 @@
  * row data suitable for bulk insertion into bestiary_templates.
  *
  * Runs in the main process (Node.js) during database seeding.
+ * Generates field_values compatible with the dynamic field system (defaultCreatureStructure).
  */
 
 /** Raw shape of a single entry in assets/monsters.json */
@@ -28,6 +29,24 @@ export interface SrdMonsterRaw {
   strength_save?: number | null;
   dexterity_save?: number | null;
   charisma_save?: number | null;
+  // Skills
+  acrobatics?: number | null;
+  arcana?: number | null;
+  athletics?: number | null;
+  deception?: number | null;
+  history?: number | null;
+  insight?: number | null;
+  intimidation?: number | null;
+  investigation?: number | null;
+  medicine?: number | null;
+  nature?: number | null;
+  perception?: number | null;
+  performance?: number | null;
+  persuasion?: number | null;
+  religion?: number | null;
+  stealth?: number | null;
+  survival?: number | null;
+  // Other
   damage_vulnerabilities: string;
   damage_resistances: string;
   damage_immunities: string;
@@ -37,10 +56,13 @@ export interface SrdMonsterRaw {
   challenge_rating: string;
   special_abilities?: Array<{ name: string; desc: string; attack_bonus?: number }>;
   actions?: Array<{ name: string; desc: string; attack_bonus?: number; damage_dice?: string; damage_bonus?: number }>;
+  reactions?: Array<{ name: string; desc: string; attack_bonus?: number }>;
   legendary_desc?: string;
   legendary_actions?: Array<{ name: string; desc: string; attack_bonus?: number }>;
+  spells?: string;
   speed_json?: Record<string, number>;
   armor_desc?: string;
+  group?: string;
 }
 
 /** Row data ready for insertion into bestiary_templates */
@@ -62,7 +84,7 @@ export interface SrdTemplateRow {
   custom_fields: string;   // JSON string of CustomField[]
   tags: string;            // JSON string of string[]
   avatar_path: null;
-  field_values: null;      // Will be populated by migration if needed
+  field_values: string;    // JSON string — populated for filter compatibility
   created_at: string;
   updated_at: string;
 }
@@ -80,13 +102,11 @@ function makeSrdId(name: string): string {
 
 /** Parse speed string like "30 ft., fly 60 ft., swim 40 ft." into Record */
 function parseSpeed(speedStr: string, speedJson?: Record<string, number>): Record<string, number> {
-  // Prefer pre-parsed speed_json if available
   if (speedJson && Object.keys(speedJson).length > 0) {
     return speedJson;
   }
 
   const result: Record<string, number> = {};
-  // Match patterns like "30 ft." or "fly 60 ft."
   const regex = /(?:(\w+)\s+)?(\d+)\s*ft\.?/gi;
   let match: RegExpExecArray | null;
   let isFirst = true;
@@ -101,13 +121,75 @@ function parseSpeed(speedStr: string, speedJson?: Record<string, number>): Recor
   return result;
 }
 
+/** Parse senses string like "darkvision 120 ft., passive Perception 20" into Record */
+function parseSenses(sensesStr: string): Record<string, number | null> {
+  const result: Record<string, number | null> = {};
+  const senseTypes = ['darkvision', 'blindsight', 'tremorsense', 'truesight'];
+
+  for (const sense of senseTypes) {
+    const regex = new RegExp(`${sense}\\s+(\\d+)\\s*ft\\.?`, 'i');
+    const match = sensesStr.match(regex);
+    if (match) {
+      result[sense] = Number(match[1]);
+    }
+  }
+
+  return result;
+}
+
+/** Parse a comma-separated damage/condition string into tags array */
+function parseCommaSeparated(str: string): string[] {
+  if (!str || !str.trim()) return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+/** Parse languages string into array */
+function parseLanguages(str: string): string[] {
+  if (!str || !str.trim() || str === '--' || str === '-') return [];
+  return str.split(',').map(s => s.trim()).filter(Boolean);
+}
+
 /** Map raw creature type to valid CreatureType or null */
 function mapCreatureType(raw: string): string | null {
   const lower = raw.toLowerCase().trim();
   if (VALID_CREATURE_TYPES.has(lower)) return lower;
-  // Some entries have compound types like "swarm of Tiny beasts"
   if (lower.includes('swarm')) return 'swarm';
   return null;
+}
+
+/** Capitalize first letter for select field values */
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Map alignment string to closest standard option */
+function mapAlignment(raw: string): string | null {
+  if (!raw) return null;
+  const lower = raw.toLowerCase();
+  const map: Record<string, string> = {
+    'lawful good': 'Lawful Good',
+    'neutral good': 'Neutral Good',
+    'chaotic good': 'Chaotic Good',
+    'lawful neutral': 'Lawful Neutral',
+    'true neutral': 'True Neutral',
+    'neutral': 'True Neutral',
+    'chaotic neutral': 'Chaotic Neutral',
+    'lawful evil': 'Lawful Evil',
+    'neutral evil': 'Neutral Evil',
+    'chaotic evil': 'Chaotic Evil',
+    'unaligned': 'Unaligned',
+    'any alignment': 'Any Alignment',
+  };
+  return map[lower] ?? null;
+}
+
+/** Parse CR string to numeric value */
+function parseCrToNumber(cr: string): number {
+  if (cr.includes('/')) {
+    const [num, den] = cr.split('/');
+    return Number(num) / Number(den);
+  }
+  return Number(cr) || 0;
 }
 
 /** Generate a simple unique ID for actions/traits */
@@ -115,10 +197,31 @@ function actionId(prefix: string, index: number): string {
   return `${prefix}-${index}`;
 }
 
+/** Skill name mapping from JSON key to display name */
+const SKILL_MAP: Record<string, string> = {
+  acrobatics: 'Acrobatics',
+  arcana: 'Arcana',
+  athletics: 'Athletics',
+  deception: 'Deception',
+  history: 'History',
+  insight: 'Insight',
+  intimidation: 'Intimidation',
+  investigation: 'Investigation',
+  medicine: 'Medicine',
+  nature: 'Nature',
+  perception: 'Perception',
+  performance: 'Performance',
+  persuasion: 'Persuasion',
+  religion: 'Religion',
+  stealth: 'Stealth',
+  survival: 'Survival',
+};
+
 /** Convert a single SRD monster to a template row */
 export function convertSrdMonster(raw: SrdMonsterRaw): SrdTemplateRow {
   const now = new Date().toISOString();
   const id = makeSrdId(raw.name);
+  const ct = mapCreatureType(raw.type);
 
   // Ability scores
   const abilityScores = {
@@ -138,6 +241,9 @@ export function convertSrdMonster(raw: SrdMonsterRaw): SrdTemplateRow {
   if (raw.intelligence_save) saves.int = raw.intelligence_save;
   if (raw.wisdom_save) saves.wis = raw.wisdom_save;
   if (raw.charisma_save) saves.cha = raw.charisma_save;
+
+  // Speed
+  const speedRecord = parseSpeed(raw.speed, raw.speed_json);
 
   // Actions (regular)
   const actions = (raw.actions ?? []).map((a, i) => ({
@@ -166,24 +272,141 @@ export function convertSrdMonster(raw: SrdMonsterRaw): SrdTemplateRow {
     description: t.desc,
   }));
 
-  // Custom fields for data that doesn't map to standard fields
-  const customFields: Array<{ key: string; value: string }> = [];
-  if (raw.damage_vulnerabilities) customFields.push({ key: 'Damage Vulnerabilities', value: raw.damage_vulnerabilities });
-  if (raw.damage_resistances) customFields.push({ key: 'Damage Resistances', value: raw.damage_resistances });
-  if (raw.damage_immunities) customFields.push({ key: 'Damage Immunities', value: raw.damage_immunities });
-  if (raw.condition_immunities) customFields.push({ key: 'Condition Immunities', value: raw.condition_immunities });
-  if (raw.senses) customFields.push({ key: 'Senses', value: raw.senses });
-  if (raw.languages) customFields.push({ key: 'Languages', value: raw.languages });
-  if (raw.alignment) customFields.push({ key: 'Alignment', value: raw.alignment });
-  if (raw.legendary_desc) customFields.push({ key: 'Legendary Description', value: raw.legendary_desc });
-  if (raw.armor_desc) customFields.push({ key: 'Armor Description', value: raw.armor_desc });
+  // Reactions
+  const reactions = (raw.reactions ?? []).map((r, i) => ({
+    id: actionId('react', i),
+    name: r.name,
+    description: r.desc,
+  }));
+
+  // Skills
+  const skills: Array<{ name: string; bonus: number }> = [];
+  for (const [key, displayName] of Object.entries(SKILL_MAP)) {
+    const val = raw[key as keyof SrdMonsterRaw] as number | null | undefined;
+    if (val != null && typeof val === 'number') {
+      skills.push({ name: displayName, bonus: val });
+    }
+  }
 
   // Tags
   const tags: string[] = ['source:srd'];
-  const ct = mapCreatureType(raw.type);
   if (ct) tags.push(`type:${ct}`);
   if (raw.size) tags.push(`size:${raw.size.toLowerCase()}`);
   if (raw.subtype) tags.push(`subtype:${raw.subtype.toLowerCase()}`);
+
+  // Custom fields (legacy column — keep minimal)
+  const customFields: Array<{ key: string; value: string }> = [];
+  if (raw.legendary_desc) customFields.push({ key: 'Legendary Description', value: raw.legendary_desc });
+  if (raw.armor_desc) customFields.push({ key: 'Armor Description', value: raw.armor_desc });
+  if (raw.spells) customFields.push({ key: 'Spells', value: raw.spells });
+
+  // ── Build field_values matching defaultCreatureStructure field IDs & types ──
+  const fieldValues: Record<string, unknown> = {};
+
+  // Header fields
+  const alignment = mapAlignment(raw.alignment);
+  if (alignment) {
+    fieldValues['alignment'] = { type: 'select', selected: alignment };
+  }
+  fieldValues['cr'] = { type: 'number', value: parseCrToNumber(raw.challenge_rating) };
+
+  // Combat
+  fieldValues['ac'] = { type: 'number', value: raw.armor_class };
+  fieldValues['hp_default'] = { type: 'number', value: raw.hit_points };
+  if (raw.hit_dice) {
+    fieldValues['hp_formula'] = { type: 'text-field', value: raw.hit_dice };
+  }
+  // Speed as speed-list (Record<string, number | null>)
+  fieldValues['speed'] = { type: 'speed-list', values: speedRecord };
+
+  // Abilities
+  fieldValues['ability_scores'] = {
+    type: 'stat-block',
+    scores: { ...abilityScores },
+    modifiers: {},
+    saves: Object.keys(saves).length > 0 ? { ...saves } : {},
+  };
+
+  // Skills
+  if (skills.length > 0) {
+    fieldValues['skills'] = { type: 'skill-list', skills };
+  }
+
+  // Defenses
+  const resistances = parseCommaSeparated(raw.damage_resistances);
+  if (resistances.length > 0) {
+    fieldValues['resistances'] = { type: 'tag-list', tags: resistances };
+  }
+  const vulnerabilities = parseCommaSeparated(raw.damage_vulnerabilities);
+  if (vulnerabilities.length > 0) {
+    fieldValues['vulnerabilities'] = { type: 'tag-list', tags: vulnerabilities };
+  }
+  const damageImmunities = parseCommaSeparated(raw.damage_immunities);
+  if (damageImmunities.length > 0) {
+    fieldValues['immunities_damage'] = { type: 'tag-list', tags: damageImmunities };
+  }
+  const conditionImmunities = parseCommaSeparated(raw.condition_immunities);
+  if (conditionImmunities.length > 0) {
+    fieldValues['immunities_condition'] = { type: 'tag-list', tags: conditionImmunities };
+  }
+
+  // Senses as speed-list
+  const sensesRecord = parseSenses(raw.senses);
+  if (Object.keys(sensesRecord).length > 0) {
+    fieldValues['senses'] = { type: 'speed-list', values: sensesRecord };
+  }
+
+  // Languages
+  const languages = parseLanguages(raw.languages);
+  if (languages.length > 0) {
+    fieldValues['languages'] = { type: 'tag-list', tags: languages };
+  }
+
+  // Info — size and creature_type as select
+  if (raw.size) {
+    fieldValues['size'] = { type: 'select', selected: capitalize(raw.size.toLowerCase()) };
+  }
+  if (ct) {
+    fieldValues['creature_type'] = { type: 'select', selected: capitalize(ct) };
+  }
+
+  // Traits
+  if (traits.length > 0) {
+    fieldValues['traits'] = {
+      type: 'action-list',
+      actions: traits.map(t => ({ id: t.id, name: t.name, description: t.description })),
+    };
+  }
+
+  // Actions
+  if (actions.length > 0) {
+    fieldValues['actions'] = {
+      type: 'action-list',
+      actions: actions.map(a => ({
+        id: a.id,
+        name: a.name,
+        description: a.description,
+        toHit: a.toHit,
+        damage: a.damage,
+      })),
+    };
+  }
+
+  // Reactions
+  if (reactions.length > 0) {
+    fieldValues['reactions'] = {
+      type: 'action-list',
+      actions: reactions.map(r => ({ id: r.id, name: r.name, description: r.description })),
+    };
+  }
+
+  // Legendary Actions
+  if (legendaryActions.length > 0) {
+    fieldValues['legendary_actions'] = {
+      type: 'action-list',
+      actions: legendaryActions.map(a => ({ id: a.id, name: a.name, description: a.description })),
+    };
+  }
 
   return {
     id,
@@ -193,7 +416,7 @@ export function convertSrdMonster(raw: SrdMonsterRaw): SrdTemplateRow {
     hp_formula: raw.hit_dice || null,
     hp_default: raw.hit_points ?? null,
     ac: raw.armor_class ?? null,
-    speed: JSON.stringify(parseSpeed(raw.speed, raw.speed_json)),
+    speed: JSON.stringify(speedRecord),
     ability_scores: JSON.stringify(abilityScores),
     saving_throws: Object.keys(saves).length > 0 ? JSON.stringify(saves) : null,
     actions: JSON.stringify(allActions),
@@ -203,7 +426,7 @@ export function convertSrdMonster(raw: SrdMonsterRaw): SrdTemplateRow {
     custom_fields: JSON.stringify(customFields),
     tags: JSON.stringify(tags),
     avatar_path: null,
-    field_values: null,
+    field_values: JSON.stringify(fieldValues),
     created_at: now,
     updated_at: now,
   };

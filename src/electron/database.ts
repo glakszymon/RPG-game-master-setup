@@ -647,15 +647,31 @@ export function seedSrdCreatures(): { seeded: number; skipped: boolean } {
   const raw: SrdMonsterRaw[] = JSON.parse(fs.readFileSync(monstersPath, 'utf-8'));
   const rows = convertAllSrdMonsters(raw);
 
+  // Resolve token avatar images from Too Many Tokens asset pack
+  const tokensDir = path.join(path.dirname(monstersPath), 'too-many-tokens-dnd-1.1.1');
+  const resolveAvatar = (monsterName: string): string | null => {
+    try {
+      const dir = path.join(tokensDir, monsterName);
+      if (!fs.existsSync(dir)) return null;
+      const files = fs.readdirSync(dir).filter(f => f.endsWith('.webp')).sort();
+      if (files.length === 0) return null;
+      const imgBuffer = fs.readFileSync(path.join(dir, files[0]));
+      return `data:image/webp;base64,${imgBuffer.toString('base64')}`;
+    } catch {
+      return null;
+    }
+  };
+
   let count = 0;
   for (const r of rows) {
+    const avatar = resolveAvatar(r.name) ?? r.avatar_path;
     db.run(
       `INSERT OR IGNORE INTO bestiary_templates (id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, field_values, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         r.id, r.name, r.creature_type, r.cr, r.hp_formula, r.hp_default, r.ac,
         r.speed, r.ability_scores, r.saving_throws, r.actions, r.actions_mode,
-        r.actions_text, r.traits, r.custom_fields, r.tags, r.avatar_path,
+        r.actions_text, r.traits, r.custom_fields, r.tags, avatar,
         r.field_values, r.created_at, r.updated_at,
       ],
     );
