@@ -13,6 +13,7 @@ import type {
   CardSizePreset,
   CardStructure,
   FieldValue,
+  InventoryItem,
   PartyTrackerState,
 } from './types';
 import { DEFAULT_CARD_STRUCTURE } from './types';
@@ -85,6 +86,7 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId }: Party
       name: 'New Character',
       portraitPath: null,
       fieldValues: createDefaultFieldValues(cardStructure.fields),
+      inventory: [],
       order: characters.length,
     };
     updateState({ characters: [...characters, newChar] });
@@ -116,6 +118,26 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId }: Party
     },
     [updateState],
   );
+
+  const addInventoryItem = useCallback((charId: string, item: InventoryItem) => {
+    updateState({
+      characters: characters.map((c) =>
+        c.id === charId
+          ? { ...c, inventory: [...(c.inventory ?? []), item] }
+          : c,
+      ),
+    });
+  }, [characters, updateState]);
+
+  const removeInventoryItem = useCallback((charId: string, itemId: string) => {
+    updateState({
+      characters: characters.map((c) =>
+        c.id === charId
+          ? { ...c, inventory: (c.inventory ?? []).filter((i) => i.id !== itemId) }
+          : c,
+      ),
+    });
+  }, [characters, updateState]);
 
   const handleCardDragStart = useCallback((id: string) => {
     setDragCharId(id);
@@ -209,6 +231,8 @@ export function PartyTracker({ toolState, onToolStateChange, campaignId }: Party
             size={cardSize}
             onUpdateCharacter={updateCharacter}
             onUpdateFieldValue={updateFieldValue}
+            onAddInventoryItem={addInventoryItem}
+            onRemoveInventoryItem={removeInventoryItem}
             onDragStart={handleCardDragStart}
             onDragOver={handleCardDragOver}
             onDragEnd={handleCardDragEnd}

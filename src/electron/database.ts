@@ -257,6 +257,38 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  // ── Equipment & Spells Library table ──
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS library_entries (
+      id TEXT PRIMARY KEY,
+      source TEXT NOT NULL DEFAULT 'custom',
+      category TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      rarity TEXT,
+      weight REAL,
+      cost TEXT,
+      properties TEXT,
+      damage TEXT,
+      damage_type TEXT,
+      ac INTEGER,
+      item_type TEXT,
+      spell_level INTEGER,
+      school TEXT,
+      casting_time TEXT,
+      range_text TEXT,
+      components TEXT,
+      duration TEXT,
+      tags TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  db.run('CREATE INDEX IF NOT EXISTS idx_library_category ON library_entries(category)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_library_name ON library_entries(name)');
+
   // Run migrations based on schema version
   runMigrations();
 
@@ -278,6 +310,15 @@ function runMigrations(): void {
     db.run('ALTER TABLE bestiary_folders ADD COLUMN campaign_id TEXT');
   } catch {
     // Column already exists
+  }
+
+  // Add structured item fields to library_entries (idempotent)
+  for (const col of ['damage TEXT', 'damage_type TEXT', 'ac INTEGER', 'item_type TEXT']) {
+    try {
+      db.run(`ALTER TABLE library_entries ADD COLUMN ${col}`);
+    } catch {
+      // Column already exists
+    }
   }
   // Assign existing folders to the first campaign if unset
   const campaigns = db.exec('SELECT id FROM campaigns LIMIT 1');
@@ -1727,4 +1768,150 @@ export function deleteNpcNameList(id: string): { ok: boolean } {
   db.run('DELETE FROM npc_name_lists WHERE id = ?', [id]);
   persist();
   return { ok: true };
+}
+
+// ── Equipment & Spells Library CRUD ──
+
+export interface LibraryEntryRow {
+  id: string;
+  source: string;
+  category: string;
+  name: string;
+  description: string | null;
+  rarity: string | null;
+  weight: number | null;
+  cost: string | null;
+  properties: string | null;
+  spell_level: number | null;
+  school: string | null;
+  casting_time: string | null;
+  range_text: string | null;
+  components: string | null;
+  duration: string | null;
+  tags: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function listLibraryEntries(): LibraryEntryRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = db.exec(
+    'SELECT id, source, category, name, description, rarity, weight, cost, properties, damage, damage_type, ac, item_type, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at FROM library_entries ORDER BY name ASC',
+  );
+
+  if (result.length === 0) return [];
+
+  return result[0].values.map(([id, source, category, name, description, rarity, weight, cost, properties, damage, damage_type, ac, item_type, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at]) => ({
+    id: id as string,
+    source: source as string,
+    category: category as string,
+    name: name as string,
+    description: description as string | null,
+    rarity: rarity as string | null,
+    weight: weight as number | null,
+    cost: cost as string | null,
+    properties: properties as string | null,
+    damage: damage as string | null,
+    damage_type: damage_type as string | null,
+    ac: ac as number | null,
+    item_type: item_type as string | null,
+    spell_level: spell_level as number | null,
+    school: school as string | null,
+    casting_time: casting_time as string | null,
+    range_text: range_text as string | null,
+    components: components as string | null,
+    duration: duration as string | null,
+    tags: tags as string | null,
+    created_at: created_at as string,
+    updated_at: updated_at as string,
+  }));
+}
+
+export function saveLibraryEntry(dataJson: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  const e = JSON.parse(dataJson);
+  db.run(
+    `INSERT INTO library_entries (id, source, category, name, description, rarity, weight, cost, properties, damage, damage_type, ac, item_type, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET
+       name = excluded.name, category = excluded.category, description = excluded.description,
+       rarity = excluded.rarity, weight = excluded.weight, cost = excluded.cost,
+       properties = excluded.properties, damage = excluded.damage, damage_type = excluded.damage_type,
+       ac = excluded.ac, item_type = excluded.item_type,
+       spell_level = excluded.spell_level, school = excluded.school,
+       casting_time = excluded.casting_time, range_text = excluded.range_text, components = excluded.components,
+       duration = excluded.duration, tags = excluded.tags, updated_at = datetime('now')`,
+    [
+      e.id, e.source ?? 'custom', e.category, e.name, e.description ?? null,
+      e.rarity ?? null, e.weight ?? null, e.cost ?? null,
+      JSON.stringify(e.properties ?? []), e.damage ?? null, e.damageType ?? null,
+      e.ac ?? null, e.itemType ?? null, e.spellLevel ?? null,
+      e.school ?? null, e.castingTime ?? null, e.range ?? null,
+      e.components ?? null, e.duration ?? null,
+      JSON.stringify(e.tags ?? []), e.createdAt ?? new Date().toISOString(),
+    ],
+  );
+
+  persist();
+}
+
+export function deleteLibraryEntry(id: string): void {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM library_entries WHERE id = ?', [id]);
+  persist();
+}
+
+export function seedLibrarySrd(): { seeded: number; skipped: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  // Check if already seeded with structured data
+  const existing = db.exec("SELECT damage FROM library_entries WHERE id = 'srd-longsword'");
+  if (existing.length > 0 && existing[0].values.length > 0 && existing[0].values[0][0] !== null) {
+    return { seeded: 0, skipped: true };
+  }
+
+  // Delete old SRD entries to reseed with structured data
+  db.run("DELETE FROM library_entries WHERE source = 'srd'");
+
+  let seeded = 0;
+
+  // Locate SRD items — try app resources first, fallback to project assets
+  let itemsPath = path.join(app.getAppPath(), 'assets', 'srd-items.json');
+  if (!fs.existsSync(itemsPath)) {
+    itemsPath = path.join(__dirname, '..', '..', 'assets', 'srd-items.json');
+  }
+  if (fs.existsSync(itemsPath)) {
+    const items = JSON.parse(fs.readFileSync(itemsPath, 'utf-8'));
+    for (const item of items) {
+      db.run(
+        `INSERT OR IGNORE INTO library_entries (id, source, category, name, description, rarity, weight, cost, properties, damage, damage_type, ac, item_type, tags, created_at, updated_at)
+         VALUES (?, 'srd', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '[]', datetime('now'), datetime('now'))`,
+        [item.id, item.category, item.name, item.description ?? null, item.rarity ?? null, item.weight ?? null, item.cost ?? null, JSON.stringify(item.properties ?? []), item.damage ?? null, item.damageType ?? null, item.ac ?? null, item.itemType ?? null],
+      );
+      seeded++;
+    }
+  }
+
+  // Locate SRD spells
+  let spellsPath = path.join(app.getAppPath(), 'assets', 'srd-spells.json');
+  if (!fs.existsSync(spellsPath)) {
+    spellsPath = path.join(__dirname, '..', '..', 'assets', 'srd-spells.json');
+  }
+  if (fs.existsSync(spellsPath)) {
+    const spells = JSON.parse(fs.readFileSync(spellsPath, 'utf-8'));
+    for (const spell of spells) {
+      db.run(
+        `INSERT OR IGNORE INTO library_entries (id, source, category, name, description, spell_level, school, casting_time, range_text, components, duration, tags, created_at, updated_at)
+         VALUES (?, 'srd', 'spell', ?, ?, ?, ?, ?, ?, ?, ?, '[]', datetime('now'), datetime('now'))`,
+        [spell.id, spell.name, spell.description ?? null, spell.level ?? 0, spell.school ?? null, spell.castingTime ?? null, spell.range ?? null, spell.components ?? null, spell.duration ?? null],
+      );
+      seeded++;
+    }
+  }
+
+  persist();
+  return { seeded, skipped: false };
 }

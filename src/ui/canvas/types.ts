@@ -14,10 +14,11 @@ export type ToolType =
   | 'time-clock'
   | 'time-calendar'
   | 'time-session-timer'
-  | 'shop-generator'
-  | 'dice-roller'
   | 'npc-tool'
   | 'player-view';
+  // | 'equipment-library'
+  // | 'shop-generator'
+  // | 'dice-roller'
 
 export interface WindowState {
   id: string;
@@ -86,10 +87,11 @@ export const TOOL_MIN_SIZES: Record<ToolType, { minWidth: number; minHeight: num
   'time-clock': { minWidth: 280, minHeight: 320 },
   'time-calendar': { minWidth: 320, minHeight: 350 },
   'time-session-timer': { minWidth: 280, minHeight: 250 },
-  'shop-generator': { minWidth: 350, minHeight: 300 },
-  'dice-roller': { minWidth: 250, minHeight: 200 },
+  // 'shop-generator': { minWidth: 350, minHeight: 300 },
+  // 'dice-roller': { minWidth: 250, minHeight: 200 },
   'npc-tool': { minWidth: 400, minHeight: 350 },
   'player-view': { minWidth: 350, minHeight: 400 },
+  // 'equipment-library': { minWidth: 500, minHeight: 350 },
 };
 
 /** Default sizes for new windows */
@@ -105,10 +107,11 @@ export const TOOL_DEFAULT_SIZES: Record<ToolType, { width: number; height: numbe
   'time-clock': { width: 320, height: 400 },
   'time-calendar': { width: 420, height: 450 },
   'time-session-timer': { width: 350, height: 350 },
-  'shop-generator': { width: 450, height: 380 },
-  'dice-roller': { width: 300, height: 250 },
+  // 'shop-generator': { width: 450, height: 380 },
+  // 'dice-roller': { width: 300, height: 250 },
   'npc-tool': { width: 500, height: 450 },
   'player-view': { width: 500, height: 500 },
+  // 'equipment-library': { width: 700, height: 500 },
 };
 
 /** Tool display names and icons */
@@ -124,17 +127,18 @@ export const TOOL_INFO: Record<ToolType, { name: string; icon: string }> = {
   'time-clock': { name: 'Time Clock', icon: '🌅' },
   'time-calendar': { name: 'Calendar', icon: '📅' },
   'time-session-timer': { name: 'Session Timer', icon: '⏱️' },
-  'shop-generator': { name: 'Shop Generator', icon: '🏪' },
-  'dice-roller': { name: 'Dice Roller', icon: '🎲' },
+  // 'shop-generator': { name: 'Shop Generator', icon: '🏪' },
+  // 'dice-roller': { name: 'Dice Roller', icon: '🎲' },
   'npc-tool': { name: 'NPC Tool', icon: '🧑' },
   'player-view': { name: 'Player View', icon: '📡' },
+  // 'equipment-library': { name: 'Equipment & Spells', icon: '📦' },
 };
 
 /** Context menu categories */
 export const TOOL_CATEGORIES = [
   {
     label: 'Combat Tools',
-    tools: ['combat-tracker', 'encounter-sets', 'dice-roller'] as ToolType[],
+    tools: ['combat-tracker', 'encounter-sets'] as ToolType[],
   },
   {
     label: 'Party & NPCs',
@@ -142,7 +146,7 @@ export const TOOL_CATEGORIES = [
   },
   {
     label: 'World & Time',
-    tools: ['weather-generator', 'time-clock', 'time-calendar', 'time-session-timer', 'shop-generator'] as ToolType[],
+    tools: ['weather-generator', 'time-clock', 'time-calendar', 'time-session-timer'] as ToolType[],
   },
   {
     label: 'Notes & Content',
