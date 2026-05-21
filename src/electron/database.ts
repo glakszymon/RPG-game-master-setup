@@ -179,6 +179,7 @@ export async function initDatabase(): Promise<void> {
 
   // ── Seed SRD creatures on first launch ──
   seedSrdCreatures();
+  backfillSrdAvatars();
 
   db.run(`
     CREATE TABLE IF NOT EXISTS bestiary_folders (
@@ -681,6 +682,49 @@ export function seedSrdCreatures(): { seeded: number; skipped: boolean } {
   persist();
   console.log(`[bestiary] Seeded ${count} SRD creatures`);
   return { seeded: count, skipped: false };
+}
+
+/** Backfill avatar images for SRD creatures that have null avatar_path */
+export function backfillSrdAvatars(): number {
+  if (!db) throw new Error('Database not initialized');
+
+  // Find the tokens directory
+  let tokensDir = path.join(app.getAppPath(), 'assets', 'too-many-tokens-dnd-1.1.1');
+  if (!fs.existsSync(tokensDir)) {
+    tokensDir = path.join(__dirname, '..', '..', 'assets', 'too-many-tokens-dnd-1.1.1');
+  }
+  if (!fs.existsSync(tokensDir)) {
+    console.warn('[bestiary] Could not find token assets for avatar backfill');
+    return 0;
+  }
+
+  // Get SRD templates with null avatars
+  const result = db.exec(
+    "SELECT id, name FROM bestiary_templates WHERE avatar_path IS NULL AND id LIKE 'srd-%'"
+  );
+  if (result.length === 0 || result[0].values.length === 0) return 0;
+
+  let updated = 0;
+  for (const [id, name] of result[0].values) {
+    try {
+      const dir = path.join(tokensDir, name as string);
+      if (!fs.existsSync(dir)) continue;
+      const files = fs.readdirSync(dir).filter(f => f.endsWith('.webp')).sort();
+      if (files.length === 0) continue;
+      const imgBuffer = fs.readFileSync(path.join(dir, files[0]));
+      const dataUrl = `data:image/webp;base64,${imgBuffer.toString('base64')}`;
+      db.run('UPDATE bestiary_templates SET avatar_path = ? WHERE id = ?', [dataUrl, id]);
+      updated++;
+    } catch {
+      // Skip individual failures silently
+    }
+  }
+
+  if (updated > 0) {
+    persist();
+    console.log(`[bestiary] Backfilled ${updated} SRD creature avatars`);
+  }
+  return updated;
 }
 
 export interface BestiaryTemplateRow {
