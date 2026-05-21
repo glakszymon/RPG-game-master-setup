@@ -5,7 +5,7 @@
  * Inline editing of field values directly on cards.
  */
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { createDefaultFieldValues } from '../../components/dynamic-fields';
 import type {
@@ -31,10 +31,34 @@ function uid(): string {
   return crypto.randomUUID();
 }
 
-export function PartyTracker({ toolState, onToolStateChange }: PartyTrackerProps) {
+export function PartyTracker({ toolState, onToolStateChange, campaignId }: PartyTrackerProps) {
   const cardSize: CardSizePreset = toolState?.cardSize ?? 'M';
   const characters: Character[] = useMemo(() => toolState?.characters ?? [], [toolState?.characters]);
   const cardStructure: CardStructure = toolState?.cardStructure ?? DEFAULT_CARD_STRUCTURE;
+  const initialLoadedRef = useRef(false);
+
+  // Seed from initial_party_members if toolState has no characters yet
+  useEffect(() => {
+    if (initialLoadedRef.current) return;
+    if (toolState?.characters && toolState.characters.length > 0) {
+      initialLoadedRef.current = true;
+      return;
+    }
+    const api = window.electronAPI;
+    if (!api || !campaignId) return;
+    initialLoadedRef.current = true;
+    api.settings.load(campaignId, 'initial_party_members').then((json: string | null) => {
+      if (!json) return;
+      const members = JSON.parse(json) as Character[];
+      if (members.length > 0) {
+        onToolStateChange({
+          cardSize: toolState?.cardSize ?? 'M',
+          characters: members,
+          cardStructure: toolState?.cardStructure ?? DEFAULT_CARD_STRUCTURE,
+        });
+      }
+    });
+  }, [campaignId, toolState, onToolStateChange]);
 
   const [gearOpen, setGearOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);

@@ -67,7 +67,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  height: 160px;
+  height: 180px;
   background: var(--glass-bg-surface);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-lg);

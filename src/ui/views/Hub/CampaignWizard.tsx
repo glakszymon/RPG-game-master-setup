@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import type { CampaignData } from '../../electron.d';
 import styles from './CampaignWizard.module.css';
@@ -46,9 +46,26 @@ function CampaignWizard({ open, onClose, onSave, editData }: CampaignWizardProps
   );
   const [iconValue, setIconValue] = useState(editData?.icon_value ?? 'sword');
   const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [tileBackground, setTileBackground] = useState<string | null>(null);
+  const [tileBackgroundPreview, setTileBackgroundPreview] = useState<string | null>(null);
 
   // Step 2: party members
   const [members, setMembers] = useState<PartyMemberEntry[]>([]);
+
+  // Load existing tile background in edit mode
+  useEffect(() => {
+    if (!editData || !open) return;
+    const api = window.electronAPI;
+    if (!api) return;
+    api.settings.load(editData.id, 'background_image').then((json: string | null) => {
+      if (!json) return;
+      const path = JSON.parse(json) as string;
+      setTileBackground(path);
+      api.dialog.readImage(path).then((dataUrl: string | null) => {
+        if (dataUrl) setTileBackgroundPreview(dataUrl);
+      });
+    });
+  }, [editData, open]);
 
   const resetForm = () => {
     setStep(1);
@@ -57,6 +74,8 @@ function CampaignWizard({ open, onClose, onSave, editData }: CampaignWizardProps
     setIconType((editData?.icon_type as 'preset' | 'custom') ?? 'preset');
     setIconValue(editData?.icon_value ?? 'sword');
     setCampaignId(null);
+    setTileBackground(null);
+    setTileBackgroundPreview(null);
     setMembers([]);
   };
 
@@ -70,8 +89,14 @@ function CampaignWizard({ open, onClose, onSave, editData }: CampaignWizardProps
     if (!name.trim()) return;
 
     if (editData) {
-      // Edit mode — just save and close
+      // Edit mode — save and persist tile background if changed
       await onSave(name.trim(), system.trim(), iconType, iconValue);
+      if (tileBackground !== null) {
+        const api = window.electronAPI;
+        if (api) {
+          await api.settings.save(editData.id, 'background_image', JSON.stringify(tileBackground));
+        }
+      }
       handleClose();
       return;
     }
@@ -80,6 +105,13 @@ function CampaignWizard({ open, onClose, onSave, editData }: CampaignWizardProps
     const id = await onSave(name.trim(), system.trim(), iconType, iconValue);
     if (id) {
       setCampaignId(id);
+      // Save tile background setting
+      if (tileBackground) {
+        const api = window.electronAPI;
+        if (api) {
+          await api.settings.save(id, 'background_image', JSON.stringify(tileBackground));
+        }
+      }
     }
     setStep(2);
   };
@@ -134,6 +166,18 @@ function CampaignWizard({ open, onClose, onSave, editData }: CampaignWizardProps
     const url = URL.createObjectURL(file);
     setIconType('custom');
     setIconValue(url);
+  };
+
+  const handlePickTileBackground = async () => {
+    const api = window.electronAPI;
+    if (!api) return;
+    const filePath = await api.dialog.openImageFile();
+    if (!filePath) return;
+    setTileBackground(filePath);
+    const dataUrl = await api.dialog.readImage(filePath);
+    if (dataUrl) {
+      setTileBackgroundPreview(dataUrl);
+    }
   };
 
   return (
@@ -205,6 +249,33 @@ function CampaignWizard({ open, onClose, onSave, editData }: CampaignWizardProps
                   <span>Or upload custom image</span>
                   <input type="file" accept="image/*" onChange={handleFileUpload} className={styles.fileInput} />
                 </label>
+              </fieldset>
+
+              <fieldset className={styles.fieldset}>
+                <legend className={styles.legend}>Tile Background</legend>
+                <div className={styles.tileBackgroundPicker}>
+                  {tileBackgroundPreview ? (
+                    <div
+                      className={styles.tileBackgroundPreviewBox}
+                      style={{ backgroundImage: `url(${tileBackgroundPreview})` }}
+                    />
+                  ) : (
+                    <div className={styles.tileBackgroundPlaceholder}>No image</div>
+                  )}
+                  <button type="button" className={styles.addMemberBtn} onClick={handlePickTileBackground}>
+                    Choose Image
+                  </button>
+                  {tileBackground && (
+                    <button
+                      type="button"
+                      className={styles.removeMemberBtn}
+                      onClick={() => { setTileBackground(null); setTileBackgroundPreview(null); }}
+                      title="Remove background"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
               </fieldset>
 
               <div className={styles.actions}>
