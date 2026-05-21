@@ -530,9 +530,9 @@ Pliki modułu:
 
 ---
 
-## Faza 5: Combat Tracker
+## Faza 5: Combat Tracker  ✅ ZAKOŃCZONE
 
-### Krok 5.0 - Brainstorm
+### Krok 5.0 - Brainstorm  ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Porozmawiaj ze mną o Combat Tracker - narzędziu do prowadzenia walki. Omówmy:
@@ -550,7 +550,7 @@ Pliki modułu:
 >
 > Dopytaj mnie o szczegóły flow walki."
 
-### Krok 5.1 - Implementacja
+### Krok 5.1 - Implementacja  ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Poprowadź mnie w implementacji Combat Trackera na podstawie naszych ustaleń. Zaczynamy od listy uczestników, potem system tur, potem damage/heal."
@@ -578,9 +578,9 @@ Pliki modułu:
 
 ---
 
-## Faza 6: Udostępnianie LAN (Killer Feature)
+## Faza 6: Udostępnianie LAN (Killer Feature)  ✅ ZAKOŃCZONE
 
-### Krok 6.0 - Brainstorm
+### Krok 6.0 - Brainstorm  ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Porozmawiaj ze mną o systemie LAN sharing - to kluczowa funkcja mojej aplikacji. Omówmy:
@@ -598,7 +598,7 @@ Pliki modułu:
 >
 > Dopytaj mnie o każdy aspekt."
 
-### Krok 6.1 - Implementacja serwera
+### Krok 6.1 - Implementacja serwera  ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Poprowadź mnie krok po kroku w implementacji LAN sharing. Zaczynamy od serwera HTTP + WebSocket, potem prosty widok gracza, potem synchronizacja."
@@ -732,9 +732,9 @@ Pliki modułu:
 
 ---
 
-## Faza 8: Notatnik
+## Faza 8: Notatnik  ✅ ZAKOŃCZONE
 
-### Krok 8.0 - Brainstorm
+### Krok 8.0 - Brainstorm  ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Porozmawiaj ze mną o Notatniku - block editorze w stylu Notion. Omówmy:
@@ -749,7 +749,7 @@ Pliki modułu:
 >
 > Dopytaj mnie o szczegóły."
 
-### Krok 8.1 - Implementacja
+### Krok 8.1 - Implementacja  ✅ ZAKOŃCZONE
 
 **Napisz do AI:**
 > "Poprowadź mnie w implementacji Notatnika na podstawie naszych ustaleń."
