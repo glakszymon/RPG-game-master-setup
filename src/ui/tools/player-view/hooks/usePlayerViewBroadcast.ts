@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import { useSubscribe } from '../../../event-bus';
 import type { PlayerViewState } from '../types';
 import type { MapDisplayState } from '../../map-display/types';
 import type { CombatTrackerState } from '../../combat-tracker/types';
@@ -52,6 +53,21 @@ export interface PlayerBroadcastState {
   map?: PlayerMapState;
   combat?: PlayerCombatState;
   rotation: 0 | 90 | 180 | 270;
+  hpEvents?: HpAnimationEvent[];
+  conditionsLegend?: ConditionLegendEntry[];
+}
+
+export interface HpAnimationEvent {
+  sourceType: string;
+  sourceId: string | null;
+  delta: number;
+  currentHp: number;
+}
+
+export interface ConditionLegendEntry {
+  id: string;
+  name: string;
+  color: string;
 }
 
 // ── Interval ──
@@ -75,10 +91,17 @@ export function usePlayerViewBroadcast(
   const stateRef = useRef(playerViewState);
   const windowsRef = useRef(allWindows);
   const lastJson = useRef('');
+  const hpEventQueue = useRef<HpAnimationEvent[]>([]);
 
   // Keep refs fresh
   stateRef.current = playerViewState;
   windowsRef.current = allWindows;
+
+  // Subscribe to HP change events and queue them for next broadcast tick
+  useSubscribe('combat:hp-changed', ({ sourceType, sourceId, delta, currentHp }) => {
+    if (!stateRef.current.serverRunning) return;
+    hpEventQueue.current.push({ sourceType, sourceId, delta, currentHp });
+  });
 
   useEffect(() => {
     if (!playerViewState.serverRunning) return;
@@ -90,10 +113,17 @@ export function usePlayerViewBroadcast(
       if (!pvState.serverRunning || pvState.sharedWindows.length === 0) return;
 
       const state = buildBroadcastState(pvState, wins);
+
+      // Attach queued HP events
+      const pendingHp = hpEventQueue.current.splice(0);
+      if (pendingHp.length > 0) {
+        state.hpEvents = pendingHp;
+      }
+
       const json = JSON.stringify(state);
 
-      // Only broadcast when state actually changed
-      if (json === lastJson.current) return;
+      // Only broadcast when state actually changed (but always broadcast if HP events present)
+      if (json === lastJson.current && pendingHp.length === 0) return;
       lastJson.current = json;
 
       window.electronAPI?.lan.broadcast('state-update', state);
@@ -136,6 +166,16 @@ function buildBroadcastState(
     if (win.toolType === 'combat-tracker' && win.toolState) {
       state.combat = transformCombatState(win.toolState as CombatTrackerState);
     }
+  }
+
+  // Include conditions legend if enabled
+  if (playerViewState.showEffectsLegend && combatState) {
+    const conditions = combatState.conditions.length > 0 ? combatState.conditions : [];
+    state.conditionsLegend = conditions.map(c => ({
+      id: c.id,
+      name: c.name,
+      color: CONDITION_COLORS[c.id] ?? '#94a3b8',
+    }));
   }
 
   return state;

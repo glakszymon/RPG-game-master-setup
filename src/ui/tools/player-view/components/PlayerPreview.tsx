@@ -3,7 +3,8 @@
  * Uses the same broadcast state (PlayerBroadcastState) for accuracy.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useSubscribe } from '../../../event-bus';
 import type { PlayerBroadcastState, PlayerMapState } from '../hooks/usePlayerViewBroadcast';
 import type { PlayerViewState } from '../types';
 import type { WindowState } from '../../../canvas/types';
@@ -17,12 +18,53 @@ interface PlayerPreviewProps {
 }
 
 const TOKEN_RADIUS = 20;
+const FLOAT_DURATION = 1200;
+const FLOAT_DISTANCE = 48;
+const MAX_FLOATING_TEXTS = 50;
+
+interface FloatingText {
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  startTime: number;
+}
+
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
 
 export function PlayerPreview({ playerViewState, allWindows }: PlayerPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mapImageRef = useRef<HTMLImageElement | null>(null);
   const lastMapUrl = useRef<string | null>(null);
   const rafRef = useRef<number>(0);
+  const floatingTextsRef = useRef<FloatingText[]>([]);
+  const allWindowsRef = useRef(allWindows);
+  useLayoutEffect(() => { allWindowsRef.current = allWindows; });
+
+  // Subscribe to HP changes for floating text animation
+  useSubscribe('combat:hp-changed', ({ sourceType, sourceId, delta }) => {
+    // Find token position from map state
+    for (const win of allWindowsRef.current) {
+      if (win.toolType === 'map-display' && win.toolState) {
+        const ms = win.toolState as MapDisplayState;
+        const token = ms.tokens.find(t => t.sourceType === sourceType && t.sourceId === sourceId);
+        if (token) {
+          const texts = floatingTextsRef.current;
+          if (texts.length >= MAX_FLOATING_TEXTS) texts.shift();
+          texts.push({
+            x: token.x + (Math.random() - 0.5) * 20,
+            y: token.y,
+            text: delta > 0 ? `+${delta}` : `${delta}`,
+            color: delta > 0 ? '#4ade80' : '#ef4444',
+            startTime: performance.now(),
+          });
+          break;
+        }
+      }
+    }
+  });
 
   // Build broadcast state locally (same logic as the hook)
   const buildState = useCallback((): PlayerBroadcastState => {
@@ -99,6 +141,45 @@ export function PlayerPreview({ playerViewState, allWindows }: PlayerPreviewProp
     }
 
     renderMap(ctx, w, h, state.map, mapImageRef.current);
+
+    // Draw floating HP texts (in viewport-transformed space)
+    const now = performance.now();
+    const texts = floatingTextsRef.current;
+    if (state.map && texts.length > 0) {
+      ctx.save();
+      ctx.translate(w / 2, h / 2);
+      ctx.scale(state.map.viewport.zoom, state.map.viewport.zoom);
+      ctx.translate(-state.map.viewport.x, -state.map.viewport.y);
+
+      for (let i = texts.length - 1; i >= 0; i--) {
+        const ft = texts[i];
+        const elapsed = now - ft.startTime;
+        if (elapsed >= FLOAT_DURATION) {
+          texts.splice(i, 1);
+          continue;
+        }
+        const progress = elapsed / FLOAT_DURATION;
+        const eased = easeOutCubic(progress);
+        const tx = ft.x;
+        const ty = ft.y - eased * FLOAT_DISTANCE;
+        const alpha = 1 - progress;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = `bold 14px system-ui`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = ft.color;
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.lineWidth = 2;
+        ctx.strokeText(ft.text, tx, ty);
+        ctx.fillText(ft.text, tx, ty);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
     rafRef.current = requestAnimationFrame(render);
   }, [buildState]);
 

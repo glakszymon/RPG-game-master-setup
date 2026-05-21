@@ -42,7 +42,7 @@ export function useCanvasPersistence(
         try {
           const loaded = JSON.parse(json) as CanvasState;
           // Filter out windows with unknown tool types
-          const validToolTypes = new Set(['combat-tracker','party-tracker','bestiary','encounter-sets','notepad','map-display','soundboard','weather-generator','time-clock','time-calendar','time-session-timer','shop-generator','dice-roller']);
+          const validToolTypes = new Set(['combat-tracker','party-tracker','bestiary','encounter-sets','notepad','map-display','soundboard','weather-generator','time-clock','time-calendar','time-session-timer','shop-generator','dice-roller','player-view']);
           loaded.windows = (loaded.windows || []).filter((w) => {
             if (!validToolTypes.has(w.toolType)) {
               return false;

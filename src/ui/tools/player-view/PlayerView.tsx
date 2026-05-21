@@ -161,6 +161,18 @@ export function PlayerView({ toolState, onToolStateChange, allWindows }: PlayerV
         </div>
       </div>
 
+      {/* Effects Legend Toggle */}
+      <div className={styles.section}>
+        <label className={styles.shareItem}>
+          <input
+            type="checkbox"
+            checked={state.showEffectsLegend ?? false}
+            onChange={() => patchState({ showEffectsLegend: !state.showEffectsLegend })}
+          />
+          <span>Show Effects Legend (for players)</span>
+        </label>
+      </div>
+
       {/* Preview */}
       <div className={styles.previewArea}>
         {state.serverRunning

@@ -53,4 +53,19 @@ export interface PlayerBroadcastState {
   map?: PlayerMapState;
   combat?: PlayerCombatState;
   rotation: 0 | 90 | 180 | 270;
+  hpEvents?: HpAnimationEvent[];
+  conditionsLegend?: ConditionLegendEntry[];
+}
+
+export interface HpAnimationEvent {
+  sourceType: string;
+  sourceId: string | null;
+  delta: number;
+  currentHp: number;
+}
+
+export interface ConditionLegendEntry {
+  id: string;
+  name: string;
+  color: string;
 }
