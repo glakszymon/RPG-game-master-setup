@@ -296,7 +296,6 @@
   position: absolute;
   inset: 0;
   background: rgba(15, 15, 20, 0.95);
-  backdrop-filter: blur(8px);
   border-radius: 8px;
   display: flex;
   flex-direction: column;

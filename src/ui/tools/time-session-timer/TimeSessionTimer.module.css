@@ -153,7 +153,6 @@
   padding: 10px 8px;
   border-radius: 12px;
   background: rgba(20, 20, 30, 0.95);
-  backdrop-filter: blur(8px);
   z-index: 2;
   justify-content: center;
 }
@@ -377,7 +376,6 @@
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
   color: var(--color-text-primary);
-  backdrop-filter: blur(4px);
   transition: border-color 0.15s, background 0.15s;
 }
 
@@ -396,7 +394,6 @@
   border-radius: 8px;
   background: rgba(30, 30, 40, 0.9);
   color: var(--color-text-primary);
-  backdrop-filter: blur(4px);
   transition: border-color 0.15s;
 }
 

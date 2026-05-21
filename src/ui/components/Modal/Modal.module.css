@@ -58,7 +58,6 @@
   overflow-y: auto;
 
   background: var(--glass-bg-elevated);
-  backdrop-filter: var(--glass-blur-elevated);
   border: 1px solid var(--color-border-hover);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);

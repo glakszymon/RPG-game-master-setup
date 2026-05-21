@@ -109,4 +109,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     load: (id: string) =>
       ipcRenderer.invoke('note-presets:load', id),
   },
+  lan: {
+    start: (port?: number) =>
+      ipcRenderer.invoke('lan:start', port),
+    stop: () =>
+      ipcRenderer.invoke('lan:stop'),
+    status: () =>
+      ipcRenderer.invoke('lan:status'),
+    broadcast: (channel: string, data: unknown) =>
+      ipcRenderer.invoke('lan:broadcast', channel, data),
+    registerAsset: (filename: string, base64Data: string) =>
+      ipcRenderer.invoke('lan:register-asset', filename, base64Data),
+  },
 });

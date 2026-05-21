@@ -11,7 +11,6 @@
   min-height: 200px;
   padding: var(--space-6) var(--space-4) var(--space-4);
   background: var(--glass-bg-surface);
-  backdrop-filter: var(--glass-blur-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   cursor: pointer;
@@ -62,7 +61,6 @@
   min-width: 140px;
   padding: var(--space-1);
   background: var(--glass-bg-elevated);
-  backdrop-filter: var(--glass-blur-elevated);
   border: 1px solid var(--color-border-hover);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);

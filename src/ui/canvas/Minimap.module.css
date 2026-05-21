@@ -9,7 +9,6 @@
   width: 180px;
   height: 120px;
   background: var(--glass-bg-elevated);
-  backdrop-filter: var(--glass-blur-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
