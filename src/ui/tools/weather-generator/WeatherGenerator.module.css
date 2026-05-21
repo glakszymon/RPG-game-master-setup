@@ -1,0 +1,425 @@
+/* WeatherGenerator — glassmorphism dark-mode styles */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  height: 100%;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+/* ── Sections ── */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Labels ── */
+
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Biome grid ── */
+
+.biomeGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.biomeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 3px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.biomeBtn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.biomeActive {
+  border-color: rgba(103, 232, 249, 0.5);
+  background: rgba(103, 232, 249, 0.08);
+  box-shadow: 0 0 6px rgba(103, 232, 249, 0.2);
+  color: var(--color-text-primary);
+}
+
+.biomeImg {
+  display: block;
+  width: 36px;
+  height: 28px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.7);
+}
+
+.biomeActive .biomeImg {
+  filter: brightness(0.85);
+}
+
+.biomeName {
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  letter-spacing: 0.02em;
+}
+
+/* ── Toggle group ── */
+
+.toggleGroup {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toggleBtn {
+  padding: 4px 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toggleBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.toggleBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toggleActive {
+  background: rgba(103, 232, 249, 0.15);
+  color: var(--color-text-primary);
+}
+
+.timeInfo {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-left: auto;
+}
+
+/* ── Collapse button ── */
+
+.collapseBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 0;
+  text-align: left;
+}
+
+.collapseBtn:hover {
+  color: var(--color-text-primary);
+}
+
+/* ── Params ── */
+
+.paramsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.paramRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paramLabel {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  min-width: 95px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.paramIcon {
+  font-size: 14px;
+}
+
+.paramValue {
+  font-size: 11px;
+  color: var(--color-text-primary);
+  min-width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.slider {
+  flex: 1;
+  height: 4px;
+  accent-color: #67e8f9;
+}
+
+/* ── Select (matching app glassmorphism style) ── */
+
+.select {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid transparent;
+  background: var(--color-bg-elevated, rgba(255, 255, 255, 0.06));
+  color: var(--color-text-primary);
+  font-family: var(--font-body, inherit);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2399a1af' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  padding-right: 22px;
+}
+
+.select:focus {
+  border-color: var(--color-accent-border, rgba(103, 232, 249, 0.5));
+}
+
+.select option {
+  background: var(--color-bg-base, #1a1a2e);
+  color: var(--color-text-primary);
+}
+
+/* ── Actions ── */
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btnSecondary {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btnSecondary .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.btnSecondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btnPrimary {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(103, 232, 249, 0.3);
+  background: rgba(103, 232, 249, 0.12);
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btnPrimary .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.btnPrimary:hover {
+  background: rgba(103, 232, 249, 0.2);
+}
+
+/* ── Result ── */
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.narrative {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resultHeading {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.resultHeading .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.narrativeText {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text-primary);
+  margin: 0;
+  font-style: italic;
+}
+
+.mechanical {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.effectList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.effectItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.effectIcon {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.effectLabel {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.effectDesc {
+  color: var(--color-text-secondary);
+}
+
+/* ── Stat Table (Phase 3) ── */
+
+.statTable {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statCategory {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.statCatHeader {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-bottom: 1px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.statCatIcon {
+  font-size: 12px;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 0 1px 16px;
+  font-size: 11px;
+}
+
+.statName {
+  min-width: 90px;
+  color: var(--color-text-primary);
+}
+
+.statPercent {
+  min-width: 40px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.statPositive {
+  color: #6ee7b7;
+}
+
+.statNegative {
+  color: #fca5a5;
+}
+
+.statRolls {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
