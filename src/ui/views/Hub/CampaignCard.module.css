@@ -5,11 +5,11 @@
 .card {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: var(--space-3);
-  min-height: 200px;
-  padding: var(--space-6) var(--space-4) var(--space-4);
+  gap: var(--space-4);
+  height: 180px;
+  padding: var(--space-4);
   background: var(--glass-bg-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -42,7 +42,8 @@
   font-size: var(--text-lg);
   cursor: pointer;
   opacity: 0;
-  transition: opacity var(--duration-fast) var(--easing-default),
+  transition:
+    opacity var(--duration-fast) var(--easing-default),
     background var(--duration-fast) var(--easing-default);
 }
 
@@ -97,6 +98,8 @@
 .icon {
   width: 56px;
   height: 56px;
+  min-width: 56px;
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -117,12 +120,24 @@
 
 /* ── Text ── */
 
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  /* align-self: stretch; */
+}
+
+.info .badgeDemo {
+  margin-top: auto;
+}
+
 .name {
   font-family: var(--font-heading);
   font-size: var(--text-base);
   font-weight: var(--font-semibold);
   color: var(--color-text-primary);
-  text-align: center;
+  text-align: left;
   margin: 0;
 }
 
@@ -139,8 +154,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-top: auto;
-  padding-top: var(--space-3);
+  margin-left: auto;
 }
 
 .date {
@@ -156,4 +170,9 @@
   border-radius: var(--radius-full);
   background: var(--color-warning-muted);
   color: var(--color-warning);
+}
+
+.badgeDemo {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
 }

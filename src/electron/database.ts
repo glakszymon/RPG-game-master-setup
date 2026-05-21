@@ -322,8 +322,8 @@ function migrateTokensToInstances(): void {
 function seedDemoCampaign(): void {
   if (!db) return;
 
-  // Only seed if no campaigns exist
-  const result = db.exec('SELECT COUNT(*) FROM campaigns');
+  // Seed demo campaign if it doesn't already exist
+  const result = db.exec("SELECT COUNT(*) FROM campaigns WHERE id = 'demo-campaign'");
   const count = result.length > 0 ? (result[0].values[0][0] as number) : 0;
   if (count > 0) return;
 
