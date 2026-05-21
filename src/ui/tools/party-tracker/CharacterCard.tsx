@@ -36,6 +36,7 @@ export function CharacterCard({
   onDragEnd,
   isDragging,
 }: CharacterCardProps) {
+  const fieldValues = character.fieldValues ?? {};
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(character.name);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,9 +87,9 @@ export function CharacterCard({
       data-size={size}
       draggable
       onDragStart={(e) => {
-        const hpField = character.fieldValues['hp'];
-        const armorField = character.fieldValues['armor'];
-        const initField = character.fieldValues['initiative'];
+        const hpField = fieldValues['hp'];
+        const armorField = fieldValues['armor'];
+        const initField = fieldValues['initiative'];
         const hp = hpField?.type === 'number' ? hpField.value : undefined;
         const armor = armorField?.type === 'number' ? armorField.value : 0;
         const initiative = initField?.type === 'number' ? initField.value : 0;
@@ -147,7 +148,7 @@ export function CharacterCard({
           <FieldRenderer
             key={field.id}
             field={field}
-            value={character.fieldValues[field.id]}
+            value={fieldValues[field.id]}
             onChange={(val) => onUpdateFieldValue(character.id, field.id, val)}
           />
         ))}

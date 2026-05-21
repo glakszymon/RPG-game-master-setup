@@ -2,9 +2,9 @@
  * NpcDetail — edit view for a single NPC.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { Npc, NpcCustomFieldDef } from './types';
-import styles from './NpcLibrary.module.css';
+import styles from './NpcDetail.module.css';
 
 interface NpcDetailProps {
   npc: Npc;
@@ -18,6 +18,8 @@ interface NpcDetailProps {
 export function NpcDetail({ npc, customFields, campaignId, onBack, onSave, onDelete }: NpcDetailProps) {
   const [form, setForm] = useState({ ...npc });
   const [tagsInput, setTagsInput] = useState(npc.tags.join(', '));
+  const [saveFlash, setSaveFlash] = useState(false);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSave = useCallback(async () => {
     const tags = tagsInput.split(',').map((t) => t.trim()).filter(Boolean);
@@ -34,12 +36,17 @@ export function NpcDetail({ npc, customFields, campaignId, onBack, onSave, onDel
       field_values: JSON.stringify(form.fieldValues),
     }));
     onSave();
+    setSaveFlash(true);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setSaveFlash(false), 1500);
   }, [form, tagsInput, campaignId, onSave]);
 
   const handlePortraitUpload = useCallback(async () => {
     const filePath = await window.electronAPI?.dialog.openImageFile();
-    if (filePath) {
-      setForm((f) => ({ ...f, portraitPath: filePath, portraitBuiltin: null }));
+    if (!filePath) return;
+    const dataUrl = await window.electronAPI?.dialog.readImage(filePath);
+    if (dataUrl) {
+      setForm((f) => ({ ...f, portraitPath: dataUrl, portraitBuiltin: null }));
     }
   }, []);
 
@@ -54,14 +61,18 @@ export function NpcDetail({ npc, customFields, campaignId, onBack, onSave, onDel
     <div className={styles.detail}>
       <div className={styles.detailHeader}>
         <button className={styles.backBtn} onClick={onBack}>← Back</button>
-        <button className={styles.saveBtn} onClick={handleSave}>Save</button>
+        <button className={`${styles.saveBtn} ${saveFlash ? styles.saveFlash : ''}`} onClick={handleSave}>
+          {saveFlash ? 'Saved!' : 'Save'}
+        </button>
         <button className={styles.deleteBtn} onClick={() => onDelete(npc.id)}>Delete</button>
       </div>
 
       <div className={styles.detailBody}>
         <div className={styles.portraitSection}>
           <div className={styles.portrait}>
-            {form.portraitPath ? '🖼️' : '🧑'}
+            {form.portraitPath ? (
+              <img src={form.portraitPath} alt={form.name} className={styles.portraitImg} />
+            ) : '🧑'}
           </div>
           <button className={styles.uploadBtn} onClick={handlePortraitUpload}>
             Upload Portrait
@@ -85,6 +96,39 @@ export function NpcDetail({ npc, customFields, campaignId, onBack, onSave, onDel
             onChange={(e) => setForm((f) => ({ ...f, typeRole: e.target.value }))}
           />
         </label>
+
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>Race</span>
+          <input
+            type="text"
+            value={form.fieldValues['Race'] ?? ''}
+            onChange={(e) => handleFieldChange('Race', e.target.value)}
+          />
+        </label>
+
+        <div className={styles.row}>
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>Age</span>
+            <input
+              type="number"
+              value={form.fieldValues['Age'] ?? ''}
+              onChange={(e) => handleFieldChange('Age', e.target.value)}
+            />
+          </label>
+
+          <label className={styles.field}>
+            <span className={styles.fieldLabel}>Gender</span>
+            <select
+              value={form.fieldValues['Gender'] ?? ''}
+              onChange={(e) => handleFieldChange('Gender', e.target.value)}
+            >
+              <option value="">—</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="neutral">Neutral</option>
+            </select>
+          </label>
+        </div>
 
         <label className={styles.field}>
           <span className={styles.fieldLabel}>Tags (comma-separated)</span>

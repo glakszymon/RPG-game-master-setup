@@ -565,6 +565,7 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
   // ── Bestiary creatures for entity suggestions ──
 
   const [bestiaryCreatures, setBestiaryCreatures] = useState<MentionedEntity[]>([]);
+  const [npcEntities, setNpcEntities] = useState<MentionedEntity[]>([]);
 
   useEffect(() => {
     async function loadBestiary() {
@@ -584,14 +585,32 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
     loadBestiary();
   }, []);
 
+  useEffect(() => {
+    async function loadNpcs() {
+      const api = window.electronAPI;
+      if (!api || !campaignId) return;
+      try {
+        const rows = await api.npc.list(campaignId);
+        setNpcEntities(rows.map(r => ({
+          id: r.id,
+          name: r.name,
+          type: 'npc',
+          portraitPath: r.portrait_path ?? undefined,
+          count: 1,
+        })));
+      } catch { /* silent */ }
+    }
+    loadNpcs();
+  }, [campaignId]);
+
   // ── Entity suggestions (bestiary + already mentioned) ──
 
   const entitySuggestions = useMemo((): MentionedEntity[] => {
     if (!entityMenu) return [];
 
-    // Combine bestiary creatures + entities already mentioned in notes
-    const all: MentionedEntity[] = [...bestiaryCreatures];
-    const seen = new Set<string>(bestiaryCreatures.map(c => c.id));
+    // Combine bestiary creatures + NPCs + entities already mentioned in notes
+    const all: MentionedEntity[] = [...bestiaryCreatures, ...npcEntities];
+    const seen = new Set<string>([...bestiaryCreatures.map(c => c.id), ...npcEntities.map(c => c.id)]);
 
     for (const n of notes) {
       try {
@@ -610,7 +629,7 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
     }
     const q = entityMenu.query.toLowerCase();
     return all.filter(e => e.name.toLowerCase().includes(q)).slice(0, 10);
-  }, [entityMenu, notes, bestiaryCreatures]);
+  }, [entityMenu, notes, bestiaryCreatures, npcEntities]);
 
   // ── Cleanup ──
 
@@ -891,11 +910,11 @@ export function Notepad({ toolState, onToolStateChange, campaignId, onLoadMapPre
                         onMouseDown={e => e.preventDefault()}
                         onClick={() => handleInsertEntity(entity)}
                       >
-                        {entity.type === 'creature' ? '🐉' : '👤'} {entity.name}
+                        {entity.type === 'creature' ? '🐉' : entity.type === 'npc' ? '🧑' : '👤'} {entity.name}
                       </button>
                     ))
                   ) : (
-                    <div className={styles.autocompleteEmpty}>No creatures in bestiary</div>
+                    <div className={styles.autocompleteEmpty}>No matching entities</div>
                   )}
                 </div>
               )}

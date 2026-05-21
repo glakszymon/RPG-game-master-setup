@@ -1,9 +1,11 @@
 /*
- * NpcGenerator — random NPC generation from predefined lists.
+ * NpcGenerator — random NPC generation with user-selected parameters.
+ * User picks: race, profession, gender, name type.
+ * Generator randomizes: name + appearance.
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { DEFAULT_NAME_LISTS, ROLES, DESCRIPTIONS, AGE_RANGES } from './data/generatorData';
+import { DEFAULT_NAME_LISTS, RACES, PROFESSIONS, APPEARANCES, AGE_RANGES } from './data/generatorData';
 import type { NpcToolState, GeneratedNpc, NameListCategory } from './types';
 import styles from './NpcGenerator.module.css';
 
@@ -20,6 +22,9 @@ function pickRandom<T>(arr: T[]): T {
 
 export function NpcGenerator({ campaignId, state, patchState, onNpcSaved }: NpcGeneratorProps) {
   const [nameLists, setNameLists] = useState<NameListCategory[]>(DEFAULT_NAME_LISTS);
+  const [selectedRace, setSelectedRace] = useState('Human');
+  const [selectedProfession, setSelectedProfession] = useState('Merchant');
+  const [selectedAge, setSelectedAge] = useState(30);
 
   // Load custom name lists from DB
   useEffect(() => {
@@ -47,14 +52,15 @@ export function NpcGenerator({ campaignId, state, patchState, onNpcSaved }: NpcG
 
     const generated: GeneratedNpc = {
       name: pickRandom(namePool) || 'Unknown',
-      role: pickRandom(ROLES),
-      description: pickRandom(DESCRIPTIONS),
-      age: Math.floor(Math.random() * (AGE_RANGES.max - AGE_RANGES.min + 1)) + AGE_RANGES.min,
+      race: selectedRace,
+      profession: selectedProfession,
+      appearance: pickRandom(APPEARANCES),
+      age: selectedAge,
       gender,
     };
 
     patchState({ lastGenerated: generated });
-  }, [nameLists, state.generatorNameType, state.generatorGender, patchState]);
+  }, [nameLists, state.generatorNameType, state.generatorGender, selectedRace, selectedProfession, selectedAge, patchState]);
 
   const handleSave = useCallback(async () => {
     if (!state.lastGenerated) return;
@@ -64,26 +70,17 @@ export function NpcGenerator({ campaignId, state, patchState, onNpcSaved }: NpcG
       id,
       campaign_id: campaignId,
       name: gen.name,
-      type_role: gen.role,
-      tags: JSON.stringify(['generated']),
-      description: gen.description,
-      notes: `Age: ${gen.age}`,
+      type_role: gen.profession,
+      tags: JSON.stringify(['generated', gen.race.toLowerCase()]),
+      description: gen.appearance,
+      notes: `Race: ${gen.race}\nAge: ${gen.age}\nGender: ${gen.gender}`,
       portrait_path: null,
       portrait_builtin: null,
-      field_values: JSON.stringify({ Age: String(gen.age) }),
+      field_values: JSON.stringify({ Age: String(gen.age), Race: gen.race, Gender: gen.gender }),
     }));
     onNpcSaved();
     patchState({ lastGenerated: null });
   }, [state.lastGenerated, campaignId, onNpcSaved, patchState]);
-
-  const handleImportJson = useCallback(async () => {
-    const filePath = await window.electronAPI?.dialog.openImageFile();
-    if (!filePath) return;
-    // Read file content via a custom approach — for now we use readImage which returns base64
-    // Actually, we need a JSON file reader. Let's use the settings API workaround:
-    // For MVP, import via the file path approach is complex. Skip for now with a notice.
-    // TODO: Implement proper JSON file import
-  }, []);
 
   return (
     <div className={styles.container}>
@@ -112,6 +109,35 @@ export function NpcGenerator({ campaignId, state, patchState, onNpcSaved }: NpcG
           </select>
         </label>
 
+        <label className={styles.field}>
+          <span className={styles.label}>Race</span>
+          <select value={selectedRace} onChange={(e) => setSelectedRace(e.target.value)}>
+            {RACES.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className={styles.field}>
+          <span className={styles.label}>Profession</span>
+          <select value={selectedProfession} onChange={(e) => setSelectedProfession(e.target.value)}>
+            {PROFESSIONS.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className={styles.field}>
+          <span className={styles.label}>Age ({selectedAge})</span>
+          <input
+            type="range"
+            min={AGE_RANGES.min}
+            max={AGE_RANGES.max}
+            value={selectedAge}
+            onChange={(e) => setSelectedAge(Number(e.target.value))}
+          />
+        </label>
+
         <button className={styles.generateBtn} onClick={handleGenerate}>
           Generate
         </button>
@@ -123,25 +149,17 @@ export function NpcGenerator({ campaignId, state, patchState, onNpcSaved }: NpcG
             <span className={styles.resultLabel}>Name:</span> {state.lastGenerated.name}
           </div>
           <div className={styles.resultField}>
-            <span className={styles.resultLabel}>Role:</span> {state.lastGenerated.role}
+            <span className={styles.resultLabel}>Appearance:</span> {state.lastGenerated.appearance}
           </div>
-          <div className={styles.resultField}>
-            <span className={styles.resultLabel}>Description:</span> {state.lastGenerated.description}
-          </div>
-          <div className={styles.resultField}>
-            <span className={styles.resultLabel}>Age:</span> {state.lastGenerated.age}
+          <div className={styles.resultDivider} />
+          <div className={styles.resultMeta}>
+            {state.lastGenerated.race} · {state.lastGenerated.profession} · Age {state.lastGenerated.age}
           </div>
           <button className={styles.saveBtn} onClick={handleSave}>
             Save to Library
           </button>
         </div>
       )}
-
-      <div className={styles.importSection}>
-        <button className={styles.importBtn} onClick={handleImportJson}>
-          Import Custom Names (JSON)
-        </button>
-      </div>
     </div>
   );
 }

@@ -163,7 +163,9 @@ export function NpcLibrary({ npcs, customFields, campaignId, state, patchState, 
               onClick={() => handleSelect(npc)}
             >
               <div className={styles.npcAvatar}>
-                {npc.portraitPath || npc.portraitBuiltin ? '🖼️' : '🧑'}
+                {(npc.portraitPath || npc.portraitBuiltin) ? (
+                  <img src={npc.portraitPath ?? npc.portraitBuiltin ?? ''} alt={npc.name} className={styles.npcAvatarImg} />
+                ) : '🧑'}
               </div>
               <div className={styles.npcInfo}>
                 <div className={styles.npcName}>{npc.name}</div>

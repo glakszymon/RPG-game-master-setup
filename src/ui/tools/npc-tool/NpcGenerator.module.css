@@ -100,25 +100,15 @@
   opacity: 0.85;
 }
 
-/* ── Import ── */
+/* ── Result meta ── */
 
-.importSection {
-  border-top: 1px solid var(--color-border);
-  padding-top: 12px;
+.resultDivider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 0;
 }
 
-.importBtn {
-  padding: 6px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--color-text-secondary);
+.resultMeta {
   font-size: 12px;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.importBtn:hover {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
 }

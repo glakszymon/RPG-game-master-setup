@@ -37,8 +37,9 @@ export interface NameListCategory {
 /** Generator output before saving */
 export interface GeneratedNpc {
   name: string;
-  role: string;
-  description: string;
+  race: string;
+  profession: string;
+  appearance: string;
   age: number;
   gender: 'male' | 'female' | 'neutral';
 }

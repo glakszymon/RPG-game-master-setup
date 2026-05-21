@@ -32,7 +32,7 @@ export const EntityMention = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    const icon = HTMLAttributes.entityType === 'creature' ? '🐉' : '👤';
+    const icon = HTMLAttributes.entityType === 'creature' ? '🐉' : HTMLAttributes.entityType === 'npc' ? '🧑' : '👤';
     return [
       'span',
       mergeAttributes(HTMLAttributes, {
