@@ -219,6 +219,44 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  // ── NPC tables ──
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS npcs (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      type_role TEXT NOT NULL DEFAULT '',
+      tags TEXT NOT NULL DEFAULT '[]',
+      description TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
+      portrait_path TEXT,
+      portrait_builtin TEXT,
+      field_values TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS npc_custom_field_defs (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      field_name TEXT NOT NULL,
+      field_type TEXT NOT NULL DEFAULT 'text',
+      sort_order INTEGER NOT NULL DEFAULT 0
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS npc_name_lists (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      label TEXT NOT NULL,
+      data_json TEXT NOT NULL
+    );
+  `);
+
   // Run migrations based on schema version
   runMigrations();
 
@@ -1518,4 +1556,175 @@ export function getNoteMapPreset(id: string): NoteMapPresetRow | null {
   }
   stmt.free();
   return null;
+}
+
+// ── NPC CRUD ──
+
+export interface NpcRow {
+  id: string;
+  campaign_id: string;
+  name: string;
+  type_role: string;
+  tags: string;
+  description: string;
+  notes: string;
+  portrait_path: string | null;
+  portrait_builtin: string | null;
+  field_values: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NpcCustomFieldDefRow {
+  id: string;
+  campaign_id: string;
+  field_name: string;
+  field_type: string;
+  sort_order: number;
+}
+
+export interface NpcNameListRow {
+  id: string;
+  campaign_id: string;
+  label: string;
+  data_json: string;
+}
+
+export function listNpcs(campaignId: string): NpcRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const stmt = db.prepare(
+    'SELECT id, campaign_id, name, type_role, tags, description, notes, portrait_path, portrait_builtin, field_values, created_at, updated_at FROM npcs WHERE campaign_id = ? ORDER BY name'
+  );
+  stmt.bind([campaignId]);
+  const rows: NpcRow[] = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject() as unknown as NpcRow);
+  }
+  stmt.free();
+  return rows;
+}
+
+export function getNpc(id: string): NpcRow | null {
+  if (!db) throw new Error('Database not initialized');
+
+  const stmt = db.prepare(
+    'SELECT id, campaign_id, name, type_role, tags, description, notes, portrait_path, portrait_builtin, field_values, created_at, updated_at FROM npcs WHERE id = ?'
+  );
+  stmt.bind([id]);
+  if (stmt.step()) {
+    const row = stmt.getAsObject() as unknown as NpcRow;
+    stmt.free();
+    return row;
+  }
+  stmt.free();
+  return null;
+}
+
+export function saveNpc(dataJson: string): { ok: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  const data = JSON.parse(dataJson) as NpcRow;
+  db.run(
+    `INSERT INTO npcs (id, campaign_id, name, type_role, tags, description, notes, portrait_path, portrait_builtin, field_values, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+     ON CONFLICT(id) DO UPDATE SET
+       name = excluded.name,
+       type_role = excluded.type_role,
+       tags = excluded.tags,
+       description = excluded.description,
+       notes = excluded.notes,
+       portrait_path = excluded.portrait_path,
+       portrait_builtin = excluded.portrait_builtin,
+       field_values = excluded.field_values,
+       updated_at = datetime('now')`,
+    [data.id, data.campaign_id, data.name, data.type_role, data.tags, data.description, data.notes, data.portrait_path, data.portrait_builtin, data.field_values]
+  );
+  persist();
+  return { ok: true };
+}
+
+export function deleteNpc(id: string): { ok: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM npcs WHERE id = ?', [id]);
+  persist();
+  return { ok: true };
+}
+
+export function listNpcCustomFieldDefs(campaignId: string): NpcCustomFieldDefRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const stmt = db.prepare(
+    'SELECT id, campaign_id, field_name, field_type, sort_order FROM npc_custom_field_defs WHERE campaign_id = ? ORDER BY sort_order'
+  );
+  stmt.bind([campaignId]);
+  const rows: NpcCustomFieldDefRow[] = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject() as unknown as NpcCustomFieldDefRow);
+  }
+  stmt.free();
+  return rows;
+}
+
+export function saveNpcCustomFieldDef(id: string, campaignId: string, fieldName: string, fieldType: string, sortOrder: number): { ok: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT INTO npc_custom_field_defs (id, campaign_id, field_name, field_type, sort_order)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       field_name = excluded.field_name,
+       field_type = excluded.field_type,
+       sort_order = excluded.sort_order`,
+    [id, campaignId, fieldName, fieldType, sortOrder]
+  );
+  persist();
+  return { ok: true };
+}
+
+export function deleteNpcCustomFieldDef(id: string): { ok: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM npc_custom_field_defs WHERE id = ?', [id]);
+  persist();
+  return { ok: true };
+}
+
+export function listNpcNameLists(campaignId: string): NpcNameListRow[] {
+  if (!db) throw new Error('Database not initialized');
+
+  const stmt = db.prepare(
+    'SELECT id, campaign_id, label, data_json FROM npc_name_lists WHERE campaign_id = ? ORDER BY label'
+  );
+  stmt.bind([campaignId]);
+  const rows: NpcNameListRow[] = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject() as unknown as NpcNameListRow);
+  }
+  stmt.free();
+  return rows;
+}
+
+export function saveNpcNameList(id: string, campaignId: string, label: string, dataJson: string): { ok: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run(
+    `INSERT INTO npc_name_lists (id, campaign_id, label, data_json)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       label = excluded.label,
+       data_json = excluded.data_json`,
+    [id, campaignId, label, dataJson]
+  );
+  persist();
+  return { ok: true };
+}
+
+export function deleteNpcNameList(id: string): { ok: boolean } {
+  if (!db) throw new Error('Database not initialized');
+
+  db.run('DELETE FROM npc_name_lists WHERE id = ?', [id]);
+  persist();
+  return { ok: true };
 }

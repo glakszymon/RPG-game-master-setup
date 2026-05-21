@@ -1,0 +1,124 @@
+/* ── NPC Generator ── */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* ── Controls ── */
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.field select {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.field select:focus {
+  border-color: var(--color-accent);
+}
+
+.generateBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: var(--color-text-on-accent, #fff);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.generateBtn:hover {
+  opacity: 0.85;
+}
+
+/* ── Result ── */
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-elevated);
+}
+
+.resultField {
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.resultLabel {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.saveBtn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-success, #22c55e);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.saveBtn:hover {
+  opacity: 0.85;
+}
+
+/* ── Import ── */
+
+.importSection {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.importBtn {
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.importBtn:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}

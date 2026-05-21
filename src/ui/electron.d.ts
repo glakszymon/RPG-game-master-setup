@@ -220,6 +220,49 @@ export interface ElectronFloatingAPI {
   saveAudioSegment: (campaignId: string, buffer: ArrayBuffer, filename: string) => Promise<{ ok: boolean } | null>;
 }
 
+export interface NpcRow {
+  id: string;
+  campaign_id: string;
+  name: string;
+  type_role: string;
+  tags: string;
+  description: string;
+  notes: string;
+  portrait_path: string | null;
+  portrait_builtin: string | null;
+  field_values: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NpcCustomFieldDefRow {
+  id: string;
+  campaign_id: string;
+  field_name: string;
+  field_type: string;
+  sort_order: number;
+}
+
+export interface NpcNameListRow {
+  id: string;
+  campaign_id: string;
+  label: string;
+  data_json: string;
+}
+
+export interface ElectronNpcAPI {
+  list: (campaignId: string) => Promise<NpcRow[]>;
+  get: (id: string) => Promise<NpcRow | null>;
+  save: (dataJson: string) => Promise<{ ok: boolean } | null>;
+  delete: (id: string) => Promise<{ ok: boolean } | null>;
+  listCustomFields: (campaignId: string) => Promise<NpcCustomFieldDefRow[]>;
+  saveCustomField: (id: string, campaignId: string, fieldName: string, fieldType: string, sortOrder: number) => Promise<{ ok: boolean } | null>;
+  deleteCustomField: (id: string) => Promise<{ ok: boolean } | null>;
+  listNameLists: (campaignId: string) => Promise<NpcNameListRow[]>;
+  saveNameList: (id: string, campaignId: string, label: string, dataJson: string) => Promise<{ ok: boolean } | null>;
+  deleteNameList: (id: string) => Promise<{ ok: boolean } | null>;
+}
+
 export interface ElectronAPI {
   canvas: ElectronCanvasAPI;
   presets: ElectronPresetsAPI;
@@ -235,6 +278,7 @@ export interface ElectronAPI {
   notePresets: ElectronNotePresetsAPI;
   lan: ElectronLanAPI;
   floating: ElectronFloatingAPI;
+  npc: ElectronNpcAPI;
 }
 
 declare global {

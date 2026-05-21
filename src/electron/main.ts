@@ -20,6 +20,9 @@ import {
   listNoteLinks, syncNoteLinks,
   listNoteGraphPositions, saveNoteGraphPosition,
   listNoteMapPresets, saveNoteMapPreset, deleteNoteMapPreset, getNoteMapPreset,
+  listNpcs, getNpc, saveNpc, deleteNpc,
+  listNpcCustomFieldDefs, saveNpcCustomFieldDef, deleteNpcCustomFieldDef,
+  listNpcNameLists, saveNpcNameList, deleteNpcNameList,
 } from './database.js';
 
 app.on('ready', async () => {
@@ -339,6 +342,48 @@ app.on('ready', async () => {
 
   ipcMain.handle('note-presets:load', (_event, id: string) => {
     try { return getNoteMapPreset(id); } catch { return null; }
+  });
+
+  // ── NPC IPC handlers ──
+
+  ipcMain.handle('npc:list', (_event, campaignId: string) => {
+    try { return listNpcs(campaignId); } catch { return []; }
+  });
+
+  ipcMain.handle('npc:get', (_event, id: string) => {
+    try { return getNpc(id); } catch { return null; }
+  });
+
+  ipcMain.handle('npc:save', (_event, dataJson: string) => {
+    try { return saveNpc(dataJson); } catch { return null; }
+  });
+
+  ipcMain.handle('npc:delete', (_event, id: string) => {
+    try { return deleteNpc(id); } catch { return null; }
+  });
+
+  ipcMain.handle('npc:list-custom-fields', (_event, campaignId: string) => {
+    try { return listNpcCustomFieldDefs(campaignId); } catch { return []; }
+  });
+
+  ipcMain.handle('npc:save-custom-field', (_event, id: string, campaignId: string, fieldName: string, fieldType: string, sortOrder: number) => {
+    try { return saveNpcCustomFieldDef(id, campaignId, fieldName, fieldType, sortOrder); } catch { return null; }
+  });
+
+  ipcMain.handle('npc:delete-custom-field', (_event, id: string) => {
+    try { return deleteNpcCustomFieldDef(id); } catch { return null; }
+  });
+
+  ipcMain.handle('npc:list-name-lists', (_event, campaignId: string) => {
+    try { return listNpcNameLists(campaignId); } catch { return []; }
+  });
+
+  ipcMain.handle('npc:save-name-list', (_event, id: string, campaignId: string, label: string, dataJson: string) => {
+    try { return saveNpcNameList(id, campaignId, label, dataJson); } catch { return null; }
+  });
+
+  ipcMain.handle('npc:delete-name-list', (_event, id: string) => {
+    try { return deleteNpcNameList(id); } catch { return null; }
   });
 
   // ── LAN Server IPC handlers ──

@@ -15,7 +15,7 @@ export interface VfxInstance {
 
 export interface MapToken {
   id: string;
-  sourceType: 'party' | 'bestiary' | 'instance' | 'preset-template' | 'manual';
+  sourceType: 'party' | 'bestiary' | 'instance' | 'preset-template' | 'npc' | 'manual';
   sourceId: string;
   instanceId?: string; // link to CreatureInstance.id (for sourceType 'instance')
   name: string;
@@ -27,7 +27,7 @@ export interface MapToken {
 
 /** Standardized drag-drop payload protocol for adding tokens to the map */
 export interface MapDropPayload {
-  type: 'party-character' | 'bestiary-creature' | 'encounter-instance' | 'preset-template';
+  type: 'party-character' | 'bestiary-creature' | 'encounter-instance' | 'preset-template' | 'npc-character';
   id: string;
   instanceId?: string;
   name: string;

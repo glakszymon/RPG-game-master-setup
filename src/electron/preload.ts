@@ -127,4 +127,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveAudioSegment: (campaignId: string, buffer: ArrayBuffer, filename: string) =>
       ipcRenderer.invoke('floating:save-audio-segment', campaignId, buffer, filename),
   },
+  npc: {
+    list: (campaignId: string) =>
+      ipcRenderer.invoke('npc:list', campaignId),
+    get: (id: string) =>
+      ipcRenderer.invoke('npc:get', id),
+    save: (dataJson: string) =>
+      ipcRenderer.invoke('npc:save', dataJson),
+    delete: (id: string) =>
+      ipcRenderer.invoke('npc:delete', id),
+    listCustomFields: (campaignId: string) =>
+      ipcRenderer.invoke('npc:list-custom-fields', campaignId),
+    saveCustomField: (id: string, campaignId: string, fieldName: string, fieldType: string, sortOrder: number) =>
+      ipcRenderer.invoke('npc:save-custom-field', id, campaignId, fieldName, fieldType, sortOrder),
+    deleteCustomField: (id: string) =>
+      ipcRenderer.invoke('npc:delete-custom-field', id),
+    listNameLists: (campaignId: string) =>
+      ipcRenderer.invoke('npc:list-name-lists', campaignId),
+    saveNameList: (id: string, campaignId: string, label: string, dataJson: string) =>
+      ipcRenderer.invoke('npc:save-name-list', id, campaignId, label, dataJson),
+    deleteNameList: (id: string) =>
+      ipcRenderer.invoke('npc:delete-name-list', id),
+  },
 });

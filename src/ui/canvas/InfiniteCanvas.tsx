@@ -46,6 +46,8 @@ import { PlayerView } from '../tools/player-view';
 import type { PlayerViewState } from '../tools/player-view';
 import { WeatherGenerator } from '../tools/weather-generator';
 import type { WeatherGeneratorState } from '../tools/weather-generator';
+import { NpcTool } from '../tools/npc-tool';
+import type { NpcToolState } from '../tools/npc-tool/types';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
 function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
@@ -189,6 +191,15 @@ const ToolContent = memo(function ToolContent({
           toolState={toolState as WeatherGeneratorState | undefined}
           onToolStateChange={onToolStateChange}
           timeState={timeState}
+        />
+      );
+
+    case 'npc-tool':
+      return (
+        <NpcTool
+          toolState={toolState as NpcToolState | undefined}
+          onToolStateChange={onToolStateChange}
+          campaignId={campaignId}
         />
       );
 

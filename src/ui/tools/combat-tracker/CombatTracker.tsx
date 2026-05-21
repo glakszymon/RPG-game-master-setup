@@ -135,11 +135,12 @@ export function CombatTracker({ toolState, onToolStateChange }: CombatTrackerPro
     try {
       const data: DragData = JSON.parse(raw);
 
-      if (data.type === 'party-character' || data.type === 'bestiary-creature' || data.type === 'encounter-instance') {
+      if (data.type === 'party-character' || data.type === 'bestiary-creature' || data.type === 'encounter-instance' || data.type === 'npc-character') {
         const hp = data.hp ?? data.meta?.hp ?? 10;
         const armor = data.armor ?? data.meta?.ac ?? 0;
         const sourceType = data.type === 'party-character' ? 'party'
           : data.type === 'encounter-instance' ? 'instance'
+          : data.type === 'npc-character' ? 'npc'
           : 'bestiary';
         addCombatant({
           name: data.name ?? 'Unknown',
