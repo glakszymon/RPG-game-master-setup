@@ -8,6 +8,7 @@ import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { CreatureTemplate, CreatureInstance, TreeNodeData } from '../types';
 import { CREATURE_TYPE_ICON, getCrColor } from '../types';
+import { useAvatarCache } from '../hooks/useAvatarCache';
 import styles from '../Bestiary.module.css';
 
 /* ── Instance Row ── */
@@ -28,6 +29,7 @@ function InstanceRow({
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editHp, setEditHp] = useState('');
+  const avatar = useAvatarCache(resolved?.id);
 
   const name = instance.instanceName ?? resolved?.name ?? 'Unknown';
   const cr = resolved?.cr ?? null;
@@ -69,7 +71,7 @@ function InstanceRow({
           id: instance.id,
           instanceId: instance.id,
           name,
-          portraitPath: resolved?.avatarPath ?? null,
+           portraitPath: avatar ?? null,
           meta: { cr, creatureType: resolved?.creatureType, hp: hp ?? resolved?.hpDefault, ac: resolved?.ac },
         };
         e.dataTransfer.setData('application/json', JSON.stringify(payload));
@@ -106,8 +108,8 @@ function InstanceRow({
         <>
           {/* Avatar */}
           <div className={styles.creatureAvatar}>
-            {resolved?.avatarPath ? (
-              <img src={resolved.avatarPath} alt={name} />
+            {avatar ? (
+              <img src={avatar} alt={name} />
             ) : (
               <span className="material-symbols-outlined">{iconName}</span>
             )}

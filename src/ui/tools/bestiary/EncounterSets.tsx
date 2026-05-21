@@ -8,6 +8,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useBestiaryState } from './hooks/useBestiaryState';
+import { useAvatarCache } from './hooks/useAvatarCache';
 import { templateToFieldValues } from './templateConversion';
 import { EncounterTreePanel } from './components/EncounterTreePanel';
 import { getXpFromCr, getProficiencyBonus, formatXp } from './crUtilities';
@@ -254,6 +255,7 @@ function CompactCreatureCard({ instance, resolveInstance }: {
   resolveInstance: (inst: CreatureInstance) => import('./types').CreatureTemplate | null;
 }) {
   const resolved = resolveInstance(instance);
+  const avatar = useAvatarCache(resolved?.id);
   if (!resolved) return null;
 
   const name = instance.instanceName ?? resolved.name;
@@ -298,8 +300,8 @@ function CompactCreatureCard({ instance, resolveInstance }: {
       {/* Header row: avatar + name + CR */}
       <div className={styles.compactCardHeader}>
         <div className={styles.compactCardAvatar}>
-          {resolved.avatarPath ? (
-            <img src={resolved.avatarPath} alt={name} />
+          {avatar ? (
+            <img src={avatar} alt={name} />
           ) : (
             <span className="material-symbols-outlined" style={{ fontSize: '24px', opacity: 0.5 }}>pets</span>
           )}

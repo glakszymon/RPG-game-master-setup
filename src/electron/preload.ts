@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   bestiary: {
     listTemplates: () => ipcRenderer.invoke('bestiary:list-templates'),
+    getAvatar: (templateId: string) => ipcRenderer.invoke('bestiary:get-avatar', templateId),
     saveTemplate: (dataJson: string) => ipcRenderer.invoke('bestiary:save-template', dataJson),
     deleteTemplate: (id: string) => ipcRenderer.invoke('bestiary:delete-template', id),
     listFolders: (campaignId?: string) => ipcRenderer.invoke('bestiary:list-folders', campaignId),

@@ -5,6 +5,7 @@
 
 import type { CreatureTemplate } from '../types';
 import { CREATURE_TYPE_ICON, getCrColor } from '../types';
+import { useAvatarCache } from '../hooks/useAvatarCache';
 import styles from '../Bestiary.module.css';
 
 interface CreatureCardProps {
@@ -15,6 +16,7 @@ interface CreatureCardProps {
 
 export function CreatureCard({ template, selected, onClick }: CreatureCardProps) {
   const iconName = template.creatureType ? CREATURE_TYPE_ICON[template.creatureType] : 'category';
+  const avatar = useAvatarCache(template.id);
   const meta = [
     template.creatureType,
     template.cr ? `CR ${template.cr}` : null,
@@ -33,8 +35,8 @@ export function CreatureCard({ template, selected, onClick }: CreatureCardProps)
       }}
     >
       <div className={styles.creatureAvatar}>
-        {template.avatarPath ? (
-          <img src={template.avatarPath} alt={template.name} />
+        {avatar ? (
+          <img src={avatar} alt={template.name} />
         ) : (
           <span className="material-symbols-outlined">{iconName}</span>
         )}

@@ -8,7 +8,7 @@ import {
   saveCanvasState, loadCanvasState,
   savePreset, loadPresets, deletePreset, renamePreset,
   createCampaign, listCampaigns, updateCampaign, updateCampaignStatus, deleteCampaign, touchCampaignSession,
-  listBestiaryTemplates, saveBestiaryTemplate, deleteBestiaryTemplate,
+  listBestiaryTemplates, saveBestiaryTemplate, deleteBestiaryTemplate, getBestiaryAvatar,
   listBestiaryFolders, saveBestiaryFolder, deleteBestiaryFolder,
   listBestiaryInstances, saveBestiaryInstance, deleteBestiaryInstance,
   getInstanceState, updateInstanceState, getInstanceDependents, validateInstanceIds, deleteInstanceCascade,
@@ -132,6 +132,10 @@ app.on('ready', async () => {
 
   ipcMain.handle('bestiary:list-templates', () => {
     try { return listBestiaryTemplates(); } catch { return []; }
+  });
+
+  ipcMain.handle('bestiary:get-avatar', (_event, templateId: string) => {
+    try { return getBestiaryAvatar(templateId); } catch { return null; }
   });
 
   ipcMain.handle('bestiary:save-template', (_event, dataJson: string) => {

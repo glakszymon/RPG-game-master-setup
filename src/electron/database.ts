@@ -850,7 +850,7 @@ export function listBestiaryTemplates(): BestiaryTemplateRow[] {
   if (!db) throw new Error('Database not initialized');
 
   const result = db.exec(
-    'SELECT id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, avatar_path, field_values, created_at, updated_at FROM bestiary_templates ORDER BY name ASC',
+    'SELECT id, name, creature_type, cr, hp_formula, hp_default, ac, speed, ability_scores, saving_throws, actions, actions_mode, actions_text, traits, custom_fields, tags, NULL as avatar_path, field_values, created_at, updated_at FROM bestiary_templates ORDER BY name ASC',
   );
 
   if (result.length === 0) return [];
@@ -877,6 +877,13 @@ export function listBestiaryTemplates(): BestiaryTemplateRow[] {
     created_at: created_at as string,
     updated_at: updated_at as string,
   }));
+}
+
+export function getBestiaryAvatar(templateId: string): string | null {
+  if (!db) throw new Error('Database not initialized');
+  const result = db.exec('SELECT avatar_path FROM bestiary_templates WHERE id = ?', [templateId]);
+  if (result.length === 0 || result[0].values.length === 0) return null;
+  return result[0].values[0][0] as string | null;
 }
 
 export function saveBestiaryTemplate(dataJson: string): void {

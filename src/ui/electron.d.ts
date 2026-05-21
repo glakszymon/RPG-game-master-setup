@@ -88,6 +88,7 @@ export interface InstanceStateRow {
 
 export interface ElectronBestiaryAPI {
   listTemplates: () => Promise<BestiaryTemplateRow[]>;
+  getAvatar: (templateId: string) => Promise<string | null>;
   saveTemplate: (dataJson: string) => Promise<{ ok: boolean } | null>;
   deleteTemplate: (id: string) => Promise<{ ok: boolean } | null>;
   listFolders: (campaignId?: string) => Promise<BestiaryFolderRow[]>;

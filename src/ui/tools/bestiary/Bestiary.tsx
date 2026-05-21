@@ -7,6 +7,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useBestiaryState } from './hooks/useBestiaryState';
+import { useAvatarCache } from './hooks/useAvatarCache';
 import { useCreatureStructure } from './hooks/useCreatureStructure';
 import { LibraryPanel } from './components/LibraryPanel';
 import { FilterPanel } from './components/FilterPanel';
@@ -41,6 +42,8 @@ export function Bestiary({ toolState, onToolStateChange, campaignId }: BestiaryP
     templates, loading,
     saveTemplate, deleteTemplate,
   } = useBestiaryState();
+
+  const selectedAvatar = useAvatarCache(state.selectedTemplateId);
 
   // ── Selected template ──
   const selectedTemplate = useMemo(() => {
@@ -103,7 +106,7 @@ export function Bestiary({ toolState, onToolStateChange, campaignId }: BestiaryP
   const rightPanel = selectedTemplate ? (
     <CreatureForm
       name={selectedTemplate.name}
-      avatarPath={selectedTemplate.avatarPath}
+      avatarPath={selectedAvatar}
       fieldValues={fieldValues}
       structure={structure}
       onNameChange={handleNameChange}
