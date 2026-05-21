@@ -862,25 +862,87 @@ Pliki modułu:
 
 ## Faza 11: Pozostałe moduły
 
-### Krok 11.1 - Generator pogody
+### Krok 11.1 - Generator pogody ✅ ZAKOŃCZONE
 
-**Brainstorm z AI:**
-> "Porozmawiaj ze mną o Generatorze Pogody. Omówmy:
-> - Parametry: temperatura, zachmurzenie, siła/kierunek wiatru, wilgotność
-> - Algorytm analizy: jak generować opis pogody i klimat
-> - Wpływ na rozgrywkę: widoczność, komfort podróży
-> - Sprawdź inspiracja/world.md jako referencję
-> - Użyj wymagań R42-R43
->
-> Dopytaj mnie o szczegóły."
+**Dokumenty:**
+- Requirements (Phase 3): `docs/brainstorms/2026-05-21-weather-realistic-mechanics-requirements.md`
 
-**Napisz do AI:**
-> "Poprowadź mnie w implementacji Generatora Pogody na podstawie naszych ustaleń."
+**Co zostało zaimplementowane:**
+
+**Phase 1 — Bazowy tool:**
+- Biome selection (10 biomów z miniaturkami zdjęć z `assets/photo/`)
+- Auto/manual time source (integracja z `CampaignTimeState`)
+- Parameter controls (slidery + styled selecty, glassmorphism)
+- Randomize from biome (z `nightTempOffset` per pora dnia)
+- Phrase matching → narracja po polsku + proste efekty
+
+**Phase 2 — Visual fixes:**
+- Material Symbols Outlined ikony (zamiast emoji)
+- Styled dropdowns (app glassmorphism)
+- Google Fonts ikony (pełna czcionka, bez `icon_names` limitu)
+- Realistyczne dane temperatur biomów z diurnal swing
+
+**Phase 3 — Mechaniczny system statystyk (R1-R11):**
+- 16 weather stats: visibility, hearing, rangedAccuracy, stealth, movement, tracking, breathing, balance, initiative, campTime, waterConsumption, fuelConsumption, equipmentDamage, magicAccuracy, thrownWeapons, flying
+- 6 kategorii display: Ruch, Walka/Balistyka, Zasoby/Przetrwanie, Percepcja/Widoczność, Skradanie/Tropienie, Zagrożenia/Hazardy
+- Time-of-day base modifiers (dawn/day/dusk/night × cloud level as moon proxy)
+- Precipitation effects: drizzle, rain, heavyRain, snow (+ blizzard combo), fog, hail, sandstorm
+- Wind effects: 4 levels (calm, light, moderate, strong, storm)
+- Temperature thresholds: <-15°C, -15–0°C, 35–50°C, >50°C
+- Humidity combos: high+warm, dry+hot
+- Thunderstorm combo: heavyRain + strong/storm wind → lightning/magic hazards
+- **Multiplicative stacking**: `Stat_final = Base × (1+mod_time) × (1+mod_precip) × (1+mod_wind) × (1+mod_temp) × (1+mod_humidity)`, floor 5%
+- **% → D&D 5e roll conversion**: `Math.round(percent / 15)`, cap ±6
+- **Stat → multiple D&D skills**: visibility → Perception/Investigation/Survival, etc.
+- Underground biome: ignores time-of-day, fixed visibility -80%, only 'none'/'fog' precipitation
+- UI: stat table grouped by category, only non-zero stats with roll effects shown, % colored green/red + italic roll annotations
+- Hazard cards: temperature dangers, hail, sandstorm blindness, thunderstorm, crushing from storm wind
+
+**Podjęte decyzje:**
+| Aspekt | Decyzja |
+|--------|---------|
+| Stacking | Multiplikatywne (realistyczne), floor 5% |
+| Night visibility | Cloud level as moon proxy (clear=25%, overcast=10%, fullOvercast=5%) |
+| Sandstorm | Nowy Precipitation type, dostępny w desert/steppe |
+| Thunderstorm | Combo detection (heavyRain + storm wind), nie nowy Precipitation |
+| Roll conversion | 15% = ±1 punkt, cap ±6 |
+| Stat→Rolls | Jeden stat wpływa na wiele D&D skills |
+| Underground | `ignoresTimeOfDay: true` + `allowedPrecipitation: ['none', 'fog']` |
+| Biome buttons | Miniaturki zdjęć (assets/photo/) w ramce, nie background-image na cały przycisk |
+| Filtrowanie | Statystyki bez wpływu na rzuty (campTime, water, fuel, equipment) ukryte w tabeli |
+| Icons | Material Symbols: `footprint` (stealth), `directions_run` (movement), `gps_fixed` (combat), etc. |
+
+**Pliki:**
+```
+src/ui/tools/weather-generator/
+  types.ts                          — Typy: Precipitation z 'sandstorm', 16 WeatherStats, DndRoll, StatModifier, MechanicalResult, WeatherResultV2
+  index.ts                          — Barrel export
+  data/biomes.ts                    — 10 biomów z ignoresTimeOfDay/allowedPrecipitation, sandstorm weights
+  data/phrases.ts                   — ~20 Polish phrase entries (narracja)
+  hooks/useWeatherEngine.ts         — Phrase matching (narracja + legacy effects)
+  hooks/useMechanicsEngine.ts       — NEW: numeric modifier computation (R1-R11)
+  hooks/useTimeIntegration.ts       — Derives TimeOfDay/Season from CampaignTimeState
+  WeatherGenerator.tsx              — Main component + StatTable sub-component
+  WeatherGenerator.module.css       — Compact glassmorphism styles
+
+assets/photo/                       — 10 biome images (arctic, umiarkowany, pustynia, las-deszczowy, mountain, sea, forest, step, bagno, jaskinia)
+```
+
+**Odkrycia techniczne:**
+1. Google Fonts Material Symbols ma limit ~77 ikon w `icon_names` param — usunięcie go ładuje pełną czcionkę
+2. `material-symbols-outlined` class renderuje nazwy ikon (np. `ac_unit`) jako glify
+3. `BiomeConfig.nightTempOffset` skutecznie symuluje diurnal swing (pustynia -25°C w nocy)
+4. Ikona `deaf` nie istnieje w Material Symbols — zamieniona na `footprint`
+5. Vite `new URL('...', import.meta.url).href` poprawnie obsługuje statyczne assety (zdjęcia biomów)
+6. Multiplicative stacking z floor 5% zapobiega zerowaniu statystyk przy ekstremalnych combo
 
 **Jak sprawdzić że działa:**
-- Ustaw parametry pogody - opis powinien się wygenerować
-- Ekstremalny parametr (np. -40°C + huragan) - powinien dać sensowny opis
-- Sprawdź czy sugerowany klimat pasuje do parametrów
+- Wybierz biom "Pustynny", noc, lato → temperatura ~10-25°C (nightTempOffset applied)
+- Ustaw snow + storm wind → ruch -50%, widoczność -80% (blizzard combo)
+- Ustaw heavyRain + storm wind → hazard "Burza elektryczna" się pojawia
+- Wybierz Podziemia → brak modyfikatorów od pory dnia, widoczność fixed -80%
+- Stat table: widoczność -40% → Perception -3, Investigation -3, Survival -3
+- Statystyki bez rzutów (campTime, water) NIE pojawiają się w tabeli
 
 ### Krok 11.2 - Tracker czasu ✅ ZAKOŃCZONE
 
