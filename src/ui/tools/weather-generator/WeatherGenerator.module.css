@@ -1,0 +1,241 @@
+/* ── Weather Generator ── */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+/* ── Biome Grid ── */
+
+.biomeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 4px;
+}
+
+.biomeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.biomeBtn:hover {
+  border-color: var(--color-accent);
+  background: var(--color-bg-hover);
+}
+
+.biomeActive {
+  border-color: var(--color-accent);
+  background: rgba(var(--color-accent-rgb), 0.15);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.biomeIcon {
+  font-size: 18px;
+}
+
+.biomeName {
+  font-size: 10px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ── Row & Fields ── */
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+/* ── Parameters Grid ── */
+
+.paramsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.paramItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slider {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+
+.select {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 12px;
+}
+
+.select:disabled {
+  opacity: 0.5;
+}
+
+/* ── Actions ── */
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.rollBtn,
+.generateBtn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rollBtn {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+.rollBtn:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-accent);
+}
+
+.generateBtn {
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+.generateBtn:hover {
+  opacity: 0.9;
+}
+
+.timeSourceBtn {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.timeSourceBtn:hover {
+  border-color: var(--color-accent);
+}
+
+/* ── Result ── */
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+
+.narrativeSection,
+.mechanicalSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.resultTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.narrativeText {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background: var(--color-bg-elevated);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  margin: 0;
+  font-style: italic;
+}
+
+.effectsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.effectItem {
+  display: grid;
+  grid-template-columns: 24px auto 1fr;
+  gap: 6px;
+  align-items: baseline;
+  padding: 6px 8px;
+  background: var(--color-bg-elevated);
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+
+.effectIcon {
+  font-size: 14px;
+  text-align: center;
+}
+
+.effectLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.effectDesc {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}

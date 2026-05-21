@@ -40,6 +40,8 @@ import { CombatTracker } from '../tools/combat-tracker';
 import type { CombatTrackerState } from '../tools/combat-tracker';
 import { Notepad } from '../tools/notepad';
 import type { NotepadToolState } from '../tools/notepad/types';
+import { WeatherGenerator } from '../tools/weather-generator';
+import type { WeatherGeneratorState } from '../tools/weather-generator';
 
 /** Placeholder content for tools — will be replaced by actual tool components */
 function ToolPlaceholder({ toolType }: { toolType: ToolType }) {
@@ -162,6 +164,15 @@ const ToolContent = memo(function ToolContent({
           campaignId={campaignId}
           onLoadMapPreset={onLoadMapPreset}
           onCaptureMapState={onCaptureMapState}
+        />
+      );
+
+    case 'weather-generator':
+      return (
+        <WeatherGenerator
+          toolState={toolState as WeatherGeneratorState | undefined}
+          onToolStateChange={onToolStateChange}
+          timeState={timeState}
         />
       );
 
@@ -490,7 +501,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
                   toolState={win.toolState}
                   onToolStateChange={toolStateHandlers.get(win.id)!}
                   campaignId={campaignId ?? 'default'}
-                  timeState={win.toolType.startsWith('time-') ? state.timeState : undefined}
+                  timeState={win.toolType.startsWith('time-') || win.toolType === 'weather-generator' ? state.timeState : undefined}
                   onAdvanceTime={win.toolType.startsWith('time-') ? advanceTimeHandler : undefined}
                   onSetTimeState={win.toolType.startsWith('time-') ? setTimeStateHandler : undefined}
                   onLoadMapPreset={win.toolType === 'notepad' ? loadMapPresetHandler : undefined}
