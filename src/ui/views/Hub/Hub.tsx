@@ -20,7 +20,6 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [showWizard, setShowWizard] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<CampaignData | null>(null);
-  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
   const [cardBackgrounds, setCardBackgrounds] = useState<Record<string, string>>({});
 
   const loadCampaigns = useCallback(async () => {
@@ -33,21 +32,6 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
   useEffect(() => {
     loadCampaigns();
   }, [loadCampaigns]);
-
-  // Load background image from most recent campaign
-  useEffect(() => {
-    const api = window.electronAPI;
-    if (!api || campaigns.length === 0) return;
-
-    const recentCampaign = campaigns[0];
-    api.settings.load(recentCampaign.id, 'background_image').then(async (json) => {
-      if (!json) { setBackgroundUrl(null); return; }
-      const path = JSON.parse(json) as string | null;
-      if (!path) { setBackgroundUrl(null); return; }
-      const dataUrl = await api.dialog.readImage(path);
-      setBackgroundUrl(dataUrl);
-    });
-  }, [campaigns]);
 
   // Load per-card background images
   useEffect(() => {
@@ -94,9 +78,7 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
     <div
       className={styles.hub}
       style={{
-        backgroundImage: backgroundUrl
-          ? `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url(${backgroundUrl})`
-          : `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url(${iconBg})`,
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url(${iconBg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}

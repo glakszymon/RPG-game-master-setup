@@ -23,7 +23,9 @@ import { MinimizeTray } from './MinimizeTray';
 import { PresetToolbar } from './PresetToolbar';
 import { ShortcutsOverlay } from './ShortcutsOverlay';
 import { CampaignSettings } from './CampaignSettings/CampaignSettings';
+import { FloatingLayer } from '../floating/FloatingLayer';
 import type { ToolType, ViewportTransform, CampaignTimeState, WindowState } from './types';
+import type { FloatingUtilityType } from '../floating/types';
 import { PartyTracker } from '../tools/party-tracker';
 import type { PartyTrackerState } from '../tools/party-tracker';
 import styles from './InfiniteCanvas.module.css';
@@ -271,6 +273,29 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
     [dispatch],
   );
 
+  // Floating widget handlers
+  const openFloatingWidget = useCallback(
+    (widgetType: FloatingUtilityType) =>
+      dispatch({ type: 'ADD_FLOATING', widgetType, x: 100, y: 100 }),
+    [dispatch],
+  );
+  const moveFloatingWidget = useCallback(
+    (id: string, x: number, y: number) =>
+      dispatch({ type: 'UPDATE_FLOATING', id, patch: { x, y } }),
+    [dispatch],
+  );
+  const toggleMinimizeFloating = useCallback(
+    (id: string) => {
+      const w = state.floatingWidgets.find((fw) => fw.id === id);
+      if (w) dispatch({ type: 'UPDATE_FLOATING', id, patch: { minimized: !w.minimized } });
+    },
+    [dispatch, state.floatingWidgets],
+  );
+  const closeFloatingWidget = useCallback(
+    (id: string) => dispatch({ type: 'REMOVE_FLOATING', id }),
+    [dispatch],
+  );
+
   // Listen for notepad date/event events → update campaign calendar
   const timeStateRef = useRef(state.timeState);
   useLayoutEffect(() => { timeStateRef.current = state.timeState; });
@@ -494,7 +519,7 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
 
   return (
     <div ref={viewportRef} className={styles.viewport}>
-      <CanvasContextMenu onOpenTool={handleOpenTool} viewportToCanvas={viewportToCanvas}>
+      <CanvasContextMenu onOpenTool={handleOpenTool} onOpenFloating={openFloatingWidget} viewportToCanvas={viewportToCanvas}>
         <div className={styles.canvasOuter}>
           <div ref={canvasRef} className={styles.canvasInner}>
             <CanvasBackground type={state.background} />
@@ -589,6 +614,13 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
             getToolStateHandler(ptWindow.id)(newState);
           }
         }}
+      />
+      <FloatingLayer
+        widgets={state.floatingWidgets}
+        onMove={moveFloatingWidget}
+        onMinimize={toggleMinimizeFloating}
+        onClose={closeFloatingWidget}
+        campaignId={campaignId ?? 'default'}
       />
     </div>
   );

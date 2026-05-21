@@ -6,7 +6,7 @@
  */
 
 import { useReducer, useCallback } from 'react';
-import type { CanvasState, WindowState, ToolType, BackgroundType, CampaignTimeState } from '../types';
+import type { CanvasState, WindowState, ToolType, BackgroundType, CampaignTimeState, FloatingWidgetState } from '../types';
 import { TOOL_DEFAULT_SIZES, DEFAULT_TIME_STATE } from '../types';
 
 // ── Actions ──
@@ -24,6 +24,9 @@ type CanvasAction =
   | { type: 'SET_BACKGROUND'; background: BackgroundType }
   | { type: 'ADVANCE_TIME'; minutes: number }
   | { type: 'SET_TIME_STATE'; timeState: CampaignTimeState }
+  | { type: 'ADD_FLOATING'; widgetType: FloatingWidgetState['type']; x: number; y: number }
+  | { type: 'UPDATE_FLOATING'; id: string; patch: Partial<FloatingWidgetState> }
+  | { type: 'REMOVE_FLOATING'; id: string }
   | { type: 'LOAD_STATE'; state: CanvasState };
 
 export type { CanvasAction };
@@ -248,10 +251,36 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
     case 'SET_TIME_STATE':
       return { ...state, timeState: action.timeState };
 
+    case 'ADD_FLOATING': {
+      const newWidget: FloatingWidgetState = {
+        id: `float_${Date.now()}_${++idCounter}`,
+        type: action.widgetType,
+        x: action.x,
+        y: action.y,
+        minimized: false,
+      };
+      return { ...state, floatingWidgets: [...state.floatingWidgets, newWidget] };
+    }
+
+    case 'UPDATE_FLOATING':
+      return {
+        ...state,
+        floatingWidgets: state.floatingWidgets.map((w) =>
+          w.id === action.id ? { ...w, ...action.patch } : w,
+        ),
+      };
+
+    case 'REMOVE_FLOATING':
+      return {
+        ...state,
+        floatingWidgets: state.floatingWidgets.filter((w) => w.id !== action.id),
+      };
+
     case 'LOAD_STATE': {
       const loadedTime = action.state.timeState ?? DEFAULT_TIME_STATE;
       return {
         ...action.state,
+        floatingWidgets: action.state.floatingWidgets ?? [],
         timeState: {
           ...loadedTime,
           // Ensure whole minutes + reset auto-advance running state on load
@@ -279,6 +308,7 @@ export const initialCanvasState: CanvasState = {
   background: 'dot-grid',
   nextWindowId: 0,
   timeState: DEFAULT_TIME_STATE,
+  floatingWidgets: [],
 };
 
 export function useCanvasState() {
