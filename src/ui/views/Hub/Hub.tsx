@@ -19,6 +19,7 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [showWizard, setShowWizard] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<CampaignData | null>(null);
+  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
 
   const loadCampaigns = useCallback(async () => {
     const api = window.electronAPI;
@@ -30,6 +31,21 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
   useEffect(() => {
     loadCampaigns();
   }, [loadCampaigns]);
+
+  // Load background image from most recent campaign
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!api || campaigns.length === 0) return;
+
+    const recentCampaign = campaigns[0];
+    api.settings.load(recentCampaign.id, 'background_image').then(async (json) => {
+      if (!json) { setBackgroundUrl(null); return; }
+      const path = JSON.parse(json) as string | null;
+      if (!path) { setBackgroundUrl(null); return; }
+      const dataUrl = await api.dialog.readImage(path);
+      setBackgroundUrl(dataUrl);
+    });
+  }, [campaigns]);
 
   const handleDelete = async (id: string) => {
     const api = window.electronAPI;
@@ -53,7 +69,14 @@ function Hub({ onOpenCampaign, onOpenMapCreator }: HubProps) {
   };
 
   return (
-    <div className={styles.hub}>
+    <div
+      className={styles.hub}
+      style={backgroundUrl ? {
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)), url(${backgroundUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      } : undefined}
+    >
       <header className={styles.header}>
         <h1 className={styles.title}>Game Master Panel</h1>
         <button className={styles.mapCreatorBtn} onClick={onOpenMapCreator}>

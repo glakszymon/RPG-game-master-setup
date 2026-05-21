@@ -578,6 +578,17 @@ function InfiniteCanvas({ onBack, campaignId }: { onBack?: () => void; campaignI
         open={showSettings}
         onOpenChange={setShowSettings}
         campaignId={campaignId ?? 'default'}
+        timeState={state.timeState}
+        onSetTimeState={setTimeStateHandler}
+        partyState={
+          state.windows.find((w) => w.toolType === 'party-tracker')?.toolState as PartyTrackerState | undefined
+        }
+        onPartyStateChange={(newState) => {
+          const ptWindow = state.windows.find((w) => w.toolType === 'party-tracker');
+          if (ptWindow) {
+            getToolStateHandler(ptWindow.id)(newState);
+          }
+        }}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Input } from '../../components/Input/Input';
 import { Button } from '../../components/Button/Button';
 import styles from './CampaignSettings.module.css';
@@ -27,6 +27,7 @@ function MainSettingsTab({ campaignId, onClose }: MainSettingsTabProps) {
   const [name, setName] = useState('');
   const [system, setSystem] = useState('');
   const [iconValue, setIconValue] = useState('sword');
+  const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,6 +45,41 @@ function MainSettingsTab({ campaignId, onClose }: MainSettingsTabProps) {
         setIconValue(found.icon_value);
       }
     });
+
+    // Load background image setting
+    api.settings.load(campaignId, 'background_image').then((json) => {
+      if (json) {
+        const path = JSON.parse(json) as string;
+        if (path) {
+          api.dialog.readImage(path).then((dataUrl) => {
+            if (dataUrl) setBackgroundPreview(dataUrl);
+          });
+        }
+      }
+    });
+  }, [campaignId]);
+
+  const handlePickBackground = useCallback(async () => {
+    const api = window.electronAPI;
+    if (!api) return;
+
+    const filePath = await api.dialog.openImageFile();
+    if (!filePath) return;
+
+    // Save the path to settings
+    await api.settings.save(campaignId, 'background_image', JSON.stringify(filePath));
+
+    // Load preview
+    const dataUrl = await api.dialog.readImage(filePath);
+    if (dataUrl) setBackgroundPreview(dataUrl);
+  }, [campaignId]);
+
+  const handleRemoveBackground = useCallback(async () => {
+    const api = window.electronAPI;
+    if (!api) return;
+
+    await api.settings.save(campaignId, 'background_image', JSON.stringify(null));
+    setBackgroundPreview(null);
   }, [campaignId]);
 
   const handleSave = async () => {
@@ -106,6 +142,29 @@ function MainSettingsTab({ campaignId, onClose }: MainSettingsTabProps) {
               {icon.emoji}
             </button>
           ))}
+        </div>
+      </fieldset>
+
+      {/* Background Image */}
+      <fieldset className={styles.fieldset}>
+        <legend className={styles.legend}>Campaign Background</legend>
+        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', margin: '0 0 8px' }}>
+          Displayed as background on the Hub screen.
+        </p>
+        {backgroundPreview && (
+          <div className={styles.backgroundPreview}>
+            <img src={backgroundPreview} alt="Campaign background" className={styles.backgroundImg} />
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button variant="secondary" onClick={handlePickBackground}>
+            {backgroundPreview ? 'Change Image' : 'Select Image'}
+          </Button>
+          {backgroundPreview && (
+            <Button variant="secondary" onClick={handleRemoveBackground}>
+              Remove
+            </Button>
+          )}
         </div>
       </fieldset>
 
