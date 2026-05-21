@@ -149,4 +149,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteNameList: (id: string) =>
       ipcRenderer.invoke('npc:delete-name-list', id),
   },
+  library: {
+    listEntries: () =>
+      ipcRenderer.invoke('library:list-entries'),
+    saveEntry: (dataJson: string) =>
+      ipcRenderer.invoke('library:save-entry', dataJson),
+    deleteEntry: (id: string) =>
+      ipcRenderer.invoke('library:delete-entry', id),
+    seedSrd: () =>
+      ipcRenderer.invoke('library:seed-srd'),
+  },
 });

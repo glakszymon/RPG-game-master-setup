@@ -1035,6 +1035,88 @@ src/ui/tools/time-session-timer/
 - Sprawdź przelicznik: 4h rest przy ratio 10 = 24 min realnego czasu
 - Ustaw datę początkową w kalendarzu (np. Day 15, Month 3, Year 1402) — data powinna się zmienić natychmiast
 
+### Krok 11.8 - Equipment & Spells Library ✅ ZAKOŃCZONE
+
+**Dokumenty:**
+- Requirements: `docs/brainstorms/2026-05-21-equipment-spells-library-requirements.md`
+- Plan: `docs/plans/2026-05-21-009-feat-equipment-spells-library-plan.md`
+
+**Co zostało zaimplementowane:**
+
+Biblioteka przedmiotów i zaklęć (5 kategorii: Weapons, Armor, Equipment, Magic Items, Spells) wzorowana na module Bestiariusz (lista + filtr po lewej, szczegóły po prawej).
+
+**Fazy:**
+1. ✅ **Core Library** — typy, SQLite CRUD, IPC, preload bridge, hook `useLibraryState`, UI (FilterBar, LibraryList, EntryDetail, EntryForm)
+2. ✅ **SRD Seed** — 500 itemów i 500 spelli z SRD 5e (wygenerowane z istniejących `assets/items.json` / `assets/spells.json`)
+3. ✅ **Custom Entries** — formularz tworzenia/edycji/usuwania wpisów oznaczonych `source: 'custom'`
+4. ✅ **Drag & Drop to Party Tracker** — przeciąganie z listy biblioteki na kartę postaci, inventory display z przyciskiem usuwania
+
+**Podjęte decyzje:**
+
+| Aspekt | Decyzja |
+|--------|---------|
+| Architektura | Bestiary pattern (dual-panel, hook-based filtering) |
+| Dane | SQLite `library_entries` table, seeded on first open |
+| Filtrowanie | Po kategorii, rzadkości, szkole magii, poziomie zaklęcia, tekście |
+| Seed data | 500 items + 500 spells (SRD only, filtered by `srd: true`) |
+| Custom entries | `source: 'custom'` flag, pełny CRUD |
+| Drag payload | `{ type: 'library-entry', entryId, category, name }` |
+| Party integration | `InventoryItem` type na `Character`, drop handler na `CharacterCard` |
+| Inventory display | Compact list at bottom of card, remove on hover |
+| Drop feedback | Accent border glow on card (`cardDropTarget` class) |
+
+**Odkrycia techniczne:**
+1. Istniejące `assets/items.json` (15,749 items) i `assets/spells.json` (5,849 spells) zawierają pole `srd: true` do filtrowania
+2. `app.getAppPath()` + fallback `__dirname/../../assets/` to wzorzec z bestiariusza do rozwiązywania ścieżek assetów
+3. Kolumna `range_text` (nie `range`) w SQLite — `range` to słowo kluczowe SQL
+4. Party tracker nie miał incoming drop handlera — wymagał modyfikacji `CharacterCard` + `PartyTracker`
+5. HTML5 DnD `onDragOver` musi wywoływać `e.preventDefault()` żeby `onDrop` zadziałał
+6. `Character.inventory` jest opcjonalne (backward compat) — `c.inventory ?? []` w kodzie
+
+**Pliki:**
+```
+src/ui/tools/equipment-library/
+  types.ts                    — LibraryEntry, filters, category/rarity constants, converters
+  EquipmentLibrary.tsx        — Main dual-panel component
+  EquipmentLibrary.module.css — Glassmorphism styles
+  index.ts                    — Barrel export
+  components/FilterBar.tsx    — Category tabs + search + rarity/school/level filters
+  components/LibraryList.tsx  — Scrollable entry cards with drag support
+  components/EntryDetail.tsx  — Right panel: full entry details
+  components/EntryForm.tsx    — Create/edit form modal
+  hooks/useLibraryState.ts   — Load, filter, CRUD via IPC
+
+assets/srd-items.json         — 500 SRD items seed
+assets/srd-spells.json        — 500 SRD spells seed
+```
+
+**Zmodyfikowane pliki (integracja):**
+- `src/electron/database.ts` — tabela `library_entries`, CRUD, `seedLibrarySrd()`
+- `src/electron/main.ts` — IPC handlers `library:*`
+- `src/electron/preload.ts` — `library` bridge
+- `src/ui/electron.d.ts` — `LibraryEntryRow`, `ElectronLibraryAPI`
+- `src/ui/canvas/types.ts` — `'equipment-library'` w ToolType, sizes, info, categories
+- `src/ui/canvas/InfiniteCanvas.tsx` — import + switch case
+- `src/ui/canvas/Minimap.tsx` — kolor dla equipment-library
+- `src/ui/tools/party-tracker/types.ts` — `InventoryItem` interface, `inventory` field on `Character`
+- `src/ui/tools/party-tracker/CharacterCard.tsx` — drop handler, inventory display
+- `src/ui/tools/party-tracker/PartyTracker.tsx` — `addInventoryItem`, `removeInventoryItem`
+- `src/ui/tools/party-tracker/PartyTracker.module.css` — `.cardDropTarget`, `.inventory*` styles
+
+**Jak sprawdzić że działa:**
+- Otwórz Equipment Library z context menu — powinno załadować 1000 SRD entries
+- Filtruj po kategorii (Weapons, Spells, itp.) — lista się filtruje
+- Wyszukaj po nazwie — instant filtering
+- Kliknij entry — szczegóły po prawej
+- Stwórz custom entry (formularz) — pojawia się z badge "Custom"
+- Edytuj/usuń custom entry
+- Przeciągnij entry z listy na kartę postaci w Party Tracker — item pojawia się w inventory
+- Hover na item w inventory — przycisk × się pojawia, klik usuwa
+
+**Integracje z innymi modułami:**
+- → Party Tracker: drag & drop items/spells na karty postaci (inventory)
+- → (przyszłe) Generator Sklepów: może korzystać z tej samej bazy przedmiotów
+
 ### Krok 11.3 - Generator sklepów
 
 **Brainstorm z AI:**

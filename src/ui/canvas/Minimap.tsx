@@ -29,6 +29,7 @@ const TOOL_COLORS: Record<string, string> = {
   'time-tracker': '#a78bfa',
   'shop-generator': '#fb923c',
   'dice-roller': '#e879f9',
+  'equipment-library': '#34d399',
 };
 
 const MINIMAP_WIDTH = 180;

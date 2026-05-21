@@ -10,6 +10,7 @@ import type {
   CardStructure,
   CardSizePreset,
   FieldValue,
+  InventoryItem,
 } from './types';
 import styles from './PartyTracker.module.css';
 
@@ -19,6 +20,8 @@ interface CharacterCardProps {
   size: CardSizePreset;
   onUpdateCharacter: (id: string, updates: Partial<Character>) => void;
   onUpdateFieldValue: (charId: string, fieldId: string, value: FieldValue) => void;
+  onAddInventoryItem: (charId: string, item: InventoryItem) => void;
+  onRemoveInventoryItem: (charId: string, itemId: string) => void;
   onDragStart: (id: string) => void;
   onDragOver: (e: React.DragEvent, id: string) => void;
   onDragEnd: () => void;
@@ -31,14 +34,18 @@ export function CharacterCard({
   size,
   onUpdateCharacter,
   onUpdateFieldValue,
+  onAddInventoryItem,
+  onRemoveInventoryItem,
   onDragStart,
   onDragOver,
   onDragEnd,
   isDragging,
 }: CharacterCardProps) {
   const fieldValues = character.fieldValues ?? {};
+  const inventory = character.inventory ?? [];
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(character.name);
+  const [dropOver, setDropOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePortraitClick = useCallback(() => {
@@ -81,9 +88,35 @@ export function CharacterCard({
     [handleNameSubmit, character.name],
   );
 
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDropOver(false);
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      if (data.type === 'library-entry') {
+        onAddInventoryItem(character.id, {
+          id: crypto.randomUUID(),
+          entryId: data.entryId,
+          name: data.name,
+          category: data.category,
+        });
+      }
+    } catch { /* ignore non-JSON drops */ }
+  }, [character.id, onAddInventoryItem]);
+
+  const handleDropOver = useCallback((e: React.DragEvent) => {
+    // Accept library-entry drops
+    e.preventDefault();
+    setDropOver(true);
+  }, []);
+
+  const handleDropLeave = useCallback(() => {
+    setDropOver(false);
+  }, []);
+
   return (
     <div
-      className={`${styles.card} ${isDragging ? styles.cardDragging : ''}`}
+      className={`${styles.card} ${isDragging ? styles.cardDragging : ''} ${dropOver ? styles.cardDropTarget : ''}`}
       data-size={size}
       draggable
       onDragStart={(e) => {
@@ -105,7 +138,12 @@ export function CharacterCard({
         }));
         onDragStart(character.id);
       }}
-      onDragOver={(e) => onDragOver(e, character.id)}
+      onDragOver={(e) => {
+        handleDropOver(e);
+        onDragOver(e, character.id);
+      }}
+      onDragLeave={handleDropLeave}
+      onDrop={handleDrop}
       onDragEnd={onDragEnd}
     >
       {/* Portrait */}
@@ -153,6 +191,24 @@ export function CharacterCard({
           />
         ))}
       </div>
+
+      {/* Inventory */}
+      {inventory.length > 0 && (
+        <div className={styles.inventory}>
+          {inventory.map((item) => (
+            <div key={item.id} className={styles.inventoryItem} title={item.name}>
+              <span className={styles.inventoryName}>{item.name}</span>
+              <button
+                className={styles.inventoryRemove}
+                onClick={() => onRemoveInventoryItem(character.id, item.id)}
+                title="Remove"
+              >
+                &times;
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

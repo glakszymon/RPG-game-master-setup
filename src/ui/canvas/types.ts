@@ -17,7 +17,8 @@ export type ToolType =
   | 'shop-generator'
   | 'dice-roller'
   | 'npc-tool'
-  | 'player-view';
+  | 'player-view'
+  | 'equipment-library';
 
 export interface WindowState {
   id: string;
@@ -90,6 +91,7 @@ export const TOOL_MIN_SIZES: Record<ToolType, { minWidth: number; minHeight: num
   'dice-roller': { minWidth: 250, minHeight: 200 },
   'npc-tool': { minWidth: 400, minHeight: 350 },
   'player-view': { minWidth: 350, minHeight: 400 },
+  'equipment-library': { minWidth: 500, minHeight: 350 },
 };
 
 /** Default sizes for new windows */
@@ -109,6 +111,7 @@ export const TOOL_DEFAULT_SIZES: Record<ToolType, { width: number; height: numbe
   'dice-roller': { width: 300, height: 250 },
   'npc-tool': { width: 500, height: 450 },
   'player-view': { width: 500, height: 500 },
+  'equipment-library': { width: 700, height: 500 },
 };
 
 /** Tool display names and icons */
@@ -128,6 +131,7 @@ export const TOOL_INFO: Record<ToolType, { name: string; icon: string }> = {
   'dice-roller': { name: 'Dice Roller', icon: '🎲' },
   'npc-tool': { name: 'NPC Tool', icon: '🧑' },
   'player-view': { name: 'Player View', icon: '📡' },
+  'equipment-library': { name: 'Equipment & Spells', icon: '📦' },
 };
 
 /** Context menu categories */
@@ -138,7 +142,7 @@ export const TOOL_CATEGORIES = [
   },
   {
     label: 'Party & NPCs',
-    tools: ['party-tracker', 'bestiary', 'npc-tool'] as ToolType[],
+    tools: ['party-tracker', 'bestiary', 'npc-tool', 'equipment-library'] as ToolType[],
   },
   {
     label: 'World & Time',

@@ -24,6 +24,14 @@ export interface CardStructure {
   fields: import('../../components/dynamic-fields').FieldDefinition[];
 }
 
+/** An item or spell attached to a character from the equipment library */
+export interface InventoryItem {
+  id: string;
+  entryId: string;
+  name: string;
+  category: 'weapon' | 'armor' | 'equipment' | 'magic-item' | 'spell';
+}
+
 /** A single character in the party */
 export interface Character {
   id: string;
@@ -31,6 +39,8 @@ export interface Character {
   portraitPath: string | null;
   /** Field values keyed by field definition ID */
   fieldValues: Record<string, import('../../components/dynamic-fields').FieldValue>;
+  /** Inventory items & spells dropped from equipment library */
+  inventory: InventoryItem[];
   order: number;
 }
 
