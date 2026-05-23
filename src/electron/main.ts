@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { isDev } from './utils.js';
+
+app.commandLine.appendSwitch('no-sandbox');
 import { startServer, stopServer, getStatus, broadcast, registerAsset } from './lanServer.js';
 import {
   initDatabase,

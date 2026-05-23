@@ -8,8 +8,12 @@
 import initSqlJs, { type Database } from 'sql.js';
 import { app } from 'electron';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import fs from 'fs';
 import crypto from 'crypto';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { convertAllSrdMonsters } from './srdConversion.js';
 import type { SrdMonsterRaw } from './srdConversion.js';
 

@@ -3,7 +3,8 @@
     "icon": "assets/icon",
     "files": [
         "dist-electron",
-        "dist-react"
+        "dist-react",
+        "assets"
     ],
     "mac": {
         "target": "dmg"
