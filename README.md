@@ -135,6 +135,3 @@ Includes SRD (System Reference Document) data:
 - `assets/srd-items.json` - SRD equipment
 - `assets/srd-spells.json` - SRD spells
 
-## License
-
-This project is private and not currently licensed for distribution.
